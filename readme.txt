@@ -1,22 +1,25 @@
 Gaviota Tablebases Probing Code v0.1
 Copyright (c) 2010 Miguel A. Ballicora
 
-This software is the code needed to probe the Gaviota Endgame Tablebases.
-It is supposed to be portable and could be called from programs running
-in Linux and Windows. It is possible that also works in other OS but
-it has not been tested.
+This software provides the code needed to probe the Gaviota Endgame Tablebases.
+It is designed to be portable to be called from programs running
+in Linux and Windows. Most likely it will work in other OS but
+it has not been tested. This is a beta version and it is not guaranteed
+that the interface will not changed. At least until version 1.0 is
+released. This software is under the X11 ("MIT") license (see below).
 
 A very small set of tablebase files is included in this distribution 
-for testing purposes (only 3 pieces). They are compressed with three
-different schemes. For a more complete set, please download Gaviota
-from
+for testing purposes (only 3 pieces). They are compressed with four
+different compression schemes. For a more complete set, please download 
+Gaviota from
 http://sites.google.com/site/gaviotachessengine/ 
-and generate the 4 and 5 piece tablebases. Instructions are in the
-website.
+and generate the 4 and 5 piece tablebases. Instructions how to generate them
+and compressed them are in the website.
 
 "tbprobe" is distributed here as an example of how to probe the TBs.
-The interface is relatively low level to make sure that performance won't suffer. 
-Hopefully, the small program tbprobe is self explanatory.
+The interface is relatively "low level" to make sure that performance won't suffer. 
+Hopefully, the small program tbprobe is self explanatory. A more complete
+documentation may be released in the future.
 In the future I planned to support an interface with a FEN notation too.
 
 To include this code in any engine or GUI, the following files should be
@@ -67,7 +70,7 @@ The following libraries should be linked in Linux
 -lpthread
 -lm
 
-In Windows, the appropriate MT (multithreaded library should be linked)
+In Windows, the appropriate MT (multithreaded library should alos be linked)
 
 These switches should be set in the compiler
 -D NDEBUG

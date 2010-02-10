@@ -443,7 +443,18 @@ task :clean => [:clean_target] do
 	clean_objects(build_clist($sources))
 end
 
-
+task :clobber => [:clean] do
+	list = Dir['*~']
+	list.each do |src|
+		puts(src)
+		cleanfile(src)
+	end
+	list = Dir['errors_*']
+	list.each do |src|
+		puts(src)
+		cleanfile(src)
+	end
+end
 
 #--------------#
 # DEPLOY       #
