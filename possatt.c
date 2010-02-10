@@ -229,6 +229,7 @@ possible_attack(unsigned int from, unsigned int to, unsigned int piece)
 
 	assert (piece < 256);
 	assert (from < 64 && to < 64);
+	assert (reach_was_initialized());
 	assert (attmsk [piece] != 0 || 0==fprintf(stderr, "PIECE=%d\n",piece) ); /* means piece has been considered */ 
 
 	return 0 != (attmap [to] [from] & attmsk [piece]);

@@ -26,6 +26,8 @@ Copyright (c) 2010 Miguel A. Ballicora
  OTHER DEALINGS IN THE SOFTWARE.
 */
 
+/*-- Intended to be modified to make public functions needed for the TB generator -------------------------*/
+
 #if 0
 #define SHARED_forbuilding
 #endif
@@ -293,7 +295,7 @@ static unsigned char 	Buffer_zipped [EGTB_MAXBLOCKSIZE];
 static unsigned char 	Buffer_packed [EGTB_MAXBLOCKSIZE];
 
 /*static bool_t 			EGTB_PROBING_HARD = TRUE;*/
-static bool_t 			zipinfo_init (void);
+static int				zipinfo_init (void);
 static void 			zipinfo_done (void);
 
 
@@ -997,6 +999,8 @@ set_path_system (char **path)
 extern void
 tb_init (int verbosity, int decoding_scheme, char **paths)
 {
+	int zi;
+
 	assert(!TB_INITIALIZED);
 
 	set_path_system (paths);
@@ -1008,16 +1012,17 @@ tb_init (int verbosity, int decoding_scheme, char **paths)
 			char *p = Gtbpath[g];
 			printf ("  #%d: %s\n", g, p);
 		}
+		fflush(stdout);
 	}
 
 	if (!reach_was_initialized())
 		reach_init();
 
+	attack_maps_init (); /* external initialization */
+
 	init_indexing(0 /* no verbosity */);	
 	init_bettarr();
 	fd_init (&fd);
-
-	attack_maps_init (); /* external initialization */
 	
 	GTB_scheme = decoding_scheme;
 	Uncompressed = GTB_scheme == 0;
@@ -1035,13 +1040,33 @@ tb_init (int verbosity, int decoding_scheme, char **paths)
 		printf ("  Compression  Scheme = %d\n", GTB_scheme);
 	}
 
-	if (!zipinfo_init()) {
-		if (verbosity) printf ("  Compression Indexes = **FAILED**\n");
-	} else {
-		if (verbosity)	printf ("  Compression Indexes = PASSED\n");
-	}
+	zi = zipinfo_init();
 
-	/*Gtbpath_end_index = 1;*/
+	if (verbosity) {
+		if (!zi) {
+			printf ("  Compression Indexes = **FAILED**\n");
+		} else {
+			switch (zi) {
+				case 3: 
+					printf ("  Compression Indexes (3-pc) = PASSED\n");
+					printf ("  Compression Indexes (4-pc) = **FAILED**\n");
+					printf ("  Compression Indexes (5-pc) = **FAILED**\n");
+					break;
+				case 4: 
+					printf ("  Compression Indexes (3-pc) = PASSED\n");
+					printf ("  Compression Indexes (4-pc) = PASSED\n");
+					printf ("  Compression Indexes (5-pc) = **FAILED**\n");
+					break;
+				case 5: 
+					printf ("  Compression Indexes (3-pc) = PASSED\n");
+					printf ("  Compression Indexes (4-pc) = PASSED\n");
+					printf ("  Compression Indexes (5-pc) = PASSED*\n");
+					break;
+				default:
+				break;
+			}
+		}
+	}
 
 	eg_was_open_reset();
 	Bytes_read = 0;
@@ -2417,11 +2442,11 @@ static index_t 	egtb_block_uncompressed_to_index (int key, index_t b);
 static bool_t 	fread32 					(FILE *f, unsigned long int *y);
 
 
-static bool_t
+static int
 zipinfo_init (void)
 {
-	int i;
-	bool_t ok;
+	int i, start, end, ret;
+	bool_t ok, ok3, ok4, ok5;
 
 	/* reset all values */
 	for (i = 0; i < MAX_EGKEYS; i++) {
@@ -2431,14 +2456,41 @@ zipinfo_init (void)
 	}
 
 	/* load all values */
-	for (i = 0, ok = TRUE; ok && i < MAX_EGKEYS; i++) {
+	start = 0;
+	end   = 5;
+	for (i = start, ok = TRUE; i < end; i++) {
 		ok = NULL != fd_openit(i);
-		/*printf ("fd open #%d: %d\n", i, ok);*/
 		ok = ok && egtb_loadindexes (i);
-		/*printf ("indexes #%d: %d\n", i, ok);*/
+	}
+	ok3 = ok;
+
+	start = 5;
+	end   = 35;
+	for (i = start, ok = TRUE; i < end; i++) {
+		ok = NULL != fd_openit(i);
+		ok = ok && egtb_loadindexes (i);
+	}
+	ok4 = ok;
+
+	start = 35;
+	end   = MAX_EGKEYS;
+	for (i = start, ok = TRUE; i < end; i++) {
+		ok = NULL != fd_openit(i);
+		ok = ok && egtb_loadindexes (i);
+	}
+	ok5 = ok;
+
+	ret = 0;
+	if (ok3) {
+		ret = 3;	
+		if (ok4) {
+			ret = 4;
+			if (ok5) 
+				ret = 5;
+		}
 	}
 
-	return ok;
+	return ret;
 }
 
 static void
@@ -2686,8 +2738,10 @@ preload_cache (int key, int side, index_t idx)
 
 	FOLLOW_label("preload_cache starts")
 
-	if (idx >= egkey[key].maxindex)
+	if (idx >= egkey[key].maxindex) {
+		FOLLOW_LULU("Wrong index", __LINE__, idx)	
 		return FALSE;
+	}
 	
 	/* find aged blocked in cache */
 	pblock = point_block_to_replace();
