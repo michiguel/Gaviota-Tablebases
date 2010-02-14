@@ -307,7 +307,7 @@ struct filesopen {
 
 /* STATIC GLOBALS */
 
-static struct filesopen 	fd;
+static struct filesopen 	fd = {0, NULL};
 
 static bool_t 	TB_INITIALIZED = FALSE;
 static bool_t	TBCACHE_INITIALIZED = FALSE;
@@ -1039,7 +1039,10 @@ tb_init (int verbosity, int decoding_scheme, char **paths)
 
 	init_indexing(0 /* no verbosity */);	
 	init_bettarr();
-	fd_init (&fd);
+	if (!fd_init (&fd) && verbosity) {
+		printf ("  File Open Memory initialization = **FAILED**\n");
+		return;
+	}
 	
 	GTB_scheme = decoding_scheme;
 	Uncompressed = GTB_scheme == 0;
@@ -1209,8 +1212,14 @@ static bool_t
 fd_init (struct filesopen *pfd)
 {
 	int *p;
-    int i;
+    int i, allowed;
 	pfd->n = 0;
+
+	allowed = FOPEN_MAX - 5 /*stdin,stdout,sterr,stdlog,book*/;
+	if (allowed < 4)
+		GTB_MAXOPEN = 4;
+	if (allowed > 32)
+		GTB_MAXOPEN = 32;		
 
 	p =	malloc(sizeof(int)*GTB_MAXOPEN);
 
@@ -1242,6 +1251,7 @@ fd_done (struct filesopen *pfd)
 		pfd->key[i] = -1;	
 	}
 	pfd->n = 0;
+	free(pfd->key);
 }
 
 /****************************************************************************\
