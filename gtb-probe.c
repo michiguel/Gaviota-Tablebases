@@ -26,11 +26,14 @@ Copyright (c) 2010 Miguel A. Ballicora
  OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/*-- Intended to be modified to make public functions needed for the TB generator -------------------------*/
+/*-- Intended to be modified to make public --> functions needed for the TB generator ---------------------*/
 
 #if 0
 #define SHARED_forbuilding
 #endif
+
+#undef BUILD_CODE
+#if 0#define BUILD_CODE#endif
 
 /*---------------------------------------------------------------------------------------------------------*/
 #include <stdlib.h>
@@ -84,7 +87,7 @@ typedef int						bool_t;
 #define FALSE ((bool_t)0)
 #endif
 
-/*--------- private if not external building code is present ----------------------------------------------*/
+/*--------- private if external building code is not present ----------------------------------------------*/
 
 #if !defined(SHARED_forbuilding)
 
@@ -154,7 +157,7 @@ enum Info_values {
 
 /*-----------------------------------------------------------------------------*/
 
-/*---------- needed from maindef.h -----------*/
+/*---------- inherited from a previous maindef.h -----------*/
 
 #define WHITES (1u<<6)
 #define BLACKS (1u<<7)
@@ -192,7 +195,7 @@ enum SQUARES {
 	ERRSQUARE = 128
 };
 
-/*-------- end needed from maindef.h -----------*/
+/*-------- end of inherited from a previous maindef.h -----------*/
  
 #if !defined(NDEBUG)
 #define NDEBUG
@@ -201,11 +204,6 @@ enum SQUARES {
 #undef NDEBUG
 #endif
 #include "assert.h"
-
-#undef BUILD_CODE
-#if 0
-#define BUILD_CODE
-#endif
 
 static bool_t TB_compression = FALSE;
 static bool_t TB_cache_on = TRUE;
@@ -292,12 +290,8 @@ static int GTB_scheme = 4;
 static bool_t 			Uncompressed = TRUE;
 static unsigned char 	Buffer_zipped [EGTB_MAXBLOCKSIZE];
 static unsigned char 	Buffer_packed [EGTB_MAXBLOCKSIZE];
-
-/*static bool_t 			EGTB_PROBING_HARD = TRUE;*/
 static int				zipinfo_init (void);
 static void 			zipinfo_done (void);
-
-
 
 enum Flip_flags {
 		WE_FLAG = 1, NS_FLAG = 2,  NW_SE_FLAG = 4
@@ -865,17 +859,26 @@ static uint64_t Bytes_read = 0;
 \****************************************************************************/
 
 #define MAXPATHLEN tb_MAXPATHLEN
-#define MAX_GTBPATHS 5
+#define MAX_GTBPATHS 10
 
 static char Gtbpath_0 [MAXPATHLEN+1] = "";
 static char Gtbpath_1 [MAXPATHLEN+1] = "";
 static char Gtbpath_2 [MAXPATHLEN+1] = "";
 static char Gtbpath_3 [MAXPATHLEN+1] = "";
 static char Gtbpath_4 [MAXPATHLEN+1] = "";
+static char Gtbpath_5 [MAXPATHLEN+1] = "";
+static char Gtbpath_6 [MAXPATHLEN+1] = "";
+static char Gtbpath_7 [MAXPATHLEN+1] = "";
+static char Gtbpath_8 [MAXPATHLEN+1] = "";
+static char Gtbpath_9 [MAXPATHLEN+1] = "";
 
 static int  Gtbpath_end_index = 0;
 
-static char *	Gtbpath [MAX_GTBPATHS+1] = {Gtbpath_0, Gtbpath_1, Gtbpath_2, Gtbpath_3, Gtbpath_4, NULL};
+static char *	Gtbpath [MAX_GTBPATHS+1] = {
+	Gtbpath_0, Gtbpath_1, Gtbpath_2, Gtbpath_3, Gtbpath_4, 
+	Gtbpath_5, Gtbpath_6, Gtbpath_7, Gtbpath_8, Gtbpath_9, 
+	NULL
+};
 
 static void
 egtb_setpath (int x, const char *path)
@@ -889,6 +892,11 @@ egtb_setpath (int x, const char *path)
 		case 2: t = Gtbpath_2;	break;
 		case 3: t = Gtbpath_3;	break;
 		case 4: t = Gtbpath_4;	break;
+		case 5: t = Gtbpath_5;	break;
+		case 6: t = Gtbpath_6;	break;
+		case 7: t = Gtbpath_7;	break;
+		case 8: t = Gtbpath_8;	break;
+		case 9: t = Gtbpath_9;	break;
 		default:
 			return;
 		break;
@@ -1348,7 +1356,7 @@ tb_probe_	(unsigned int stm,
 	assert (inp_wPC[0] == KING && inp_bPC[0] == KING );
 	assert ((epsq >> 3) == 2 || (epsq >> 3) == 5 || epsq == NOSQUARE);
 
-	/*	THIS IS TEMPORARY, VALID ONLY FOR KK!! */
+	/* VALID ONLY FOR KK!! */
 	if (inp_wPC[1] == NOPIECE && inp_bPC[1] == NOPIECE) {
 		index_t dummy_i;
 		bool_t b = kxk_pctoindex (inp_wSQ, inp_bSQ, &dummy_i);
@@ -2431,14 +2439,14 @@ struct ZIPINFO Zipinfo[MAX_EGKEYS];
 static index_t 	egtb_block_getnumber 		(int key, int side, index_t idx);
 static index_t 	egtb_block_getsize 			(int key, index_t idx);
 static index_t 	egtb_block_getsize_zipped 	(int key, index_t block );
-static bool_t 	egtb_block_park  			(int key, index_t block);
-static bool_t 	egtb_block_read 			(int key, index_t len, unsigned char *buffer); 
-static bool_t 	egtb_block_decode 			(int key, int z, unsigned char *bz, int n, unsigned char *bp);
-static bool_t 	egtb_block_unpack 			(int side, index_t n, const unsigned char *bp, dtm_t *out);
-static bool_t 	egtb_file_beready 			(int key);
-static bool_t 	egtb_loadindexes 			(int key);
+static  bool_t 	egtb_block_park  			(int key, index_t block);
+static  bool_t 	egtb_block_read 			(int key, index_t len, unsigned char *buffer); 
+static  bool_t 	egtb_block_decode 			(int key, int z, unsigned char *bz, int n, unsigned char *bp);
+static  bool_t 	egtb_block_unpack 			(int side, index_t n, const unsigned char *bp, dtm_t *out);
+static  bool_t 	egtb_file_beready 			(int key);
+static  bool_t 	egtb_loadindexes 			(int key);
 static index_t 	egtb_block_uncompressed_to_index (int key, index_t b);
-static bool_t 	fread32 					(FILE *f, unsigned long int *y);
+static  bool_t 	fread32 					(FILE *f, unsigned long int *y);
 
 
 static int
@@ -2647,8 +2655,10 @@ egtb_block_getsize (int key, index_t idx)
 	block = idx / blocksz;
 	offset = block * blocksz;
 
-	/* adjust block size in case that this is the last block 
-		and is shorter than "blocksz" */
+	/* 
+	|	adjust block size in case that this is the last block 
+	|	and is shorter than "blocksz" 
+	*/
 	if ( (offset + blocksz) > maxindex) 
 		x = maxindex - offset; /* last block size */
 	else
@@ -2705,13 +2715,13 @@ egtb_block_read (int key, index_t len, unsigned char *buffer)
 	return ((size_t)len == fread (buffer, sizeof (unsigned char), len, egkey[key].fd));	
 }
 
-int __indexing_dummy;
+int TB_PROBE_indexing_dummy;
 
 static bool_t
 egtb_block_decode (int key, int z, unsigned char *bz, int n, unsigned char *bp)
 /* bz:buffer zipped to bp:buffer packed */
 {
-	__indexing_dummy = key; /* to silence compiler */	
+	TB_PROBE_indexing_dummy = key; /* to silence compiler */	
 	return decode (z-1, bz+1, n, bp);
 
 }
@@ -3228,7 +3238,7 @@ init_indexing (int verbosity)
 	if (!reach_was_initialized())
 		reach_init();
 
-	/* testing */
+	/* testing used only in development stage */
 
 	if (0) {
 		list_index ();
@@ -4999,8 +5009,6 @@ kabkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 /********************** end KAB/KP ************************************/
 
 
-
-
 static void
 kpk_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 {
@@ -5080,7 +5088,6 @@ kpk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	return TRUE;
 }
-
 
 
 /**********************  KPP/K ************************************/
@@ -7026,6 +7033,17 @@ kpkp_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 |
 \*---------------------------------------*/
 
+/**
+ * bitScanForward
+ * @author Charles E. Leiserson
+ *         Harald Prokop
+ *         Keith H. Randall
+ * "Using de Bruijn Sequences to Index a 1 in a Computer Word"
+ *
+ * See http://chessprogramming.wikispaces.com/BitScan
+ *
+ */
+
 static const int index64[64] = {
    63,  0, 58,  1, 59, 47, 53,  2,
    60, 39, 48, 27, 54, 33, 42,  3,
@@ -7179,8 +7197,6 @@ bitfromvector (uint64_t x)
 }
 
 #endif
-
-
 
 /****************************************************************************\
  *
