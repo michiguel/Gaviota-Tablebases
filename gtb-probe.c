@@ -993,7 +993,7 @@ static int	eg_was_open_count(void)
 static void path_system_reset(void) {Gtbpath_end_index = 0;}
 
 static void
-set_path_system (char **path)
+path_system_init (char **path)
 {
 	int i;
 	bool_t ok = TRUE;
@@ -1003,6 +1003,13 @@ set_path_system (char **path)
 	}
 }
 
+static void
+path_system_done (void)
+{
+	/* nothing so far because path system is not dynamic (yet) */	
+	return;
+}
+
 extern void
 tb_init (int verbosity, int decoding_scheme, char **paths)
 {
@@ -1010,7 +1017,7 @@ tb_init (int verbosity, int decoding_scheme, char **paths)
 
 	assert(!TB_INITIALIZED);
 
-	set_path_system (paths);
+	path_system_init (paths);
 
 	if (verbosity) { 
 		int g;
@@ -1100,6 +1107,7 @@ tb_done (void)
 	fd_done (&fd);
 	RAM_egtbfree();
 	zipinfo_done();
+	path_system_done();
 	mythread_mutex_destroy (&Egtb_lock);
 	TB_INITIALIZED = FALSE;
 	return;
