@@ -169,15 +169,14 @@ static void freq_report (void);
 
 /*=== ENCODE/DECODE=================================================*/
 
-size_t __hzip_dummy;
-size_t __unused;
+size_t TB_hzip_unused;
 
 static int 
 huffman_decode (size_t z, const unsigned char *bz, size_t n, unsigned char *bp)
 /* bz:buffer huffman zipped to bp:buffer decoded */
 {
 	bool_t ok;
-	__hzip_dummy = z; /* to silence compiler */
+	TB_hzip_unused = z; /* to silence compiler */
 	ro_stream_init (&RO_Stream, bz);
 	ok = decode_from_stream (&RO_Stream, n, bp);
 	ro_stream_done (&RO_Stream);
@@ -208,7 +207,7 @@ huff_decode
 				| (in_start[1] <<  8) 
 				| (in_start[2] << 16)
 				| (in_start[3] << 24);	
-	__unused = out_max;
+	TB_hzip_unused = out_max;
 	*pout_len = n;
 	return huffman_decode (in_len-4, in_start+4, n, out_start);
 }
@@ -220,7 +219,7 @@ huff_encode
 {
 	bool_t ok;
 	size_t hlen = 0;
-	__unused = out_max;
+	TB_hzip_unused = out_max;
 	out_start[0] = (in_len      ) & 0xffu;
 	out_start[1] = (in_len >>  8) & 0xffu;
 	out_start[2] = (in_len >> 16) & 0xffu;
