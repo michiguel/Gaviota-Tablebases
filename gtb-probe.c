@@ -285,7 +285,9 @@ static int GTB_scheme = 4;
 \*************************************************/
 
 #define EGTB_MAXBLOCKSIZE 65536
-#define GTB_MAXOPEN 4
+/*#define GTB_MAXOPEN 4*/
+
+static int GTB_MAXOPEN = 4;
 
 static bool_t 			Uncompressed = TRUE;
 static unsigned char 	Buffer_zipped [EGTB_MAXBLOCKSIZE];
@@ -299,7 +301,8 @@ enum Flip_flags {
 
 struct filesopen {
 	int n;
-	int key[GTB_MAXOPEN];
+	int *key;
+/*	int key [GTB_MAXOPEN];*/
 };
 
 /* STATIC GLOBALS */
@@ -655,7 +658,7 @@ static bool_t	 	get_dtm_from_cache (int key, int side, index_t idx, dtm_t *out);
 |
 *---------------------------------*/
 
-static void 	fd_init (struct filesopen *pfd);
+static bool_t 	fd_init (struct filesopen *pfd);
 static void		fd_done (struct filesopen *pfd);
 
 static void		RAM_egtbfree (void);
@@ -1202,13 +1205,23 @@ init_bettarr (void)
 |
 \*---------------------------------------------------------------------------*/
 
-static void
+static bool_t
 fd_init (struct filesopen *pfd)
 {
+	int *p;
     int i;
 	pfd->n = 0;
-	for (i = 0; i < GTB_MAXOPEN; i++) {
-		pfd->key[i] = -1;	
+
+	p =	malloc(sizeof(int)*GTB_MAXOPEN);
+
+	if (p != NULL) {
+		for (i = 0; i < GTB_MAXOPEN; i++) {
+			p[i] = -1;	
+		}
+		pfd->key = p;
+		return TRUE;
+	} else {
+		return FALSE;
 	}
 }
 
@@ -1218,6 +1231,9 @@ fd_done (struct filesopen *pfd)
     int i;
 	int closingkey;
 	FILE *finp;
+
+	assert(pfd != NULL);
+
 	for (i = 0; i < pfd->n; i++) {
 		closingkey = pfd->key[i];
 		finp = egkey [closingkey].fd;
