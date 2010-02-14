@@ -5,7 +5,7 @@
 
 /*
 |	Define
-|	MONOTHREAD: if SMP functions are not going to be used or link with -lpthread
+|	MONOTHREAD: if SMP functions are not going to be used nor linked with -lpthread
 |
 */
 
@@ -132,6 +132,10 @@
 
 /* path names */
 extern int isfoldersep (int x);
+
+/*-----------------	FOPEN MAX------------------*/
+
+extern int mysys_fopen_max (void);
 
 /*------------ 
 	TIMER 

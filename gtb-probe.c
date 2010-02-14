@@ -1213,13 +1213,17 @@ fd_init (struct filesopen *pfd)
 {
 	int *p;
     int i, allowed;
+
 	pfd->n = 0;
 
-	allowed = FOPEN_MAX - 5 /*stdin,stdout,sterr,stdlog,book*/;
+	allowed = mysys_fopen_max() - 5 /*stdin,stdout,sterr,stdlog,book*/;
 	if (allowed < 4)
 		GTB_MAXOPEN = 4;
 	if (allowed > 32)
 		GTB_MAXOPEN = 32;		
+
+printf ("allowed: %d\n",allowed);
+exit(0);
 
 	p =	malloc(sizeof(int)*GTB_MAXOPEN);
 
