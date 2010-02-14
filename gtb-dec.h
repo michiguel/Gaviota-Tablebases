@@ -35,13 +35,16 @@ Copyright (c) 2010 Miguel A. Ballicora
 
 enum Compression {CP0, CP1, CP2, CP3, CP4, CP5, CP6, CP7, CP8, CP9, CP_END};
 
-/*extern int DECODE_SCHEME;*/
+extern void 	set_decoding_scheme(int x);
 
-extern void set_decoding_scheme(int x);
-extern int  decoding_scheme(void);
+extern int  	decoding_scheme(void);
 
-extern int decode (size_t z, unsigned char *bz, size_t n, unsigned char *bp);
-/*extern int encode (size_t n, unsigned char *bp, size_t *z, unsigned char *bz);*/
+extern int 		decode (size_t z, unsigned char *bz, size_t n, unsigned char *bp);
+
+/*
+This function should be included with the TB compressor 
+extern int encode (size_t n, unsigned char *bp, size_t *z, unsigned char *bz);
+*/
 
 /*<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
 #endif
