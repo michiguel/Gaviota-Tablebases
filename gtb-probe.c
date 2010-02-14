@@ -47,7 +47,6 @@ Copyright (c) 2010 Miguel A. Ballicora
 #endif
 
 #include "sysport.h"
-#include "str64.h"
 #include "gtb-att.h"
 
 /*---------------------------------------------------------------------------------------------------------*/

@@ -2,9 +2,7 @@ tbprobe.c
 gtb-probe.c
 gtb-dec.c
 gtb-att.c
-;
 ;-----------------------------------
-;sysport/str64.c
 sysport/sysport.c  
 ;-----------------------------------
 compression/wrap.c
