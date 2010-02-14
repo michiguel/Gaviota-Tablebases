@@ -1,4 +1,4 @@
-Gaviota Tablebases Probing Code v0.1
+Gaviota Tablebases Probing Code
 Copyright (c) 2010 Miguel A. Ballicora
 
 This software provides the code needed to probe the Gaviota Endgame Tablebases.
@@ -26,8 +26,8 @@ To include this code in any engine or GUI, the following files should be
 compiled and linked:
 
 gtb-probe.c
-decode.c
-possatt.c
+gtb-dec.c
+gtb-att.c
 sysport/sysport.c  
 compression/wrap.c
 compression/huffman/hzip.c 
@@ -53,9 +53,9 @@ compression/liblzf/lzf_c.c
 compression/liblzf/lzf_d.c
 
 The following files will be included 
-decode.h  
 gtb-probe.h  
-possatt.h
+gtb-dec.h  
+gtb-att.h
 
 plus all the *.h files in the folders:
 sysport/
@@ -70,7 +70,7 @@ The following libraries should be linked in Linux
 -lpthread
 -lm
 
-In Windows, the appropriate MT (multithreaded library should alos be linked)
+In Windows, the appropriate MT (multithreaded library should be linked too)
 
 These switches should be set in the compiler
 -D NDEBUG
@@ -82,6 +82,10 @@ collision with other names in ther other compression library.
 
 the file compile.sh is an example of how tbprobe can be
 compiled in Linux using gcc.
+
+Rafile.rb is the ruby version of Makefile. You have to install 'rake'
+to execute it. This is what I use but you don't have to. It is provided
+out of lazyness. I should probably remove it.
 
 Good luck with the tablebases!
 

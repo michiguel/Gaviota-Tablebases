@@ -28,7 +28,7 @@ Copyright (c) 2010 Miguel A. Ballicora
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "possatt.h"
+#include "gtb-att.h"
 
 #if 0
 

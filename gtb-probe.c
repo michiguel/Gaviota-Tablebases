@@ -48,7 +48,7 @@ Copyright (c) 2010 Miguel A. Ballicora
 
 #include "sysport.h"
 #include "str64.h"
-#include "possatt.h"
+#include "gtb-att.h"
 
 /*---------------------------------------------------------------------------------------------------------*/
 /*#include "posit_t.h"*/
@@ -217,7 +217,7 @@ static bool_t TB_cache_on = TRUE;
 |
 \*************************************************/
 
-#include "decode.h"
+#include "gtb-dec.h"
 
 static const char *const Extension[] = {
 							 ".gtb.cp0"
@@ -2413,7 +2413,7 @@ extern void	tbstats_reset (void)
 |
 \****************************************************************************/
 
-#include "decode.h"
+#include "gtb-dec.h"
 
 /*
 |

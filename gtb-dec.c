@@ -34,7 +34,7 @@ Copyright (c) 2010 Miguel A. Ballicora
 #define MAXBLOCK (1 << 16)
 
 #include <stdlib.h>
-#include "decode.h"
+#include "gtb-dec.h"
 #include "hzip.h"
 #include "wrap.h"
 

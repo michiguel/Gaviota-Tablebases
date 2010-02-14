@@ -26,7 +26,7 @@ Copyright (c) 2010 Miguel A. Ballicora
  OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/* decode.h */
+/* gtb-dec.h */
 #if !defined(H_DECOD)
 #define H_DECOD
 

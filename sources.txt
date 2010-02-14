@@ -1,7 +1,7 @@
 tbprobe.c
 gtb-probe.c
-decode.c
-possatt.c
+gtb-dec.c
+gtb-att.c
 ;
 ;-----------------------------------
 ;sysport/str64.c
