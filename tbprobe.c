@@ -57,7 +57,7 @@ int main (int argc, char *argv[])
 	|   Initialization info to be provided
 	\*--------------------------------------*/
 
-	int verbosity = 1;		/* initialization 0 = non-verbose, 1 = verbose */
+	int verbosity = 0;		/* initialization 0 = non-verbose, 1 = verbose */
 	int	scheme = tb_CP4;	/* compression scheme to be used */
 	char ** paths;		/* paths where files will be searched */
 	size_t cache_size = 32*1024*1024; /* 32 MiB in this example */
@@ -174,8 +174,9 @@ int main (int argc, char *argv[])
 			printf ("FATAL ERROR, This should never be reached\n");
 			exit(EXIT_FAILURE);
 		}
+		printf ("\n");
 	} else {
-		printf ("Tablebase info not available\n");   
+		printf ("Tablebase info not available\n\n");   
 	}
 
 	/*--------------------------------------*\

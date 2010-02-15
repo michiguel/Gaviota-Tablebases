@@ -1068,6 +1068,7 @@ tb_init (int verbosity, int decoding_scheme, char **paths)
 				break;
 			}
 		}
+		printf ("\n");
 	}
 
 	eg_was_open_reset();
