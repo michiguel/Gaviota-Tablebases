@@ -864,64 +864,9 @@ static uint64_t Bytes_read = 0;
 #define MAXPATHLEN tb_MAXPATHLEN
 #define MAX_GTBPATHS 10
 
-static char Gtbpath_0 [MAXPATHLEN+1] = "";
-static char Gtbpath_1 [MAXPATHLEN+1] = "";
-static char Gtbpath_2 [MAXPATHLEN+1] = "";
-static char Gtbpath_3 [MAXPATHLEN+1] = "";
-static char Gtbpath_4 [MAXPATHLEN+1] = "";
-static char Gtbpath_5 [MAXPATHLEN+1] = "";
-static char Gtbpath_6 [MAXPATHLEN+1] = "";
-static char Gtbpath_7 [MAXPATHLEN+1] = "";
-static char Gtbpath_8 [MAXPATHLEN+1] = "";
-static char Gtbpath_9 [MAXPATHLEN+1] = "";
-
 static int  Gtbpath_end_index = 0;
 
-static char *	Gtbpath [MAX_GTBPATHS+1] = {
-	Gtbpath_0, Gtbpath_1, Gtbpath_2, Gtbpath_3, Gtbpath_4, 
-	Gtbpath_5, Gtbpath_6, Gtbpath_7, Gtbpath_8, Gtbpath_9, 
-	NULL
-};
-
-static void
-egtb_setpath (int x, const char *path)
-{
-	const char *s = path;
-	char *t = Gtbpath_0;
-
-	switch (x) {
-		case 0: t = Gtbpath_0;	break;
-		case 1: t = Gtbpath_1;	break;
-		case 2: t = Gtbpath_2;	break;
-		case 3: t = Gtbpath_3;	break;
-		case 4: t = Gtbpath_4;	break;
-		case 5: t = Gtbpath_5;	break;
-		case 6: t = Gtbpath_6;	break;
-		case 7: t = Gtbpath_7;	break;
-		case 8: t = Gtbpath_8;	break;
-		case 9: t = Gtbpath_9;	break;
-		default:
-			return;
-		break;
-	}
- 
-	while (*s != '\0' && (s-path) < MAXPATHLEN) {
-		*t++ = *s++;
-	}
-	*t = '\0';
-	return;	
-}
-
-static int
-egtb_addpath (const char *p)
-{
-	if (Gtbpath_end_index < MAX_GTBPATHS) {
-		egtb_setpath (Gtbpath_end_index++, p);	
-		return 1;
-	} else {
-		return 0;
-	}
-}
+static char **	Gtbpath = NULL;
 
 /*---------------- EXTERNAL PATH MANAGEMENT --------------------------------*/
 
@@ -966,6 +911,62 @@ tbpaths_done(char **ps)
 	return NULL;
 }
 
+/*---------------- PATH INITIALIZATION ROUTINES ----------------------------*/
+
+static void path_system_reset(void) {Gtbpath_end_index = 0;}
+
+static bool_t
+path_system_init (char **path)
+{
+	int i;
+	int sz;
+	char *x;
+	bool_t ok = TRUE;
+	path_system_reset();
+
+	assert (path != NULL);
+
+	if (path == NULL) {
+		return FALSE;
+	}
+
+	/* calculate needed size for Gtbpath */
+	i = 0;
+	do {
+		x = path[i++];
+	} while (x != NULL);
+	sz = i; /* sz includes the NULL */
+
+
+	Gtbpath = malloc (sz * sizeof(char *));
+
+	if (Gtbpath) {
+		
+		ok = TRUE;
+		/* point to the same strings provided */
+		Gtbpath_end_index = 0;
+		for (i = 0; i < sz; i++) {
+			Gtbpath[i] = path[i];
+			Gtbpath_end_index++;
+		}
+
+	} else {
+		ok = FALSE;
+	}
+	return ok;
+
+}
+
+static void
+path_system_done (void)
+{
+	/* clean up */
+	if (Gtbpath != NULL)
+		free(Gtbpath);
+	return;
+}
+
+
 /****************************************************************************\
  *
  *
@@ -993,25 +994,6 @@ static int	eg_was_open_count(void)
 	return x;
 }
 
-static void path_system_reset(void) {Gtbpath_end_index = 0;}
-
-static void
-path_system_init (char **path)
-{
-	int i;
-	bool_t ok = TRUE;
-	path_system_reset();
-	for (i = 0; ok && path[i] != NULL; i++) {
-		ok = egtb_addpath (path[i]);
-	}
-}
-
-static void
-path_system_done (void)
-{
-	/* nothing so far because path system is not dynamic (yet) */	
-	return;
-}
 
 extern void
 tb_init (int verbosity, int decoding_scheme, char **paths)
@@ -1221,9 +1203,6 @@ fd_init (struct filesopen *pfd)
 		GTB_MAXOPEN = 4;
 	if (allowed > 32)
 		GTB_MAXOPEN = 32;		
-
-printf ("allowed: %d\n",allowed);
-exit(0);
 
 	p =	malloc(sizeof(int)*GTB_MAXOPEN);
 

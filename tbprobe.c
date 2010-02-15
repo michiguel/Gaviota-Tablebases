@@ -57,7 +57,7 @@ int main (int argc, char *argv[])
 	|   Initialization info to be provided
 	\*--------------------------------------*/
 
-	int verbosity = 0;		/* initialization 0 = non-verbose, 1 = verbose */
+	int verbosity = 1;		/* initialization 0 = non-verbose, 1 = verbose */
 	int	scheme = tb_CP4;	/* compression scheme to be used */
 	char ** paths;		/* paths where files will be searched */
 	size_t cache_size = 32*1024*1024; /* 32 MiB in this example */
@@ -100,7 +100,7 @@ int main (int argc, char *argv[])
 	\*--------------------------------------*/
 
 #if 0
-
+	/* needs 5-pc installed */
 	/* FEN: 1r6/6k1/8/8/8/8/1P6/1KR5 w - - 0 1 */
 
 	stm      = tb_WHITE_TO_MOVE;/* 0 = white to move, 1 = black to move */
@@ -127,6 +127,7 @@ int main (int argc, char *argv[])
 
 #else
 
+	/* needs 3-pc installed */
 	/* FEN: 8/8/8/4k3/8/8/8/KR6 w - - 0 1 */
 
 	stm      = tb_WHITE_TO_MOVE;/* 0 = white to move, 1 = black to move */
