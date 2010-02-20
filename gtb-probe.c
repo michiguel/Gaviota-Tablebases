@@ -2247,6 +2247,7 @@ struct gtb_block {
 	gtb_block_t		*next;
 };
 
+/*
 struct cache_table {
 	bool_t			cached;
 	uint64_t		hard;
@@ -2265,6 +2266,35 @@ struct cache_table {
 };
 
 struct cache_table 		cachetab = {FALSE,0,0,0,0,0,0,0,0,NULL,NULL,0,NULL,NULL};
+
+*/
+
+struct cache_table {
+	/* defined at init */
+	bool_t			cached;
+	size_t			max_blocks;
+	size_t 			entries_per_block;
+	dtm_t			*buffer;
+
+	/* flushables */
+	gtb_block_t		*top;
+	gtb_block_t 	*bot;
+	size_t			n;
+	gtb_block_t 	*entry;
+
+	/* counters */
+	uint64_t		hard;
+	uint64_t		soft;
+	uint64_t		hardmisses;
+	uint64_t		hits;
+	uint64_t		softmisses;
+	uint64_t 		comparisons;
+};
+
+struct cache_table 		cachetab = {FALSE,0,0,NULL,
+									NULL,NULL,0,NULL,
+									0,0,0,0,0,0};
+
 
 static void 		split_index (size_t entries_per_block, index_t i, index_t *o, index_t *r);
 static gtb_block_t *point_block_to_replace (void);
@@ -2359,14 +2389,36 @@ tbcache_done (void)
 	return;
 }
 
-/*
-static double
-tbcache_efficiency (void)
-{ 
-	statcounter_t tot = cachetab.hits + cachetab.hardmisses;
-	return tot==0? 0: (double)1.0 * cachetab.hits / tot;
+
+
+void
+tbcache_flush (void)
+{
+	unsigned int 	i;
+	gtb_block_t 	*p;
+	size_t entries_per_block = cachetab.entries_per_block;
+	size_t max_blocks = cachetab.max_blocks;
+
+	cachetab.top 				= NULL;
+	cachetab.bot 				= NULL;
+	cachetab.n 					= 0;
+	
+	for (i = 0; i < max_blocks; i++) {
+		
+		p = &cachetab.entry[i];
+		p->key  = -1;
+		p->side = -1;
+		p->offset = -1;
+		p->p_arr = cachetab.buffer + i * entries_per_block;
+		p->prev = NULL;
+		p->next = NULL;
+	}
+
+	tbcache_reset_counters ();
+
+	return;
 }
-*/
+
 
 static void
 tbcache_reset_counters (void)
