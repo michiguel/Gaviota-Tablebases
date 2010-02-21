@@ -59,7 +59,7 @@ int main (int argc, char *argv[])
 
 	int verbosity = 0;		/* initialization 0 = non-verbose, 1 = verbose */
 	int	scheme = tb_CP4;	/* compression scheme to be used */
-	char ** paths;		/* paths where files will be searched */
+	char ** paths;			/* paths where files will be searched */
 	size_t cache_size = 32*1024*1024; /* 32 MiB in this example */
 
 
@@ -99,40 +99,19 @@ int main (int argc, char *argv[])
 	|   
 	\*--------------------------------------*/
 
-#if 0
-	/* needs 5-pc installed */
-	/* FEN: 1r6/6k1/8/8/8/8/1P6/1KR5 w - - 0 1 */
-
-	stm      = tb_WHITE_TO_MOVE;/* 0 = white to move, 1 = black to move */
-	epsquare = tb_NOSQUARE;		/* no ep available */
-	castling = tb_NOCASTLE;		/* no castling available */
-
-	ws[0] = tb_B1;
-	ws[1] = tb_C1;
-	ws[2] = tb_B2;
-	ws[3] = tb_NOSQUARE;		/* it marks the end of list */
-
-	wp[0] = tb_KING;
-	wp[1] = tb_ROOK;
-	wp[2] = tb_PAWN;
-	wp[3] = tb_NOPIECE;			/* it marks the end of list */
-
-	bs[0] = tb_G7;
-	bs[1] = tb_B8;
-	bs[2] = tb_NOSQUARE;		/* it marks the end of list */
-
-	bp[0] = tb_KING;
-	bp[1] = tb_ROOK;
-	bp[2] = tb_NOPIECE;			/* it marks the end of list */
-
-#else
-
 	/* needs 3-pc installed */
 	/* FEN: 8/8/8/4k3/8/8/8/KR6 w - - 0 1 */
 
 	stm      = tb_WHITE_TO_MOVE;/* 0 = white to move, 1 = black to move */
 	epsquare = tb_NOSQUARE;		/* no ep available */
-	castling = tb_NOCASTLE;		/* no castling available */
+	castling = tb_NOCASTLE;		/* no castling available, otherwise combine all 
+									the castling possibilities with '|', for instance
+									white could castle both sides, black can't:	 
+									castling = tb_WOO | tb_WOOO; 
+									both could castle on the king side:	 
+									castling = tb_WOO | tb_WOO;
+									etc. 
+								*/
 
 	ws[0] = tb_A1;
 	ws[1] = tb_B1;
@@ -148,15 +127,101 @@ int main (int argc, char *argv[])
 	bp[0] = tb_KING;
 	bp[1] = tb_NOPIECE;			/* it marks the end of list */
 
-#endif
 
 	/*--------------------------------------*\
 	|
-	|      		PROBING TBs
+	|      		PROBING TBs (HARD)
 	|   
 	\*--------------------------------------*/
 
+	/* probing soft will go to the cache, if the info is not found there, 
+		it will go to the Hard Drive to find it
+	 */		
+
 	tb_available = tb_probe_hard (stm, epsquare, castling, ws, bs, wp, bp, &info, &pliestomate);
+
+	if (tb_available) {
+
+		if (info == tb_DRAW)
+			printf ("Draw\n");
+		else if (info == tb_WMATE && stm == tb_WHITE_TO_MOVE)
+			printf ("White mates, plies=%u\n", pliestomate);
+		else if (info == tb_BMATE && stm == tb_BLACK_TO_MOVE)
+			printf ("Black mates, plies=%u\n", pliestomate);
+		else if (info == tb_WMATE && stm == tb_BLACK_TO_MOVE)
+			printf ("Black is mated, plies=%u\n", pliestomate);
+		else if (info == tb_BMATE && stm == tb_WHITE_TO_MOVE)
+			printf ("White is mated, plies=%u\n", pliestomate);         
+		else {
+			printf ("FATAL ERROR, This should never be reached\n");
+			exit(EXIT_FAILURE);
+		}
+		printf ("\n");
+	} else {
+		printf ("Tablebase info not available\n\n");   
+	}
+
+	/*--------------------------------------*\
+	|
+	|   ASSIGNING POSITIONAL VALUES for
+	|   another example
+	|   
+	\*--------------------------------------*/
+
+	/* only the rook position is different, the rest is the same */
+	ws[1] = tb_B6;
+
+	/*--------------------------------------*\
+	|
+	|      		PROBING TBs #2 (SOFT)
+	|   
+	\*--------------------------------------*/
+
+	/* probing soft goes to cache, if info not found there, it returns FALSE
+		It will **NEVER** go to the Hard Drive
+		If info is found, it is because the previous probe #1 filled up 
+		the cache with the info needed for probe #2
+	 */	
+
+	tb_available = tb_probe_soft (stm, epsquare, castling, ws, bs, wp, bp, &info, &pliestomate);
+
+	if (tb_available) {
+
+		if (info == tb_DRAW)
+			printf ("Draw\n");
+		else if (info == tb_WMATE && stm == tb_WHITE_TO_MOVE)
+			printf ("White mates, plies=%u\n", pliestomate);
+		else if (info == tb_BMATE && stm == tb_BLACK_TO_MOVE)
+			printf ("Black mates, plies=%u\n", pliestomate);
+		else if (info == tb_WMATE && stm == tb_BLACK_TO_MOVE)
+			printf ("Black is mated, plies=%u\n", pliestomate);
+		else if (info == tb_BMATE && stm == tb_WHITE_TO_MOVE)
+			printf ("White is mated, plies=%u\n", pliestomate);         
+		else {
+			printf ("FATAL ERROR, This should never be reached\n");
+			exit(EXIT_FAILURE);
+		}
+		printf ("\n");
+	} else {
+		printf ("Tablebase info not available\n\n");   
+	}
+
+	/*--------------------------------------*\
+	|
+	|      		PROBING TBs #3 
+	|			(SOFT after cache flush)
+	|   
+	\*--------------------------------------*/
+
+	/* cache is flushed, so probing soft with the same position as #2 
+		will surely return FALSE 
+	*/
+
+	tbcache_flush();
+
+	/* same as #2 */
+
+	tb_available = tb_probe_soft (stm, epsquare, castling, ws, bs, wp, bp, &info, &pliestomate);
 
 	if (tb_available) {
 
