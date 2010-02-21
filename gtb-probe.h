@@ -115,6 +115,26 @@ extern int /*bool*/	tb_probe_soft
 			 				 /*@out@*/ unsigned *tbinfo, 
 			 				 /*@out@*/ unsigned *plies);
 
+extern int /*bool*/	tb_probe_WDL_hard 
+							(unsigned stm, 
+			 				 unsigned epsq,
+							 unsigned castles,
+			 				 const unsigned *inp_wSQ, 
+			 				 const unsigned *inp_bSQ,
+			 				 const unsigned char *inp_wPC, 
+			 				 const unsigned char *inp_bPC,
+			 				 /*@out@*/ unsigned *tbinfo); 
+
+extern int /*bool*/	tb_probe_WDL_soft 
+							(unsigned stm, 
+			 				 unsigned epsq,
+							 unsigned castles,
+			 				 const unsigned *inp_wSQ, 
+			 				 const unsigned *inp_bSQ,
+			 				 const unsigned char *inp_wPC, 
+			 				 const unsigned char *inp_bPC,
+			 				 /*@out@*/ unsigned *tbinfo);
+
 extern int /*bool*/	tb_is_initialized (void);
 
 /*----------------------------------*\
@@ -138,7 +158,8 @@ less significant 32 bits (bit 0 to 31), and prob_hard_hitsp[1] the
 most significant ones (32 to 63). The number can be recreated
 like this
 uint64_t x = (uint64_t)probe_hard_hits[0] | ((uint64_t)probe_hard_hits[1] << 32);
-The user has the responsibility to use the proper 64 bit integers.
+The user has the responsibility to combine the numbers and use the 
+proper 64 bit integers.
 */
 
 struct TB_STATS {

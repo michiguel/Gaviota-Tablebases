@@ -245,6 +245,47 @@ int main (int argc, char *argv[])
 	}
 
 	/*--------------------------------------*\
+	|
+	|      		PROBING TBs #4 
+	|			(HARD, only win, draw, lose)
+	|   
+	\*--------------------------------------*/
+
+	/* 
+		Probing with the WDL versions of the probing functions
+		will return only the info needed to know whether a position
+		is a win, draw, or a loss.  
+		The Gaviota tablebase library will try to return this info
+		with the best performance possible. If the only info needed for
+		a position is WDL, these function should be used rather
+		than the regular tb_probe_hard() function.
+		This function would be the "equivalent" of one that probes a bitbase.
+	*/
+
+	tb_available = tb_probe_WDL_hard (stm, epsquare, castling, ws, bs, wp, bp, &info);
+
+	if (tb_available) {
+
+		if (info == tb_DRAW)
+			printf ("Draw\n");
+		else if (info == tb_WMATE && stm == tb_WHITE_TO_MOVE)
+			printf ("White mates\n");
+		else if (info == tb_BMATE && stm == tb_BLACK_TO_MOVE)
+			printf ("Black mates\n");
+		else if (info == tb_WMATE && stm == tb_BLACK_TO_MOVE)
+			printf ("Black is mated\n");
+		else if (info == tb_BMATE && stm == tb_WHITE_TO_MOVE)
+			printf ("White is mated\n");         
+		else {
+			printf ("FATAL ERROR, This should never be reached\n");
+			exit(EXIT_FAILURE);
+		}
+		printf ("\n");
+	} else {
+		printf ("Tablebase info not available\n\n");   
+	}
+
+	/*--------------------------------------*\
 	|	Clean up at the end of the program
 	\*--------------------------------------*/
 

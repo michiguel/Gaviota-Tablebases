@@ -1325,6 +1325,42 @@ tb_probe_hard
 	return tb_probe_ (stm, epsq, inp_wSQ, inp_bSQ, inp_wPC, inp_bPC, TRUE, res, ply);
 } 
 
+extern bool_t
+tb_probe_WDL_soft
+			(unsigned int stm, 
+			 SQUARE epsq,
+			 unsigned castles,
+			 const SQUARE *inp_wSQ, 
+			 const SQUARE *inp_bSQ,
+			 const SQ_CONTENT *inp_wPC, 
+			 const SQ_CONTENT *inp_bPC,
+			 /*@out@*/ unsigned *res)
+{
+	unsigned ply_n;
+	unsigned *ply = &ply_n;
+	if (castles != 0) 
+		return FALSE;
+	return tb_probe_ (stm, epsq, inp_wSQ, inp_bSQ, inp_wPC, inp_bPC, FALSE, res, ply);
+} 
+
+extern bool_t
+tb_probe_WDL_hard
+			(unsigned int stm, 
+			 SQUARE epsq,
+			 unsigned castles,
+			 const SQUARE *inp_wSQ, 
+			 const SQUARE *inp_bSQ,
+			 const SQ_CONTENT *inp_wPC, 
+			 const SQ_CONTENT *inp_bPC,
+			 /*@out@*/ unsigned *res)
+{
+	unsigned ply_n;
+	unsigned *ply = &ply_n;
+	if (castles != 0) 
+		return FALSE;
+	return tb_probe_ (stm, epsq, inp_wSQ, inp_bSQ, inp_wPC, inp_bPC, TRUE, res, ply);
+} 
+
 
 static bool_t
 tb_probe_	(unsigned int stm, 
