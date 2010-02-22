@@ -32,9 +32,6 @@ Copyright (c) 2010 Miguel A. Ballicora
 #define SHARED_forbuilding
 #endif
 
-#undef BUILD_CODE
-#if 0#define BUILD_CODE#endif
-
 /*---------------------------------------------------------------------------------------------------------*/
 #include <stdlib.h>
 #include <stdio.h>
@@ -75,7 +72,7 @@ typedef struct 	posit posit_t;
 /*---------------------------------------------------------------------------------------------------------*/
 /*#include "bool_t.h"*/
 
-#if !defined(bool_t)
+#if !defined(H_BOOL)
 typedef int						bool_t;
 #endif
 
@@ -315,21 +312,6 @@ static bool_t	TBCACHE_INITIALIZED = FALSE;
 /* LOCKS */
 static mythread_mutex_t	Egtb_lock;
 
-#ifdef BUILD_CODE
-/*--------------------------------*\
-|
-|			T I M E R
-|
-*---------------------------------*/
-static tickcounter_t Timer_start[2];
-static void 	timer_reset(int x) {
-    Timer_start[x] = myclock();
-}
-static double 	timer_get  (int x) {
-    double t = (double)myclock();
-    return (t - Timer_start[x] )/(double)(ticks_per_sec());
-}
-#endif
 
 /****************************************************************************\
  *
@@ -352,7 +334,7 @@ static double 	timer_get  (int x) {
 static void 	print_pos (const sq_t *ws, const sq_t *bs, const pc_t *wp, const pc_t *bp);
 #endif
 
-#if defined(BUILD_CODE) || defined(DEBUG) || defined(FOLLOW_EGTB)
+#if defined(DEBUG) || defined(FOLLOW_EGTB)
 static void 	output_state (unsigned int stm, const SQUARE *wSQ, const SQUARE *bSQ, 
 								const SQ_CONTENT *wPC, const SQ_CONTENT *bPC);
 static const char *Square_str[64] = {
@@ -376,7 +358,7 @@ static const char *P_str[] = {
 	static bool_t GLOB_REPORT = TRUE;
 #endif
 
-#if defined(BUILD_CODE) || defined(FOLLOW_EGTB)
+#if defined(FOLLOW_EGTB)
 static const char *Info_str[8] = {	
 	" Draw", " Wmate", " Bmate", "Illegal", 
 	"~Draw", "~Wmate", "~Bmate", "Unknown" 
@@ -454,11 +436,6 @@ static index_t 			ppp48_idx[48][48][48];
 static uint8_t			ppp48_sq_x[MAX_PPP48_INDEX];
 static uint8_t			ppp48_sq_y[MAX_PPP48_INDEX]; 
 static uint8_t			ppp48_sq_z[MAX_PPP48_INDEX]; 
-
-#ifdef BUILD_CODE
-static	uint64_t		Moves_avail_full = 0;
-static	uint64_t		Moves_avail_easy = 0;	
-#endif
 
 /* FUNCTIONS */
 
@@ -596,12 +573,6 @@ static index_t	init_aaa   (void);
 static index_t	init_pp48_idx (void);
 static index_t	init_ppp48_idx (void);
 
-#ifdef BUILD_CODE
-static void   (*indextopc) (index_t, SQUARE *, SQUARE *);
-static bool_t (*pctoindex) (const SQUARE *, const SQUARE *, index_t *);
-static index_t Maxindex;
-#endif
-
 enum TB_INDEXES
 	 {	 MAX_KXK 	= MAX_KKINDEX*64 
 		,MAX_kabk 	= MAX_KKINDEX*64*64 
@@ -666,12 +637,6 @@ static void		RAM_egtbfree (void);
 /*--------------------------------------------------------------------------*/
 #if !defined(SHARED_forbuilding)
 mySHARED void   		egtb_freemem (int i);
-#endif
-
-#ifdef BUILD_CODE
-static bool_t 		egtb_reservemem (int key, long int n, size_t sz);
-static dtm_t *		egtab [2];
-static SQ_CONTENT 	whitePC[MAX_LISTSIZE], blackPC[MAX_LISTSIZE];
 #endif
 
 mySHARED struct endgamekey egkey[] = {
@@ -1266,12 +1231,6 @@ mySHARED dtm_t 			packdist (unsigned int inf, unsigned int ply);
 mySHARED bool_t			fread_entry_packed 	(FILE *dest, unsigned int side, dtm_t *px);
 mySHARED bool_t			fpark_entry_packed  (FILE *finp, int side, index_t max, index_t idx);
 #endif
-
-#ifdef BUILD_CODE
-static unsigned char 	dtm_pack (unsigned int stm, dtm_t d);
-static bool_t			fwrite_entry_packed (FILE *dest, unsigned int side, dtm_t x);
-#endif
-
 
 
 /* use only with probe */
@@ -2034,95 +1993,6 @@ bestx (unsigned int stm, dtm_t a, dtm_t b)
  |								PACKING ZONE
  *--------------------------------------------------------------------------*/
 
-#ifdef BUILD_CODE
-static unsigned char
-dtm_pack (unsigned int stm, dtm_t d)
-{
-
-	unsigned int info, plies, prefx, store, moves;
-	unsigned char ret;
-
-	if (iDRAW == d || iFORBID == d) {
-		return (unsigned char) (d & 0xff);
-	}
-
-	info  = (unsigned int) d & 3;
-	plies = (unsigned int) d >> 3;
-
-	if (WH == stm) {
-		switch (info) {
-			case iWMATE:		
-						moves = (plies + 1) /2;
-						store = moves - 1;
-						prefx = info;
-						if (store > 63) {
-							store = moves - 64;
-							prefx = iDRAW;							
-						}
-						break;				
-			case iBMATE:
-						moves = plies /2;
-						store = moves;
-						prefx = info;
-						if (store > 63) {
-							store = moves - 63;
-							prefx = iFORBID;							
-						}
-						break;
-			default:	
-            store = 0;
-            prefx = 0;
-            assert(0);
-						break;
-		}
-		ret = (unsigned char) (prefx | (store << 2));
-	} else {
-		assert (BL == stm);
-
-		switch (info) {
-			case iBMATE:		
-						moves = (plies + 1) /2;
-						store = moves - 1;
-						prefx = info;
-						if (store > 63) {
-							store = moves - 64;
-							prefx = iDRAW;							
-						}
-						break;				
-			case iWMATE:
-
-						if (plies == 254) {
-							/* 	exception: no position in the 5-man 
-							TBs needs to store 63 for iBMATE 
-							it is then used to indicate iWMATE 
-							when just overflows. plies = 254
-							may need to store 64, which overflows
-							store 63 as iBMATE then */
-							store = 63;
-							prefx = iDRAW;
-							break;
-						}
-
-						moves = plies /2;
-						store = moves;
-						prefx = info;
-						if (store > 63) {
-							store = moves - 63;
-							prefx = iFORBID;							
-						}
-						break;
-			default:	
-            store = 0;
-            prefx = 0;
-            assert(0);
-						break;
-		}
-		ret = (unsigned char) (prefx | (store << 2));
-	}
-	return ret;	
-}
-#endif
-
 mySHARED dtm_t
 dtm_unpack (unsigned int stm, unsigned char packed)
 {
@@ -2224,15 +2094,11 @@ dtm_unpack (unsigned int stm, unsigned char packed)
 	return ret;	
 }
 
-#ifdef BUILD_CODE
-static bool_t
-fwrite_entry_packed (FILE *dest, unsigned int side, dtm_t x)
-{
-	unsigned char pck;
-	pck = dtm_pack (side, x);
-	return SLOTSIZE == fwrite (&pck, sizeof(pck), SLOTSIZE, dest);
-}
-#endif
+
+/*
+static bool_t fwrite_entry_packed (FILE *dest, unsigned int side, dtm_t x);
+*/
+
 
 mySHARED bool_t
 fread_entry_packed (FILE *finp, unsigned int side, dtm_t *px)
@@ -2956,184 +2822,7 @@ egtb_freemem (int i)
 	egkey[i].status = STATUS_ABSENT;	
 }
 
-
-#ifdef BUILD_CODE
-static bool_t
-egtb_reservemem (int key, long int n, size_t sz)
-{
-	if (NULL == egkey[key].egt_w) {
-		dtm_t *p;
-		dtm_t *q;
-		assert (NULL == egkey[key].egt_b);
-		p = malloc (n * sz);
-		q = malloc (n * sz);
-		if (NULL == p || NULL == q) {
-			fprintf (stderr, "Lack of memory error\n");
-			if (NULL != p) free (p);
-			if (NULL != q) free (q);			
-			return FALSE;
-		}
-		egkey[key].egt_w = p;
-		egkey[key].egt_b = q;
-	}
-
-	assert (NULL != egkey[key].egt_b);
-	return TRUE;
-}
-#endif
-
 /***************************************************************************/
-
-#if 0
-static dtm_t
-bettercontent_for_first_isbetter (unsigned stm, dtm_t a, dtm_t b)
-{
-	int key;
-	unsigned ret;
-	unsigned uncbit;
-	
-	assert (stm == WH || stm == BL);
-	#if 1
-	key = bettarr [stm] [a & INFOMASK] [b & INFOMASK];
-	#else
-	key = bettarr [stm] [a &  RESMASK] [b &  RESMASK];		/* comparison without uncbits */
-	#endif
-	
-	uncbit = (a | b) & iUNKNBIT;
-
-	if (a == iUNKNOWN)
-		return (dtm_t) (b | uncbit);
-
-	if (b == iUNKNOWN)
-		return (dtm_t) (a | uncbit);
-
-	switch (key) {
-		case 1: ret = a; break;
-		case 2: ret = b; break;
-		case 3: ret = a < b? a: b; break;
-		case 4: ret = a > b? a: b; break;
-		default: ret = 0; printf("%d\n",key); assert(0); break;											
-	}
-	return (dtm_t) (ret | uncbit);
-}
-
-
-extern bool_t
-egtb_first_isbetter (unsigned int stm, unsigned a_inf, unsigned a_ply,
-									unsigned b_inf, unsigned b_ply)
-{
-	dtm_t a = packdist (a_inf, a_ply);
-	dtm_t b = packdist (b_inf, b_ply);
-	assert (stm == WH || stm == BL);
-	return (a == bettercontent_for_first_isbetter (stm, a, b));
-}
-#endif
-
-/*===========================================================================*/	
-
-#ifdef BUILD_CODE
-
-static dtm_t
-epcapture_score (unsigned int capturingside, int i, int j, SQUARE epsq,
-				 SQUARE      *xs,  SQUARE      *ys, 
-				 SQ_CONTENT  *xp,  SQ_CONTENT  *yp, 
-				 SQUARE     *wSQ,  SQUARE     *bSQ, 
-				 SQ_CONTENT *wPC,  SQ_CONTENT *bPC, 
-				dtm_t *score
-				);
-
-static bool_t
-egtb_present (int key)
-{
-	/* get file descriptor */
-	if (NULL == egkey[key].fd) {
-		if (NULL == fd_openit (key) ) {
-			return FALSE;
-		}	
-	} 
-	/* do not need to close file opened by fd_openit: it will be done at egtb_done() */
-	return TRUE;
-}
-
-static bool_t
-to_fourth (unsigned int stm, SQUARE to)
-{
-	static const unsigned flipcode [2] = {0, 070};
-	assert (stm == WH || stm == BL);	
-	assert (A2 <= to && to < A8);	
-	return 3 == ((to^flipcode[stm]) >> 3);
-}
-
-static dtm_t
-epcapture_score (unsigned int capturingside, int i, int j, SQUARE epsq,
-				 SQUARE      *xs,  SQUARE      *ys, 
-				 SQ_CONTENT  *xp,  SQ_CONTENT  *yp, 
-				 SQUARE     *wSQ,  SQUARE     *bSQ, 
-				 SQ_CONTENT *wPC,  SQ_CONTENT *bPC, 
-				dtm_t *score
-				)
-{
-	int k;
-	SQUARE 		tmp_xs[MAX_LISTSIZE], tmp_ys[MAX_LISTSIZE];
-	SQ_CONTENT	tmp_xp[MAX_LISTSIZE], tmp_yp[MAX_LISTSIZE];
-	unsigned int stm;
-	bool_t skip;
-	dtm_t dist;
-	unsigned int inf;
-	unsigned int plies;
-		
-	/* temp store */
-	list_sq_copy (xs, tmp_xs);
-	list_sq_copy (ys, tmp_ys);
-	list_pc_copy (xp, tmp_xp);
-	list_pc_copy (yp, tmp_yp);
-
-	/*capture from j to i */
-	ys[j] = epsq; /* captured square */
-				
-	for (k = i; xs[k] != NOSQUARE; k++) {
-		xs[k] = xs[k+1];
-		xp[k] = xp[k+1];
-	}
-
-	stm = Opp(capturingside);
-	
-	skip = FALSE;
-	
-	dist = iUNKNOWN; /* just to improve debugging */
-			
-	if (tb_probe_hard (stm, NOSQUARE, wSQ, bSQ, wPC, bPC, &inf, &plies) ) {
-		dist = packdist (inf, plies); 
-		/* legal capture ?*/
-		skip = dist == iFORBID;
-	} else {
-		/* absent egtb */
-		fprintf(stderr, "absent egtb\n");
-		output_state (stm, wSQ, bSQ, wPC, bPC);
-		assert(0);
-		fatal_error();
-	}
-					
-	if (!skip) {
-		assert (0 == (dist & iUNKNBIT));
-		assert ((dist & INFOMASK) < 3);
-		dist = adjust_up (dist);
-	} /* not skip */
-
-	/* restore original */
-	list_sq_copy (tmp_xs, xs);
-	list_sq_copy (tmp_ys, ys);
-	list_pc_copy (tmp_xp, xp);
-	list_pc_copy (tmp_yp, yp);		
-
-	*score = dist;
-	
-	return TRUE;
-	
-}
-#endif
-
-/*--------------------------------------------------------------------------------*/
 
 mySHARED bool_t
 get_dtm (int key, int side, index_t idx, dtm_t *out, bool_t probe_hard_flag)
@@ -7128,181 +6817,6 @@ kpkp_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 }
 
 
-/*--------------------------------------------------------------------------------*/
-
-#ifdef BUILD_CODE
-
-/*
-|
-|	Linearizing Bitboards 
-|
-\*---------------------------------------*/
-
-/**
- * bitScanForward
- * @author Charles E. Leiserson
- *         Harald Prokop
- *         Keith H. Randall
- * "Using de Bruijn Sequences to Index a 1 in a Computer Word"
- *
- * See http://chessprogramming.wikispaces.com/BitScan
- *
- */
-
-static const int index64[64] = {
-   63,  0, 58,  1, 59, 47, 53,  2,
-   60, 39, 48, 27, 54, 33, 42,  3,
-   61, 51, 37, 40, 49, 18, 28, 20,
-   55, 30, 34, 11, 43, 14, 22,  4,
-   62, 57, 46, 52, 38, 26, 32, 41,
-   50, 36, 17, 19, 29, 10, 13, 21,
-   56, 45, 25, 31, 35, 16,  9, 12,
-   44, 24, 15,  8, 23,  7,  6,  5
-};
-
-#define debruijn64  U64(0x07EDD5E59A4E28C2)
-
-static void
-bitboard_to_sqlist (SQUARE *ps, BITBOARD a)
-{
-	uint64_t onebit;
-	assert( ps != NULL);
-
-	while (a != 0) {
-		onebit = a & ~(a-1); /* a & -a negate */
-		a &= ~onebit;
-		*ps++ = index64[(onebit * debruijn64) >> 58];
-	}
-	*ps = NOSQUARE;
-}
-
-static void
-sqlistfrom64 (sq_t *sql, uint64_t ib)
-{
-	BITBOARD bb = ib;
-	bitboard_to_sqlist (sql, bb);
-	return;
-}
-
-static int bitfromvector (uint64_t x);
-
-static mv_t *
-gen_pblockers (mv_t *pmove, 
-					unsigned int stm, uint64_t p, uint64_t occ, uint64_t ib)
-{
-	static const sq_t promotion_options[4] = {QUEEN, ROOK, BISHOP, KNIGHT};
-	sq_t single_pawnstep [2] = { 8,  -8};
-	sq_t double_pawnstep [2] = {16, -16};
-	pc_t COLOR [2]           = {WHITES, BLACKS};
-	uint64_t line2 [2]       = {U64(0x000000000000FF00) ,
-                                U64(0x00FF000000000000)
-                               };
-	uint64_t pp, bb[2], pa, pb, x, first;
-	sq_t from, to, step;
-	unsigned promoted;
-	unsigned color;
-	mv_t mv;
-	int z;
-	/****/
-
-	color = COLOR [stm];
-	
-	pp = p & line2[Opp(stm)]; /* promoting pawns */
-	bb[0]  = pp << 8;
-	bb[1]  = pp >> 8;
-	pp = bb[stm];
-
-	/* general */
-	bb[0]  = p << 8;
-	bb[1]  = p >> 8;
-	pa = ib & bb[stm];
-	
-	pb = p & line2[stm];
-
-	bb[0]  = pb << 8;
-	bb[1]  = pb >> 8;
-	pb = bb[stm];
-
-	pb &= ~occ;
-	
-	bb[0]  = pb << 8;
-	bb[1]  = pb >> 8;
-	pb = bb[stm];
-
-	pb &= ib;
-
-	step = single_pawnstep [stm];
-
-	x = pa & ~pp; /* non promoting pawn steps */
-	
-	while (x!= 0) {
-		first = x & ~(x-1); /* x & -x; negate replaced by ~(x-1) */
-		to = bitfromvector (first);
-		from = to - step;
-		MV_BUILD (mv, NORMAL_MOVE, color, PAWN, from, to, NOPIECE, NOPIECE);		
-		*pmove++ = mv;
-		x &= ~first;
-	}
-
-	x = pa & pp; /* promoting pawns steps */
-	while (x!= 0) {
-		first = x & ~(x-1); /* x & -x; negate replaced by ~(x-1) */
-		to = bitfromvector (first);
-		from = to - step;
-		for (z = 0; z < 4; z++) {
-			promoted = promotion_options[z]; 	
-			MV_BUILD (mv, PROMOT_MOVE, color, PAWN, from, to, NOPIECE, promoted);		
-			*pmove++ = mv;		
-		}	
-		x &= ~first;
-	}
-
-	step = double_pawnstep [stm];
-
-	x = pb;
-	while (x!= 0) {
-		first = x & ~(x-1); /* x & -x; negate replaced by ~(x-1) */
-		to = bitfromvector (first);
-		from = to - step;
-		MV_BUILD (mv, NORMAL_MOVE, color, PAWN, from, to, NOPIECE, NOPIECE);		
-		*pmove++ = mv;
-		x &= ~first;
-	}
-	*pmove = NOMOVE;
-	return pmove;
-}
-
-
-static unsigned int bitlookup [16] = {
-		 4,0,1,4,2,4,4,4,3,4,4,4,4,4,4,4
-};
-
-
-static int
-bitfromvector (uint64_t x)
-{
-	uint32_t h;
-	int offset, j;
-	assert (0 == (x & (x-U64(1)))); /* only one bit */
-
-	j = (((uint32_t) x - 1) >> 31)  <<  5;
-	offset = j;
-	h = (uint32_t)(x >> j);
-	j = (((h & 0xFFFF) - 1) >> 31)  <<  4;
-	offset += j;
-	h >>= j;
-	j = (((h & 0x00FF) - 1) >> 31)  <<  3;
-	offset += j;
-	h >>= j;	
-	j = (((h & 0x000F) - 1) >> 31)  <<  2;
-	offset += j;
-	h >>= j;	
-
-	return offset + bitlookup [h];
-}
-
-#endif
-
 /****************************************************************************\
  *
  *
@@ -7328,7 +6842,7 @@ print_pos (const sq_t *ws, const sq_t *bs, const pc_t *wp, const pc_t *bp)
 }
 #endif
 
-#if defined(BUILD_CODE) || defined(DEBUG) || defined(FOLLOW_EGTB)
+#if defined(DEBUG) || defined(FOLLOW_EGTB)
 static void
 output_state (unsigned int stm, const SQUARE *wSQ, const SQUARE *bSQ, 
 								const SQ_CONTENT *wPC, const SQ_CONTENT *bPC)
