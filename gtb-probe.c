@@ -28,7 +28,7 @@ Copyright (c) 2010 Miguel A. Ballicora
 
 /*-- Intended to be modified to make public --> functions needed for the TB generator ---------------------*/
 
-#if 0
+#ifdef GTB_SHARE
 #define SHARED_forbuilding
 #endif
 
