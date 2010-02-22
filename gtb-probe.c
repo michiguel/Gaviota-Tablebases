@@ -26,7 +26,7 @@ Copyright (c) 2010 Miguel A. Ballicora
  OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/*-- Intended to be modified to make public --> functions needed for the TB generator ---------------------*/
+/*-- Intended to be modified to make public --> Supporting functions the TB generator ---------------------*/
 
 #ifdef GTB_SHARE
 #define SHARED_forbuilding
@@ -152,9 +152,7 @@ enum Info_values {
 					iUNKNBIT = (1<<2)
 };
 
-/*-----------------------------------------------------------------------------*/
-
-/*---------- inherited from a previous maindef.h -----------*/
+/*-------------------------- inherited from a previous maindef.h -----------*/
 
 #define WHITES (1u<<6)
 #define BLACKS (1u<<7)
@@ -192,7 +190,7 @@ enum SQUARES {
 	ERRSQUARE = 128
 };
 
-/*-------- end of inherited from a previous maindef.h -----------*/
+/*------------------- end of inherited from a previous maindef.h -----------*/
  
 #if !defined(NDEBUG)
 #define NDEBUG
@@ -615,11 +613,12 @@ biggest_memory_needed (void) {
 |
 |
 *---------------------------------*/
+
 #if !defined(SHARED_forbuilding)
 mySHARED bool_t		get_dtm (int key, int side, index_t idx, dtm_t *out, bool_t probe_hard);
 #endif
+
 static bool_t	 	get_dtm_from_cache (int key, int side, index_t idx, dtm_t *out);
-/*static double		tbcache_efficiency (void);*/
 
 /*--------------------------------*\
 |
@@ -1027,7 +1026,7 @@ tb_init (int verbosity, int decoding_scheme, char **paths)
 				case 5: 
 					printf ("  Compression Indexes (3-pc) = PASSED\n");
 					printf ("  Compression Indexes (4-pc) = PASSED\n");
-					printf ("  Compression Indexes (5-pc) = PASSED*\n");
+					printf ("  Compression Indexes (5-pc) = PASSED\n");
 					break;
 				default:
 				break;
@@ -2193,9 +2192,9 @@ struct cache_table {
 	uint64_t 		comparisons;
 };
 
-struct cache_table 		cachetab = {FALSE,0,0,NULL,
-									NULL,NULL,0,NULL,
-									0,0,0,0,0,0};
+struct cache_table 	cachetab = {FALSE,0,0,NULL,
+								NULL,NULL,0,NULL,
+								0,0,0,0,0,0};
 
 
 static void 		split_index (size_t entries_per_block, index_t i, index_t *o, index_t *r);
