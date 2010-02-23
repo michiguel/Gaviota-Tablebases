@@ -2175,13 +2175,13 @@ struct cache_table {
 	bool_t			cached;
 	size_t			max_blocks;
 	size_t 			entries_per_block;
-	dtm_t			*buffer;
+	dtm_t *			buffer;
 
 	/* flushables */
-	gtb_block_t		*top;
-	gtb_block_t 	*bot;
+	gtb_block_t	*	top;
+	gtb_block_t *	bot;
 	size_t			n;
-	gtb_block_t 	*entry;
+	gtb_block_t *	entry;
 
 	/* counters */
 	uint64_t		hard;
@@ -2221,7 +2221,6 @@ tbcache_init (size_t cache_mem)
 	max_blocks 			= cache_mem / block_mem;
 	cache_mem 			= max_blocks * block_mem;
 
-
 	tbcache_reset_counters ();
 
 	cachetab.entries_per_block 	= entries_per_block;
@@ -2241,7 +2240,6 @@ tbcache_init (size_t cache_mem)
 		free (cachetab.buffer);
 		return FALSE;
 	}
-
 	
 	for (i = 0; i < max_blocks; i++) {
 		
@@ -2253,7 +2251,6 @@ tbcache_init (size_t cache_mem)
 		p->prev = NULL;
 		p->next = NULL;
 	}
-
 
 	TBCACHE_INITIALIZED = TRUE;
 	return TRUE;
