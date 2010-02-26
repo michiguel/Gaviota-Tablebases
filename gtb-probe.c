@@ -2379,6 +2379,39 @@ extern void	tbstats_reset (void)
 }
 
 
+extern gtb_block_t	*
+tbcache_pointblock (int key, int side, index_t idx)
+{
+	index_t 		offset;
+	index_t			remainder;
+	bool_t 			found;
+	gtb_block_t	*	p;
+	gtb_block_t	*	ret;
+
+	if (!TB_cache_on)
+		return FALSE;
+
+	split_index (cachetab.entries_per_block, idx, &offset, &remainder); 
+
+	ret   = NULL;
+	found = FALSE;
+	for (p = cachetab.top; p != NULL; p = p->prev) {
+
+		cachetab.comparisons++;
+
+		if (   key     == p->key 
+			&& side    == p->side 
+			&& offset  == p->offset) {
+			ret = p;
+			found = TRUE;
+			break;
+		}
+	}
+
+	FOLLOW_LU("point_to_gtb_block ok?",found)
+
+	return ret;
+}
 /****************************************************************************\
 |
 |
@@ -2845,7 +2878,7 @@ get_dtm (int key, int side, index_t idx, dtm_t *out, bool_t probe_hard_flag)
 	return found;
 }
 
-
+#if 0
 static bool_t
 get_dtm_from_cache (int key, int side, index_t idx, dtm_t *out)
 {
@@ -2882,7 +2915,32 @@ get_dtm_from_cache (int key, int side, index_t idx, dtm_t *out)
 
 	return found;
 }
+#else
+static bool_t
+get_dtm_from_cache (int key, int side, index_t idx, dtm_t *out)
+{
+	index_t 	offset;
+	index_t		remainder;
+	bool_t 		found;
+	gtb_block_t	*p;
 
+	if (!TB_cache_on)
+		return FALSE;
+
+	split_index (cachetab.entries_per_block, idx, &offset, &remainder); 
+
+	found = NULL != (p = tbcache_pointblock (key, side, idx));
+
+	if (found) {
+		*out = p->p_arr[remainder];
+		movetotop(p);
+	}
+
+	FOLLOW_LU("get_dtm_from_cache ok?",found)
+
+	return found;
+}
+#endif
 
 static void
 split_index (size_t entries_per_block, index_t i, index_t *o, index_t *r)
