@@ -1298,6 +1298,10 @@ tb_probe_WDL_soft
 	unsigned *ply = &ply_n;
 	if (castles != 0) 
 		return FALSE;
+	if (epsq != NOSQUARE)
+		return tb_probe_ (stm, epsq, inp_wSQ, inp_bSQ, inp_wPC, inp_bPC, FALSE, res, ply);
+
+	/* probe bitbase like, assuming no en passant */
 	return tb_probe_ (stm, epsq, inp_wSQ, inp_bSQ, inp_wPC, inp_bPC, FALSE, res, ply);
 } 
 
@@ -1316,6 +1320,10 @@ tb_probe_WDL_hard
 	unsigned *ply = &ply_n;
 	if (castles != 0) 
 		return FALSE;
+	if (epsq != NOSQUARE)
+		return tb_probe_ (stm, epsq, inp_wSQ, inp_bSQ, inp_wPC, inp_bPC, TRUE, res, ply);
+
+	/* probe bitbase like, assuming no en passant */
 	return tb_probe_ (stm, epsq, inp_wSQ, inp_bSQ, inp_wPC, inp_bPC, TRUE, res, ply);
 } 
 
@@ -1365,7 +1373,7 @@ tb_probe_	(unsigned int stm,
 	/************************************/
 
 	assert (stm == WH || stm == BL);
-	assert (inp_wPC[0] == KING && inp_bPC[0] == KING );
+	/*assert (inp_wPC[0] == KING && inp_bPC[0] == KING );*/
 	assert ((epsq >> 3) == 2 || (epsq >> 3) == 5 || epsq == NOSQUARE);
 
 	/* VALID ONLY FOR KK!! */
@@ -7448,7 +7456,7 @@ wdl_preload_cache (int key, int side, index_t idx)
 		to_modify->offset = -1;
 	}
 
-	FOLLOW_LU("preload_cache?", ok)
+	FOLLOW_LU("wdl preload_cache?", ok)
 
 	return ok;		
 }
@@ -7458,28 +7466,26 @@ wdl_preload_cache (int key, int side, index_t idx)
 static void			
 tb_block_2_wdl_block(gtb_block_t *g, wdl_block_t *w, size_t n)
 {
-	int ExUNIT = 4;
 	size_t i;
 	int j;
 	unsigned int x ,y;
-	int infomask  = 3; /* info in the first two bits */
 	 dtm_t *s = g->p_arr;
 	unit_t *d = w->p_arr;
 
 	for (i = 0, y = 0; i < n; i++) {
-		j =  i & 3; /* modulo ExUNIT */
-		x = s[i] & infomask;
+		j =  i & 3; /* modulo WDL_entries_per_unit */
+		x = dtm2WDL(s[i]);
 		
 		y |= (x << j);		
 		
 		if (j == 3) {
-			d[i/ExUNIT] = y;
+			d[i/WDL_entries_per_unit] = y;
 			y = 0;
 		}
 	}
 
 	if (0 != (n & 3)) { /* not multiple of 4 */
-		d[(n-1)/ExUNIT] = y; /* save the rest     */
+		d[(n-1)/WDL_entries_per_unit] = y; /* save the rest     */
 		y = 0;
 	}
 
