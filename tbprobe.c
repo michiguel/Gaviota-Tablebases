@@ -84,7 +84,7 @@ int main (int argc, char *argv[])
 	paths = tbpaths_add (paths, "gtb/gtb4");
 	paths = tbpaths_add (paths, "gtb/gtb3");
 	paths = tbpaths_add (paths, "gtb/gtb2");
-	paths = tbpaths_add (paths, "gtb/gtb1");
+	paths = tbpaths_add (paths, "/media/bigdisk/gtb--9");
 
 	tb_init (verbosity, scheme, paths);
 
@@ -99,6 +99,7 @@ int main (int argc, char *argv[])
 	|   
 	\*--------------------------------------*/
 
+#if 1
 	/* needs 3-pc installed */
 	/* FEN: 8/8/8/4k3/8/8/8/KR6 w - - 0 1 */
 
@@ -127,6 +128,39 @@ int main (int argc, char *argv[])
 	bp[0] = tb_KING;
 	bp[1] = tb_NOPIECE;			/* it marks the end of list */
 
+	/****************/
+#else
+
+	/* needs 4-pc installed */
+	/* FEN: 8/8/6p1/4K3/7b/8/8/2k5 w - - 0 76 */
+
+	stm      = tb_WHITE_TO_MOVE;/* 0 = white to move, 1 = black to move */
+	epsquare = tb_NOSQUARE;		/* no ep available */
+	castling = tb_NOCASTLE;		/* no castling available, otherwise combine all 
+									the castling possibilities with '|', for instance
+									white could castle both sides, black can't:	 
+									castling = tb_WOO | tb_WOOO; 
+									both could castle on the king side:	 
+									castling = tb_WOO | tb_WOO;
+									etc. 
+								*/
+
+	ws[0] = tb_E5;
+	ws[1] = tb_NOSQUARE;		/* it marks the end of list */
+
+	wp[0] = tb_KING;
+	wp[1] = tb_NOPIECE;			/* it marks the end of list */
+
+	bs[0] = tb_H4;
+	bs[1] = tb_G6;
+	bs[2] = tb_C1;
+	bs[3] = tb_NOSQUARE;		/* it marks the end of list */
+
+	bp[0] = tb_BISHOP;
+	bp[1] = tb_PAWN;
+	bp[2] = tb_KING;
+	bp[3] = tb_NOPIECE;			/* it marks the end of list */
+#endif
 
 	/*--------------------------------------*\
 	|
