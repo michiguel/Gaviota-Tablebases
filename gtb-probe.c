@@ -6997,15 +6997,19 @@ struct WDL_CACHE 	wdl_cache = {FALSE,0,0,NULL,
 
 /*--------------------------------------------------------------------------*/
 
+#if 0
 static bool_t		wdl_cache_init (size_t cache_mem);
-static void			wdl_cache_done (void);
 static void			wdl_cache_flush (void);
-static void			wdl_cache_reset_counters (void);
 static bool_t		wdl_cache_is_on (void);
 static void 		wdl_stats_get (struct TB_STATS *x);
 static void			wdl_stats_reset (void);
-static wdl_block_t *wdl_point_block_to_replace (void);
 static bool_t		get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag);
+#endif
+
+extern void			wdl_cache_reset_counters (void);
+extern void			wdl_cache_done (void);
+
+static wdl_block_t *wdl_point_block_to_replace (void);
 static bool_t		get_WDL_from_cache (int key, int side, index_t idx, unsigned int *out);
 static unsigned int	wdl_extract (unit_t *uarr, unsigned int x);
 static void			wdl_movetotop (wdl_block_t *t);
@@ -7130,7 +7134,7 @@ wdl_cache_flush (void)
 }
 
 
-static void
+extern void
 wdl_cache_reset_counters (void)
 {
 	wdl_cache.hard = 0;
@@ -7263,12 +7267,14 @@ wdl_point_block_to_replace (void)
 |
 \****************************************************************************/
 
+
+
 unsigned int		wdl_extract (unit_t *uarr, unsigned int x);
 static bool_t		get_WDL_from_cache (int key, int side, index_t idx, unsigned int *info_out);
 static unsigned 	dtm2WDL(dtm_t dtm);	
-static void			wdl_cache_preload_block (int key, int side, index_t idx);
 static void			wdl_movetotop (wdl_block_t *t);
 static bool_t		wdl_preload_cache (int key, int side, index_t idx);
+static void			tb_block_2_wdl_block(gtb_block_t *g, wdl_block_t *w, size_t n);	
 
 extern bool_t
 get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag)
@@ -7284,7 +7290,7 @@ get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_ha
 			*info_out = dtm2WDL(dtm);			
 			found = TRUE;
 			/* move cache info from dtm_cache to WDL_cache */
-			wdl_cache_preload_block (key, side, idx);
+			wdl_preload_cache (key, side, idx);
 		} else {
 			found = FALSE;
 		}
@@ -7399,7 +7405,6 @@ wdl_preload_cache (int key, int side, index_t idx)
 {
 	gtb_block_t		*tb_block;
 	wdl_block_t 	*to_modify;
-	unit_t 			*p;
 	bool_t 			ok;
 
 	FOLLOW_label("wdl preload_cache starts")
@@ -7409,20 +7414,21 @@ wdl_preload_cache (int key, int side, index_t idx)
 		return FALSE;
 	}
 
-
 	/* find fresh block in dtm cache */
-	tb_block = point_to_gtb_block (key, side, idx);
+	tb_block = tbcache_pointblock (key, side, idx); 
 
 	/* find aged blocked in wdl cache */
 	to_modify = wdl_point_block_to_replace ();
 
-	if (NULL == tb_block || NULL == to_modify)
+	ok = (NULL == tb_block || NULL == to_modify);
+
+	if (!ok)
 		return FALSE;
 	
 	{
 
 		/* transform and move a block */
-		tb_block_to_wdl_block(tb_block, to_modify->p_arr);	
+		tb_block_2_wdl_block(tb_block, to_modify, cachetab.entries_per_block);	
 
 	}
 
@@ -7449,7 +7455,42 @@ wdl_preload_cache (int key, int side, index_t idx)
 
 /****************************************************************************************************/
 
+static void			
+tb_block_2_wdl_block(gtb_block_t *g, wdl_block_t *w, size_t n)
+{
+	int ExUNIT = 4;
+	size_t i;
+	int j;
+	unsigned int x ,y;
+	int infomask  = 3; /* info in the first two bits */
+	 dtm_t *s = g->p_arr;
+	unit_t *d = w->p_arr;
 
+	for (i = 0, y = 0; i < n; i++) {
+		j =  i & 3; /* modulo ExUNIT */
+		x = s[i] & infomask;
+		
+		y |= (x << j);		
+		
+		if (j == 3) {
+			d[i/ExUNIT] = y;
+			y = 0;
+		}
+	}
+
+	if (0 != (n & 3)) { /* not multiple of 4 */
+		d[(n-1)/ExUNIT] = y; /* save the rest     */
+		y = 0;
+	}
+
+	return;
+}	
+
+static unsigned 	
+dtm2WDL(dtm_t dtm)
+{
+	return (unsigned) dtm & 3;
+}	
 
 
 
