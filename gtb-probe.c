@@ -6877,6 +6877,523 @@ list_index (void)
 	return;
 }
 
+/**************************************************************************************************************
+
+ NEW_DWL
+
+**************************************************************************************************************/
+
+/*---------------------------------------------------------------------*\
+|			WDL CACHE Implementation  ZONE
+\*---------------------------------------------------------------------*/
+
+/*
+|			WDL CACHE Statics
+\*---------------------------------------------------------------------*/
+
+#define WDL_entries_per_unit 4
+#define WDL_entry_mask     3
+static size_t		WDL_units_per_block = 0;
+
+static bool_t		WDL_cache_on = TRUE;
+static bool_t		WDL_CACHE_INITIALIZED = FALSE;
+
+typedef unsigned char unit_t; /* block unit */
+
+typedef struct wdl_block 	wdl_block_t;
+
+struct wdl_block {
+	int 			key;
+	int				side;
+	index_t 		offset;
+	unit_t			*p_arr;
+	wdl_block_t		*prev;
+	wdl_block_t		*next;
+};
+
+struct WDL_CACHE {
+	/* defined at init */
+	bool_t			cached;
+	size_t			max_blocks;
+	size_t 			entries_per_block;
+	unit_t		 *	buffer;
+
+	/* flushables */
+	wdl_block_t	*	top;
+	wdl_block_t *	bot;
+	size_t			n;
+	wdl_block_t *	blocks; /* was entry */
+
+	/* counters */
+	uint64_t		hard;
+	uint64_t		soft;
+	uint64_t		hardmisses;
+	uint64_t		hits;
+	uint64_t		softmisses;
+	uint64_t 		comparisons;
+};
+
+struct WDL_CACHE 	wdl_cache = {FALSE,0,0,NULL,
+								 NULL,NULL,0,NULL,
+								 0,0,0,0,0,0};
+
+/*--------------------------------------------------------------------------*/
+
+static bool_t		wdl_cache_init (size_t cache_mem);
+static void			wdl_cache_done (void);
+static void			wdl_cache_flush (void);
+static void			wdl_cache_reset_counters (void);
+static bool_t		wdl_cache_is_on (void);
+static void 		wdl_stats_get (struct TB_STATS *x);
+static void			wdl_stats_reset (void);
+static wdl_block_t *wdl_point_block_to_replace (void);
+static bool_t		get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag);
+static bool_t		get_WDL_from_cache (int key, int side, index_t idx, unsigned int *out);
+static unsigned int	wdl_extract (unit_t *uarr, unsigned int x);
+static void			wdl_movetotop (wdl_block_t *t);
+static bool_t		wdl_preload_cache (int key, int side, index_t idx);
+
+/*--------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------*\
+|			WDL CACHE Maintainance
+\*---------------------------------------------------------------------*/
+
+bool_t
+wdl_cache_init (size_t cache_mem)
+{
+	unsigned int 	i;
+	wdl_block_t 	*p;
+	size_t 			entries_per_block;
+	size_t 			block_mem;
+	size_t 			max_blocks;
+
+	if (WDL_CACHE_INITIALIZED)
+		wdl_cache_done();
+
+	entries_per_block 	= 16 * 1024;  /* fixed, needed for the compression schemes */
+	WDL_units_per_block	= entries_per_block / WDL_entries_per_unit;
+	block_mem			= WDL_units_per_block * sizeof(unit_t);
+	max_blocks 			= cache_mem / block_mem;
+	cache_mem 			= max_blocks * block_mem;
+
+	wdl_cache_reset_counters ();
+
+	wdl_cache.entries_per_block 	= entries_per_block;
+	wdl_cache.max_blocks 		= max_blocks;
+	wdl_cache.cached 			= TRUE;
+	wdl_cache.top 				= NULL;
+	wdl_cache.bot 				= NULL;
+	wdl_cache.n 					= 0;
+
+	if (NULL == (wdl_cache.buffer = malloc (cache_mem))) {
+		wdl_cache.cached = FALSE;
+		return FALSE;
+	}
+
+	if (NULL == (wdl_cache.blocks = malloc (max_blocks * sizeof(wdl_block_t)))) {
+		wdl_cache.cached = FALSE;
+		free (wdl_cache.buffer);
+		return FALSE;
+	}
+	
+	for (i = 0; i < max_blocks; i++) {
+		
+		p = &wdl_cache.blocks[i];
+		p->key  = -1;
+		p->side = -1;
+		p->offset = -1;
+		p->p_arr = wdl_cache.buffer + i * WDL_units_per_block;
+		p->prev = NULL;
+		p->next = NULL;
+	}
+
+	WDL_CACHE_INITIALIZED = TRUE;
+	return TRUE;
+}
+
+void
+wdl_cache_done (void)
+{
+	assert(WDL_CACHE_INITIALIZED);
+
+	wdl_cache.cached = FALSE;
+	wdl_cache.hard = 0;
+	wdl_cache.soft = 0;
+	wdl_cache.hardmisses = 0;
+	wdl_cache.hits = 0;
+	wdl_cache.softmisses = 0;
+	wdl_cache.comparisons = 0;
+	wdl_cache.max_blocks = 0;
+	wdl_cache.entries_per_block = 0;
+
+	wdl_cache.top = NULL;
+	wdl_cache.bot = NULL;
+	wdl_cache.n = 0;
+
+	if (wdl_cache.buffer != NULL)
+		free (wdl_cache.buffer);
+	wdl_cache.buffer = NULL;
+
+	if (wdl_cache.blocks != NULL)
+		free (wdl_cache.blocks);
+	wdl_cache.blocks = NULL;
+
+	WDL_CACHE_INITIALIZED = FALSE;
+	return;
+}
+
+
+void
+wdl_cache_flush (void)
+{
+	unsigned int 	i;
+	wdl_block_t 	*p;
+	size_t max_blocks = wdl_cache.max_blocks;
+
+	wdl_cache.top 				= NULL;
+	wdl_cache.bot 				= NULL;
+	wdl_cache.n 					= 0;
+	
+	for (i = 0; i < max_blocks; i++) {
+		
+		p = &wdl_cache.blocks[i];
+		p->key  = -1;
+		p->side = -1;
+		p->offset = -1;
+		p->p_arr = wdl_cache.buffer + i * WDL_units_per_block;
+		p->prev = NULL;
+		p->next = NULL;
+	}
+
+	tbcache_reset_counters ();
+
+	return;
+}
+
+
+static void
+wdl_cache_reset_counters (void)
+{
+	wdl_cache.hard = 0;
+	wdl_cache.soft = 0;
+	wdl_cache.hardmisses = 0;
+	wdl_cache.hits = 0;
+	wdl_cache.softmisses = 0;
+	wdl_cache.comparisons = 0;
+	return;
+}
+
+
+extern bool_t
+wdl_cache_is_on (void)
+{
+	return wdl_cache.cached;
+}
+
+/* STATISTICS OUTPUT */
+
+extern void wdl_stats_get (struct TB_STATS *x)
+{
+	uint64_t hh,hm,sh,sm;
+	long unsigned mask = 0xfffffffflu;
+
+	hm = wdl_cache.hardmisses;
+	hh = wdl_cache.hard - wdl_cache.hardmisses;
+	sm = wdl_cache.softmisses;
+	sh = wdl_cache.soft - wdl_cache.softmisses;
+
+
+	x->probe_hard_hits[0] = (long unsigned)(hh & mask);
+	x->probe_hard_hits[1] = (long unsigned)(hh >> 32);
+
+	x->probe_hard_miss[0] = (long unsigned)(hm & mask);
+	x->probe_hard_miss[1] = (long unsigned)(hm >> 32);
+
+	x->probe_soft_hits[0] = (long unsigned)(sh & mask);
+	x->probe_soft_hits[1] = (long unsigned)(sh >> 32);
+
+	x->probe_soft_miss[0] = (long unsigned)(sm & mask);
+	x->probe_soft_miss[1] = (long unsigned)(sm >> 32);
+
+	x->bytes_read[0]	  = (long unsigned)(Bytes_read & mask);
+	x->bytes_read[1] 	  = (long unsigned)(Bytes_read >> 32);
+
+	x->files_opened = eg_was_open_count();
+
+	x->blocks_occupied = wdl_cache.n;
+	x->blocks_max      = wdl_cache.max_blocks;	
+	x->comparisons     = wdl_cache.comparisons;
+
+}
+
+extern void	wdl_stats_reset (void)
+{
+	wdl_cache_reset_counters ();
+	eg_was_open_reset();
+}
+
+
+/****************************************************************************\
+|						Replacement
+\****************************************************************************/
+
+
+static wdl_block_t *
+wdl_point_block_to_replace (void)
+{
+	wdl_block_t *p, *t, *s;
+
+	assert (0 == wdl_cache.n || wdl_cache.top != NULL);
+	assert (0 == wdl_cache.n || wdl_cache.bot != NULL);
+	assert (0 == wdl_cache.n || wdl_cache.bot->prev == NULL);
+	assert (0 == wdl_cache.n || wdl_cache.top->next == NULL);
+
+	if (wdl_cache.n > 0 && -1 == wdl_cache.top->key) {
+
+		/* top blocks is unusable, should be the one to replace*/
+		p = wdl_cache.top;
+
+	} else
+	if (wdl_cache.n == 0) {
+		
+		p = &wdl_cache.blocks[wdl_cache.n++];
+		wdl_cache.top = p;
+		wdl_cache.bot = p;
+	
+		p->prev = NULL;
+		p->next = NULL;
+
+	} else
+	if (wdl_cache.n < wdl_cache.max_blocks) { /* add */
+
+		s = wdl_cache.top;
+		p = &wdl_cache.blocks[wdl_cache.n++];
+		wdl_cache.top = p;
+	
+		s->next = p;
+		p->prev = s;
+		p->next = NULL;
+
+	} else {                       /* replace*/ 
+		
+		t = wdl_cache.bot;
+		s = wdl_cache.top;
+		wdl_cache.bot = t->next;
+		wdl_cache.top = t;
+		
+		s->next = t;
+		t->prev = s;
+		wdl_cache.top->next = NULL;
+		wdl_cache.bot->prev = NULL;
+
+		p = t;
+	}
+	
+	/* make the information content unusable, it will be replaced */
+	p->key    = -1;
+	p->side   = -1;
+	p->offset = -1;
+
+	return p;
+}
+
+
+/****************************************************************************\
+|
+|						NEW PROBING ZONE
+|
+\****************************************************************************/
+
+unsigned int		wdl_extract (unit_t *uarr, unsigned int x);
+static bool_t		get_WDL_from_cache (int key, int side, index_t idx, unsigned int *info_out);
+static unsigned 	dtm2WDL(dtm_t dtm);	
+static void			wdl_cache_preload_block (int key, int side, index_t idx);
+static void			wdl_movetotop (wdl_block_t *t);
+static bool_t		wdl_preload_cache (int key, int side, index_t idx);
+
+extern bool_t
+get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag)
+{
+	dtm_t dtm;
+	bool_t found;
+
+	if (get_WDL_from_cache (key, side, idx, info_out)) {
+		wdl_cache.hits++;
+		found = TRUE;
+	} else {
+		if (get_dtm (key, side, idx, &dtm, probe_hard_flag)) {
+			*info_out = dtm2WDL(dtm);			
+			found = TRUE;
+			/* move cache info from dtm_cache to WDL_cache */
+			wdl_cache_preload_block (key, side, idx);
+		} else {
+			found = FALSE;
+		}
+	}
+
+	/* from probe_hard_flag and found determine the misses and hits */
+
+	if (probe_hard_flag) {
+		wdl_cache.hard++;
+		if (!found) {
+			wdl_cache.hardmisses++;
+		}
+	} else {
+		wdl_cache.soft++;
+		if (!found) {
+			wdl_cache.softmisses++;
+		}
+	}
+
+	return found;
+}
+
+static bool_t
+get_WDL_from_cache (int key, int side, index_t idx, unsigned int *out)
+{
+	index_t 	offset;
+	index_t		remainder;
+	bool_t 		found;
+	wdl_block_t	*p;
+
+	if (!WDL_cache_on)
+		return FALSE;
+
+	split_index (wdl_cache.entries_per_block, idx, &offset, &remainder); 
+
+	found = FALSE;
+	for (p = wdl_cache.top; p != NULL; p = p->prev) {
+
+		wdl_cache.comparisons++;
+
+		if (   key     == p->key 
+			&& side    == p->side 
+			&& offset  == p->offset) {
+
+			found = TRUE;
+			*out = wdl_extract (p->p_arr, remainder); 
+			break;
+		}
+	}
+
+	if (found) {
+		wdl_movetotop(p);
+	}
+
+	FOLLOW_LU("get_wdl_from_cache ok?",found)
+
+	return found;
+}
+
+unsigned int
+wdl_extract (unit_t *uarr, unsigned int x)
+{
+	unsigned int nu = x/WDL_entries_per_unit;
+	unsigned int y  = x - (nu * WDL_entries_per_unit);
+	return (uarr[nu] >> y) & WDL_entry_mask;
+}
+
+static void
+wdl_movetotop (wdl_block_t *t)
+{
+	wdl_block_t *s, *nx, *pv;
+
+	assert (t != NULL);
+
+	if (t->next == NULL) /* at the top already */
+		return;
+
+	/* detach */
+	pv = t->prev;
+	nx = t->next;
+
+	if (pv == NULL)  /* at the bottom */
+		wdl_cache.bot = nx;
+	else 
+		pv->next = nx;
+
+	if (nx == NULL) /* at the top */
+		wdl_cache.top = pv;
+	else
+		nx->prev = pv;
+
+	/* relocate */
+	s = wdl_cache.top;
+	assert (s != NULL);
+	if (s == NULL)
+		wdl_cache.bot = t;	
+	else
+		s->next = t;
+
+	t->next = NULL;
+	t->prev = s;
+	wdl_cache.top = t;
+
+	return;
+}
+
+/****************************************************************************************************/
+
+static bool_t
+wdl_preload_cache (int key, int side, index_t idx)
+/* output to the least used block of the cache */
+{
+	gtb_block_t		*tb_block;
+	wdl_block_t 	*to_modify;
+	unit_t 			*p;
+	bool_t 			ok;
+
+	FOLLOW_label("wdl preload_cache starts")
+
+	if (idx >= egkey[key].maxindex) {
+		FOLLOW_LULU("Wrong index", __LINE__, idx)	
+		return FALSE;
+	}
+
+
+	/* find fresh block in dtm cache */
+	tb_block = point_to_gtb_block (key, side, idx);
+
+	/* find aged blocked in wdl cache */
+	to_modify = wdl_point_block_to_replace ();
+
+	if (NULL == tb_block || NULL == to_modify)
+		return FALSE;
+	
+	{
+
+		/* transform and move a block */
+		tb_block_to_wdl_block(tb_block, to_modify->p_arr);	
+
+	}
+
+	if (ok) {
+
+		index_t 		offset;
+		index_t			remainder;
+		split_index (wdl_cache.entries_per_block, idx, &offset, &remainder); 
+
+		to_modify->key    = key;
+		to_modify->side   = side;
+		to_modify->offset = offset;
+	} else {
+		/* make it unusable */
+		to_modify->key    = -1;
+		to_modify->side   = -1;
+		to_modify->offset = -1;
+	}
+
+	FOLLOW_LU("preload_cache?", ok)
+
+	return ok;		
+}
+
+/****************************************************************************************************/
+
+
+
+
 
 
 
