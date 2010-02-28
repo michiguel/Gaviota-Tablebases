@@ -1631,7 +1631,10 @@ egtb_get_dtm (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t pr
 					#endif
 
 			} else {			
-				success = egtb_filepeek (k, stm, index, dtm);
+				if (probe_hard_flag)
+					success = egtb_filepeek (k, stm, index, dtm);
+				else
+					success = FALSE;
 			}
 
 			mythread_mutex_unlock (&Egtb_lock);	
