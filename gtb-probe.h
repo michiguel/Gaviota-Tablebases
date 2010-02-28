@@ -177,6 +177,9 @@ struct TB_STATS {
 extern void			tbstats_reset (void);
 extern void 		tbstats_get (struct TB_STATS *stats);
 
+extern void 		wdl_stats_get (struct TB_STATS *x);
+
+
 /*----------------------------------*\
 |         	PATH MANAGEMENT
 \*----------------------------------*/
