@@ -26,7 +26,11 @@ Copyright (c) 2010 Miguel A. Ballicora
  OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#if 1
+/* NBBOTF will remove the internal bitbase on the fly */
+#ifdef NBBOTF
+#ifdef WDL_PROBE
+#undef WDL_PROBE
+#endif
 #define WDL_PROBE
 #endif
 
@@ -2433,9 +2437,11 @@ extern void tbstats_get (struct TB_STATS *x)
 bool_t
 tbcache_init (size_t cache_mem)
 {
-	dtm_cache_init (cache_mem/2);
 	#ifdef WDL_PROBE
-	wdl_cache_init(cache_mem/2);
+	dtm_cache_init (cache_mem/4);
+	wdl_cache_init(3*cache_mem/4);
+	#else
+	dtm_cache_init (cache_mem);
 	#endif
 	return TRUE;
 }
