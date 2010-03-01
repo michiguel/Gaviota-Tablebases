@@ -28,10 +28,11 @@ Copyright (c) 2010 Miguel A. Ballicora
 
 /* NBBOTF will remove the internal bitbase on the fly */
 #ifdef NBBOTF
-#ifdef WDL_PROBE
-#undef WDL_PROBE
-#endif
-#define WDL_PROBE
+	#ifdef WDL_PROBE
+		#undef WDL_PROBE
+	#endif
+#else
+	#define WDL_PROBE
 #endif
 
 /*-- Intended to be modified to make public --> Supporting functions the TB generator ---------------------*/
@@ -2438,8 +2439,8 @@ bool_t
 tbcache_init (size_t cache_mem)
 {
 	#ifdef WDL_PROBE
-	dtm_cache_init (cache_mem/4);
-	wdl_cache_init(3*cache_mem/4);
+	dtm_cache_init (1*cache_mem/4);
+	wdl_cache_init (3*cache_mem/4);
 	#else
 	dtm_cache_init (cache_mem);
 	#endif
@@ -7152,12 +7153,12 @@ wdl_cache_init (size_t cache_mem)
 
 	wdl_cache_reset_counters ();
 
-	wdl_cache.entries_per_block 	= entries_per_block;
+	wdl_cache.entries_per_block = entries_per_block;
 	wdl_cache.max_blocks 		= max_blocks;
 	wdl_cache.cached 			= TRUE;
 	wdl_cache.top 				= NULL;
 	wdl_cache.bot 				= NULL;
-	wdl_cache.n 					= 0;
+	wdl_cache.n 				= 0;
 
 	if (NULL == (wdl_cache.buffer = malloc (cache_mem))) {
 		wdl_cache.cached = FALSE;
@@ -7394,13 +7395,33 @@ get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_ha
 		wdl_cache.hits++;
 		found = TRUE;
 	} else {
+		/* soft */
 		if (get_dtm (key, side, idx, &dtm, probe_hard_flag)) {
 			*info_out = dtm2WDL(dtm);			
 			found = TRUE;
 			/* move cache info from dtm_cache to WDL_cache */
 			wdl_preload_cache (key, side, idx);
 		} else {
+
+			#if 0
+
+			if (probe_hard_flag) {
+				if (get_dtm (key, side, idx, &dtm, probe_hard_flag)) {
+					*info_out = dtm2WDL(dtm);			
+					found = TRUE;
+					/* move cache info from dtm_cache to WDL_cache */
+					wdl_preload_cache (key, side, idx);
+				} else {
+					found = FALSE;
+				}
+			}
+
+			#else
+
 			found = FALSE;
+
+			#endif
+
 		}
 	}
 
@@ -7461,9 +7482,10 @@ get_WDL_from_cache (int key, int side, index_t idx, unsigned int *out)
 static unsigned int
 wdl_extract (unit_t *uarr, unsigned int x)
 {
+	int width = 2;
 	unsigned int nu = x/WDL_entries_per_unit;
 	unsigned int y  = x - (nu * WDL_entries_per_unit);
-	return (uarr[nu] >> y) & WDL_entry_mask;
+	return (uarr[nu] >> (y*width)) & WDL_entry_mask;
 }
 
 static void
@@ -7528,7 +7550,7 @@ wdl_preload_cache (int key, int side, index_t idx)
 	/* find aged blocked in wdl cache */
 	to_modify = wdl_point_block_to_replace ();
 
-	ok = (NULL == tb_block || NULL == to_modify);
+	ok = !(NULL == tb_block || NULL == to_modify);
 
 	if (!ok)
 		return FALSE;
@@ -7561,6 +7583,8 @@ wdl_preload_cache (int key, int side, index_t idx)
 static void			
 tb_block_2_wdl_block(gtb_block_t *g, wdl_block_t *w, size_t n)
 {
+	int width = 2;
+	int shifting;
 	size_t i;
 	int j;
 	unsigned int x ,y;
@@ -7570,8 +7594,8 @@ tb_block_2_wdl_block(gtb_block_t *g, wdl_block_t *w, size_t n)
 	for (i = 0, y = 0; i < n; i++) {
 		j =  i & 3; /* modulo WDL_entries_per_unit */
 		x = dtm2WDL(s[i]);
-		
-		y |= (x << j);		
+		shifting = j * width;
+		y |= (x << shifting);		
 		
 		if (j == 3) {
 			d[i/WDL_entries_per_unit] = y;
