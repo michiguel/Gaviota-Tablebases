@@ -51,13 +51,8 @@ gtb-att.c
 sysport/sysport.c  
 compression/wrap.c
 compression/huffman/hzip.c 
-compression/lzma/LzmaEnc.c 
-compression/lzma/LzmaDec.c 
-compression/lzma/Alloc.c 
-compression/lzma/LzFind.c 
-compression/lzma/Lzma86Enc.c 
-compression/lzma/Lzma86Dec.c 
-compression/lzma/Bra86.c
+compression/liblzf/lzf_c.c
+compression/liblzf/lzf_d.c
 compression/zlib/zcompress.c
 compression/zlib/uncompr.c
 compression/zlib/inflate.c
@@ -69,8 +64,13 @@ compression/zlib/inffast.c
 compression/zlib/inftrees.c  
 compression/zlib/trees.c     
 compression/zlib/zutil.c
-compression/liblzf/lzf_c.c
-compression/liblzf/lzf_d.c
+compression/lzma/LzmaEnc.c 
+compression/lzma/LzmaDec.c 
+compression/lzma/Alloc.c 
+compression/lzma/LzFind.c 
+compression/lzma/Lzma86Enc.c 
+compression/lzma/Lzma86Dec.c 
+compression/lzma/Bra86.c
 
 The following files will be "included" 
 gtb-probe.h  
@@ -80,11 +80,11 @@ gtb-att.h
 plus all the *.h files in the folders, so set the proper -I flags:
 sysport/
 compression/
-compression/bzip2-1.0.5/
+compression/huffman/
 compression/liblzf/
 compression/zlib/
 compression/lzma/
-compression/huffman/
+
 
 The following libraries should be linked in Linux
 -lpthread
@@ -98,7 +98,7 @@ These switches should be set in the compiler
 
 The first one removes the assert code, and the second
 one makes sure that some names in the zlib library will not
-collision with names in the other compression libraries.
+collision with names in other compression libraries.
 
 -------------------------- COMPILATION EXAMPLE ------------------------------
 
