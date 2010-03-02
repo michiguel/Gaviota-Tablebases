@@ -2220,7 +2220,7 @@ struct cache_table {
 	dtm_t			*buffer;
 };
 
-struct cache_table 		cachetab = {FALSE,0,0,0,0,0,0,0,0,NULL,NULL,0,NULL,NULL};
+struct cache_table 		dtm_cache = {FALSE,0,0,0,0,0,0,0,0,NULL,NULL,0,NULL,NULL};
 
 */
 
@@ -2246,7 +2246,7 @@ struct cache_table {
 	uint64_t 		comparisons;
 };
 
-struct cache_table 	cachetab = {FALSE,0,0,NULL,
+struct cache_table 	dtm_cache = {FALSE,0,0,NULL,
 								NULL,NULL,0,NULL,
 								0,0,0,0,0,0};
 
@@ -2277,31 +2277,31 @@ dtm_cache_init (size_t cache_mem)
 
 	tbcache_reset_counters ();
 
-	cachetab.entries_per_block 	= entries_per_block;
-	cachetab.max_blocks 		= max_blocks;
-	cachetab.cached 			= TRUE;
-	cachetab.top 				= NULL;
-	cachetab.bot 				= NULL;
-	cachetab.n 					= 0;
+	dtm_cache.entries_per_block 	= entries_per_block;
+	dtm_cache.max_blocks 		= max_blocks;
+	dtm_cache.cached 			= TRUE;
+	dtm_cache.top 				= NULL;
+	dtm_cache.bot 				= NULL;
+	dtm_cache.n 					= 0;
 
-	if (NULL == (cachetab.buffer = malloc (cache_mem))) {
-		cachetab.cached = FALSE;
+	if (NULL == (dtm_cache.buffer = malloc (cache_mem))) {
+		dtm_cache.cached = FALSE;
 		return FALSE;
 	}
 
-	if (NULL == (cachetab.entry = malloc (max_blocks * sizeof(gtb_block_t)))) {
-		cachetab.cached = FALSE;
-		free (cachetab.buffer);
+	if (NULL == (dtm_cache.entry = malloc (max_blocks * sizeof(gtb_block_t)))) {
+		dtm_cache.cached = FALSE;
+		free (dtm_cache.buffer);
 		return FALSE;
 	}
 	
 	for (i = 0; i < max_blocks; i++) {
 		
-		p = &cachetab.entry[i];
+		p = &dtm_cache.entry[i];
 		p->key  = -1;
 		p->side = -1;
 		p->offset = -1;
-		p->p_arr = cachetab.buffer + i * entries_per_block;
+		p->p_arr = dtm_cache.buffer + i * entries_per_block;
 		p->prev = NULL;
 		p->next = NULL;
 	}
@@ -2317,27 +2317,27 @@ dtm_cache_done (void)
 {
 	assert(TBCACHE_INITIALIZED);
 
-	cachetab.cached = FALSE;
-	cachetab.hard = 0;
-	cachetab.soft = 0;
-	cachetab.hardmisses = 0;
-	cachetab.hits = 0;
-	cachetab.softmisses = 0;
-	cachetab.comparisons = 0;
-	cachetab.max_blocks = 0;
-	cachetab.entries_per_block = 0;
+	dtm_cache.cached = FALSE;
+	dtm_cache.hard = 0;
+	dtm_cache.soft = 0;
+	dtm_cache.hardmisses = 0;
+	dtm_cache.hits = 0;
+	dtm_cache.softmisses = 0;
+	dtm_cache.comparisons = 0;
+	dtm_cache.max_blocks = 0;
+	dtm_cache.entries_per_block = 0;
 
-	cachetab.top = NULL;
-	cachetab.bot = NULL;
-	cachetab.n = 0;
+	dtm_cache.top = NULL;
+	dtm_cache.bot = NULL;
+	dtm_cache.n = 0;
 
-	if (cachetab.buffer != NULL)
-		free (cachetab.buffer);
-	cachetab.buffer = NULL;
+	if (dtm_cache.buffer != NULL)
+		free (dtm_cache.buffer);
+	dtm_cache.buffer = NULL;
 
-	if (cachetab.entry != NULL)
-		free (cachetab.entry);
-	cachetab.entry = NULL;
+	if (dtm_cache.entry != NULL)
+		free (dtm_cache.entry);
+	dtm_cache.entry = NULL;
 
 	TBCACHE_INITIALIZED = FALSE;
 
@@ -2350,19 +2350,19 @@ dtm_cache_flush (void)
 {
 	unsigned int 	i;
 	gtb_block_t 	*p;
-	size_t entries_per_block = cachetab.entries_per_block;
-	size_t max_blocks = cachetab.max_blocks;
+	size_t entries_per_block = dtm_cache.entries_per_block;
+	size_t max_blocks = dtm_cache.max_blocks;
 
-	cachetab.top 				= NULL;
-	cachetab.bot 				= NULL;
-	cachetab.n 					= 0;
+	dtm_cache.top 				= NULL;
+	dtm_cache.bot 				= NULL;
+	dtm_cache.n 					= 0;
 	
 	for (i = 0; i < max_blocks; i++) {
-		p = &cachetab.entry[i];
+		p = &dtm_cache.entry[i];
 		p->key  = -1;
 		p->side = -1;
 		p->offset = -1;
-		p->p_arr = cachetab.buffer + i * entries_per_block;
+		p->p_arr = dtm_cache.buffer + i * entries_per_block;
 		p->prev = NULL;
 		p->next = NULL;
 	}
@@ -2374,12 +2374,12 @@ dtm_cache_flush (void)
 static void
 dtm_cache_reset_counters (void)
 {
-	cachetab.hard = 0;
-	cachetab.soft = 0;
-	cachetab.hardmisses = 0;
-	cachetab.hits = 0;
-	cachetab.softmisses = 0;
-	cachetab.comparisons = 0;
+	dtm_cache.hard = 0;
+	dtm_cache.soft = 0;
+	dtm_cache.hardmisses = 0;
+	dtm_cache.hits = 0;
+	dtm_cache.softmisses = 0;
+	dtm_cache.comparisons = 0;
 	return;
 }
 
@@ -2395,7 +2395,7 @@ dtm_stats_reset (void)
 extern bool_t
 tbcache_is_on (void)
 {
-	return cachetab.cached;
+	return dtm_cache.cached;
 }
 
 /* STATISTICS OUTPUT */
@@ -2405,10 +2405,10 @@ extern void tbstats_get (struct TB_STATS *x)
 	uint64_t hh,hm,sh,sm;
 	long unsigned mask = 0xfffffffflu;
 
-	hm = cachetab.hardmisses;
-	hh = cachetab.hard - cachetab.hardmisses;
-	sm = cachetab.softmisses;
-	sh = cachetab.soft - cachetab.softmisses;
+	hm = dtm_cache.hardmisses;
+	hh = dtm_cache.hard - dtm_cache.hardmisses;
+	sm = dtm_cache.softmisses;
+	sh = dtm_cache.soft - dtm_cache.softmisses;
 
 
 	x->probe_hard_hits[0] = (long unsigned)(hh & mask);
@@ -2428,9 +2428,9 @@ extern void tbstats_get (struct TB_STATS *x)
 
 	x->files_opened = eg_was_open_count();
 
-	x->blocks_occupied = cachetab.n;
-	x->blocks_max      = cachetab.max_blocks;	
-	x->comparisons     = cachetab.comparisons;
+	x->blocks_occupied = dtm_cache.n;
+	x->blocks_max      = dtm_cache.max_blocks;	
+	x->comparisons     = dtm_cache.comparisons;
 
 }
 
@@ -2499,13 +2499,13 @@ dtm_cache_pointblock (int key, int side, index_t idx)
 	if (!TB_cache_on)
 		return FALSE;
 
-	split_index (cachetab.entries_per_block, idx, &offset, &remainder); 
+	split_index (dtm_cache.entries_per_block, idx, &offset, &remainder); 
 
 	ret   = NULL;
 	found = FALSE;
-	for (p = cachetab.top; p != NULL; p = p->prev) {
+	for (p = dtm_cache.top; p != NULL; p = p->prev) {
 
-		cachetab.comparisons++;
+		dtm_cache.comparisons++;
 
 		if (   key     == p->key 
 			&& side    == p->side 
@@ -2720,7 +2720,7 @@ egtb_block_uncompressed_to_index (int key, index_t b)
 	index_t idx;
 
 	max = egkey[key].maxindex;
-	blocks_per_side = 1 + (max-1) / cachetab.entries_per_block;
+	blocks_per_side = 1 + (max-1) / dtm_cache.entries_per_block;
 
 	if (b < blocks_per_side) {
 		idx = 0;
@@ -2728,7 +2728,7 @@ egtb_block_uncompressed_to_index (int key, index_t b)
 		b -= blocks_per_side;
 		idx = max;
 	}
-	idx += b * cachetab.entries_per_block;
+	idx += b * dtm_cache.entries_per_block;
 	return idx;
 }
 
@@ -2738,13 +2738,13 @@ egtb_block_getnumber (int key, int side, index_t idx)
 	index_t blocks_per_side, block_in_side;
 	index_t max = egkey[key].maxindex;
 
-	blocks_per_side = 1 + (max-1) / cachetab.entries_per_block;
-	block_in_side   = idx / cachetab.entries_per_block;
+	blocks_per_side = 1 + (max-1) / dtm_cache.entries_per_block;
+	block_in_side   = idx / dtm_cache.entries_per_block;
 
 	#if 0
 	printf ("Inside egtb_block_getnumber\n");
-	printf ("key=%lu, side=%lu, idx=%lu, cachetab.entries_per_block=%lu, max=%lu, blocks_per_side=%lu, block_in_side=%lu\n", 
-			(unsigned long)key, (unsigned long)side, (unsigned 	long)idx, (unsigned long)cachetab.entries_per_block, 
+	printf ("key=%lu, side=%lu, idx=%lu, dtm_cache.entries_per_block=%lu, max=%lu, blocks_per_side=%lu, block_in_side=%lu\n", 
+			(unsigned long)key, (unsigned long)side, (unsigned 	long)idx, (unsigned long)dtm_cache.entries_per_block, 
 			(unsigned long)max, (unsigned long)blocks_per_side, (unsigned long)block_in_side);
 	#endif
 
@@ -2754,7 +2754,7 @@ egtb_block_getnumber (int key, int side, index_t idx)
 static index_t 
 egtb_block_getsize (int key, index_t idx)
 {
-	index_t blocksz = cachetab.entries_per_block;
+	index_t blocksz = dtm_cache.entries_per_block;
 	index_t maxindex  = egkey[key].maxindex;
 	index_t block, offset, x; 
 
@@ -2920,7 +2920,7 @@ preload_cache (int key, int side, index_t idx)
 
 		index_t 		offset;
 		index_t			remainder;
-		split_index (cachetab.entries_per_block, idx, &offset, &remainder); 
+		split_index (dtm_cache.entries_per_block, idx, &offset, &remainder); 
 
 		pblock->key    = key;
 		pblock->side   = side;
@@ -2968,20 +2968,20 @@ get_dtm (int key, int side, index_t idx, dtm_t *out, bool_t probe_hard_flag)
 	bool_t found;
 
 	if (probe_hard_flag) {
-		cachetab.hard++;
+		dtm_cache.hard++;
 	} else {
-		cachetab.soft++;
+		dtm_cache.soft++;
 	}
 
 	if (get_dtm_from_cache (key, side, idx, out)) {
-		cachetab.hits++;
+		dtm_cache.hits++;
 		found = TRUE;
 	} else if (probe_hard_flag) {
-		cachetab.hardmisses++;
+		dtm_cache.hardmisses++;
 		found = preload_cache (key, side, idx) &&
 				get_dtm_from_cache (key, side, idx, out);
 	} else {
-		cachetab.softmisses++;
+		dtm_cache.softmisses++;
 		found = FALSE;
 	}
 	return found;
@@ -2999,12 +2999,12 @@ get_dtm_from_cache (int key, int side, index_t idx, dtm_t *out)
 	if (!TB_cache_on)
 		return FALSE;
 
-	split_index (cachetab.entries_per_block, idx, &offset, &remainder); 
+	split_index (dtm_cache.entries_per_block, idx, &offset, &remainder); 
 
 	found = FALSE;
-	for (p = cachetab.top; p != NULL; p = p->prev) {
+	for (p = dtm_cache.top; p != NULL; p = p->prev) {
 
-		cachetab.comparisons++;
+		dtm_cache.comparisons++;
 
 		if (   key     == p->key 
 			&& side    == p->side 
@@ -3036,7 +3036,7 @@ get_dtm_from_cache (int key, int side, index_t idx, dtm_t *out)
 	if (!TB_cache_on)
 		return FALSE;
 
-	split_index (cachetab.entries_per_block, idx, &offset, &remainder); 
+	split_index (dtm_cache.entries_per_block, idx, &offset, &remainder); 
 
 	found = NULL != (p = dtm_cache_pointblock (key, side, idx));
 
@@ -3067,32 +3067,32 @@ point_block_to_replace (void)
 {
 	gtb_block_t *p, *t, *s;
 
-	assert (0 == cachetab.n || cachetab.top != NULL);
-	assert (0 == cachetab.n || cachetab.bot != NULL);
-	assert (0 == cachetab.n || cachetab.bot->prev == NULL);
-	assert (0 == cachetab.n || cachetab.top->next == NULL);
+	assert (0 == dtm_cache.n || dtm_cache.top != NULL);
+	assert (0 == dtm_cache.n || dtm_cache.bot != NULL);
+	assert (0 == dtm_cache.n || dtm_cache.bot->prev == NULL);
+	assert (0 == dtm_cache.n || dtm_cache.top->next == NULL);
 
-	if (cachetab.n > 0 && -1 == cachetab.top->key) {
+	if (dtm_cache.n > 0 && -1 == dtm_cache.top->key) {
 
 		/* top entry is unusable, should be the one to replace*/
-		p = cachetab.top;
+		p = dtm_cache.top;
 
 	} else
-	if (cachetab.n == 0) {
+	if (dtm_cache.n == 0) {
 		
-		p = &cachetab.entry[cachetab.n++];
-		cachetab.top = p;
-		cachetab.bot = p;
+		p = &dtm_cache.entry[dtm_cache.n++];
+		dtm_cache.top = p;
+		dtm_cache.bot = p;
 	
 		p->prev = NULL;
 		p->next = NULL;
 
 	} else
-	if (cachetab.n < cachetab.max_blocks) { /* add */
+	if (dtm_cache.n < dtm_cache.max_blocks) { /* add */
 
-		s = cachetab.top;
-		p = &cachetab.entry[cachetab.n++];
-		cachetab.top = p;
+		s = dtm_cache.top;
+		p = &dtm_cache.entry[dtm_cache.n++];
+		dtm_cache.top = p;
 	
 		s->next = p;
 		p->prev = s;
@@ -3100,15 +3100,15 @@ point_block_to_replace (void)
 
 	} else {                       /* replace*/ 
 		
-		t = cachetab.bot;
-		s = cachetab.top;
-		cachetab.bot = t->next;
-		cachetab.top = t;
+		t = dtm_cache.bot;
+		s = dtm_cache.top;
+		dtm_cache.bot = t->next;
+		dtm_cache.top = t;
 		
 		s->next = t;
 		t->prev = s;
-		cachetab.top->next = NULL;
-		cachetab.bot->prev = NULL;
+		dtm_cache.top->next = NULL;
+		dtm_cache.bot->prev = NULL;
 
 		p = t;
 	}
@@ -3136,26 +3136,26 @@ movetotop (gtb_block_t *t)
 	nx = t->next;
 
 	if (pv == NULL)  /* at the bottom */
-		cachetab.bot = nx;
+		dtm_cache.bot = nx;
 	else 
 		pv->next = nx;
 
 	if (nx == NULL) /* at the top */
-		cachetab.top = pv;
+		dtm_cache.top = pv;
 	else
 		nx->prev = pv;
 
 	/* relocate */
-	s = cachetab.top;
+	s = dtm_cache.top;
 	assert (s != NULL);
 	if (s == NULL)
-		cachetab.bot = t;	
+		dtm_cache.bot = t;	
 	else
 		s->next = t;
 
 	t->next = NULL;
 	t->prev = s;
-	cachetab.top = t;
+	dtm_cache.top = t;
 
 	return;
 }
@@ -7556,7 +7556,7 @@ wdl_preload_cache (int key, int side, index_t idx)
 		return FALSE;
 	
 	/* transform and move a block */
-	tb_block_2_wdl_block(tb_block, to_modify, cachetab.entries_per_block);	
+	tb_block_2_wdl_block(tb_block, to_modify, dtm_cache.entries_per_block);	
 
 	if (ok) {
 		index_t 		offset;
