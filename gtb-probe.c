@@ -2492,7 +2492,6 @@ dtm_cache_pointblock (int key, int side, index_t idx)
 {
 	index_t 		offset;
 	index_t			remainder;
-	bool_t 			found;
 	gtb_block_t	*	p;
 	gtb_block_t	*	ret;
 
@@ -2502,21 +2501,17 @@ dtm_cache_pointblock (int key, int side, index_t idx)
 	split_index (dtm_cache.entries_per_block, idx, &offset, &remainder); 
 
 	ret   = NULL;
-	found = FALSE;
 	for (p = dtm_cache.top; p != NULL; p = p->prev) {
 
 		dtm_cache.comparisons++;
 
-		if (   key     == p->key 
-			&& side    == p->side 
-			&& offset  == p->offset) {
+		if (key == p->key && side == p->side && offset  == p->offset) {
 			ret = p;
-			found = TRUE;
 			break;
 		}
 	}
 
-	FOLLOW_LU("point_to_gtb_block ok?",found)
+	FOLLOW_LU("point_to_gtb_block ok?",(ret!=NULL))
 
 	return ret;
 }
@@ -7447,36 +7442,33 @@ get_WDL_from_cache (int key, int side, index_t idx, unsigned int *out)
 {
 	index_t 	offset;
 	index_t		remainder;
-	bool_t 		found;
 	wdl_block_t	*p;
+	wdl_block_t	*ret;
 
 	if (!WDL_cache_on)
 		return FALSE;
 
 	split_index (wdl_cache.entries_per_block, idx, &offset, &remainder); 
 
-	found = FALSE;
+	ret = NULL;
 	for (p = wdl_cache.top; p != NULL; p = p->prev) {
 
 		wdl_cache.comparisons++;
 
-		if (   key     == p->key 
-			&& side    == p->side 
-			&& offset  == p->offset) {
-
-			found = TRUE;
-			*out = wdl_extract (p->p_arr, remainder); 
+		if (key == p->key && side == p->side && offset  == p->offset) {
+			ret = p;
 			break;
 		}
 	}
 
-	if (found) {
-		wdl_movetotop(p);
+	if (ret != NULL) {
+		*out = wdl_extract (ret->p_arr, remainder); 
+		wdl_movetotop(ret);
 	}
 
-	FOLLOW_LU("get_wdl_from_cache ok?",found)
+	FOLLOW_LU("get_wdl_from_cache ok?",(ret != NULL))
 
-	return found;
+	return ret != NULL;
 }
 
 static unsigned int
