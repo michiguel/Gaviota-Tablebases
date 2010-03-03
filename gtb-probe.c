@@ -2982,44 +2982,7 @@ get_dtm (int key, int side, index_t idx, dtm_t *out, bool_t probe_hard_flag)
 	return found;
 }
 
-#if 0
-static bool_t
-get_dtm_from_cache (int key, int side, index_t idx, dtm_t *out)
-{
-	index_t 	offset;
-	index_t		remainder;
-	bool_t 		found;
-	gtb_block_t	*p;
 
-	if (!TB_cache_on)
-		return FALSE;
-
-	split_index (dtm_cache.entries_per_block, idx, &offset, &remainder); 
-
-	found = FALSE;
-	for (p = dtm_cache.top; p != NULL; p = p->prev) {
-
-		dtm_cache.comparisons++;
-
-		if (   key     == p->key 
-			&& side    == p->side 
-			&& offset  == p->offset) {
-
-			found = TRUE;
-			*out = p->p_arr[remainder];
-			break;
-		}
-	}
-
-	if (found) {
-		movetotop(p);
-	}
-
-	FOLLOW_LU("get_dtm_from_cache ok?",found)
-
-	return found;
-}
-#else
 static bool_t
 get_dtm_from_cache (int key, int side, index_t idx, dtm_t *out)
 {
@@ -3044,7 +3007,7 @@ get_dtm_from_cache (int key, int side, index_t idx, dtm_t *out)
 
 	return found;
 }
-#endif
+
 
 static void
 split_index (size_t entries_per_block, index_t i, index_t *o, index_t *r)
@@ -7378,7 +7341,7 @@ static bool_t		get_WDL_from_cache (int key, int side, index_t idx, unsigned int 
 static unsigned 	dtm2WDL(dtm_t dtm);	
 static void			wdl_movetotop (wdl_block_t *t);
 static bool_t		wdl_preload_cache (int key, int side, index_t idx);
-static void			tb_block_2_wdl_block(gtb_block_t *g, wdl_block_t *w, size_t n);	
+static void			dtm_block_2_wdl_block(gtb_block_t *g, wdl_block_t *w, size_t n);	
 
 static bool_t
 get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag)
@@ -7386,41 +7349,19 @@ get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_ha
 	dtm_t dtm;
 	bool_t found;
 
-	if (get_WDL_from_cache (key, side, idx, info_out)) {
+	found = get_WDL_from_cache (key, side, idx, info_out);
+
+	if (found) {
 		wdl_cache.hits++;
-		found = TRUE;
 	} else {
-		/* soft */
-		if (get_dtm (key, side, idx, &dtm, probe_hard_flag)) {
+		/* may probe soft */
+		found = get_dtm (key, side, idx, &dtm, probe_hard_flag);
+		if (found) {
 			*info_out = dtm2WDL(dtm);			
-			found = TRUE;
 			/* move cache info from dtm_cache to WDL_cache */
 			wdl_preload_cache (key, side, idx);
-		} else {
-
-			#if 0
-
-			if (probe_hard_flag) {
-				if (get_dtm (key, side, idx, &dtm, probe_hard_flag)) {
-					*info_out = dtm2WDL(dtm);			
-					found = TRUE;
-					/* move cache info from dtm_cache to WDL_cache */
-					wdl_preload_cache (key, side, idx);
-				} else {
-					found = FALSE;
-				}
-			}
-
-			#else
-
-			found = FALSE;
-
-			#endif
-
-		}
+		} 
 	}
-
-	/* from probe_hard_flag and found determine the misses and hits */
 
 	if (probe_hard_flag) {
 		wdl_cache.hard++;
@@ -7548,7 +7489,7 @@ wdl_preload_cache (int key, int side, index_t idx)
 		return FALSE;
 	
 	/* transform and move a block */
-	tb_block_2_wdl_block(tb_block, to_modify, dtm_cache.entries_per_block);	
+	dtm_block_2_wdl_block(tb_block, to_modify, dtm_cache.entries_per_block);	
 
 	if (ok) {
 		index_t 		offset;
@@ -7573,7 +7514,7 @@ wdl_preload_cache (int key, int side, index_t idx)
 /****************************************************************************************************/
 
 static void			
-tb_block_2_wdl_block(gtb_block_t *g, wdl_block_t *w, size_t n)
+dtm_block_2_wdl_block(gtb_block_t *g, wdl_block_t *w, size_t n)
 {
 	int width = 2;
 	int shifting;
