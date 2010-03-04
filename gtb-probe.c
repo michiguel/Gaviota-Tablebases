@@ -105,11 +105,11 @@ typedef unsigned short int 	dtm_t;
 typedef int 				index_t;
 
 enum Loading_status {	
-				STATUS_ABSENT = 0, 
-				STATUS_STATICRAM = 1, 
-				STATUS_MALLOC = 2,
-				STATUS_FILE   = 3, 
-				STATUS_REJECT    = 4
+				STATUS_ABSENT 		= 0, 
+				STATUS_STATICRAM 	= 1, 
+				STATUS_MALLOC 		= 2,
+				STATUS_FILE   		= 3, 
+				STATUS_REJECT 		= 4
 };
 
 struct endgamekey {
@@ -411,8 +411,6 @@ static void 	fatal_error(void) {
 |
 |
 *---------------------------------*/
-
-static void tbcache_reset_counters (void);
 
 #define NO_KKINDEX NOINDEX
 #define MAX_KKINDEX 462
@@ -950,7 +948,6 @@ path_system_done (void)
 
 #ifdef WDL_PROBE
 static bool_t 		wdl_cache_init (size_t cache_mem);
-static void 		wdl_stats_reset (void);
 static void 		wdl_cache_flush (void);
 
 static void			wdl_cache_reset_counters (void);
@@ -2202,28 +2199,6 @@ struct gtb_block {
 	gtb_block_t		*next;
 };
 
-/*
-struct cache_table {
-	bool_t			cached;
-	uint64_t		hard;
-	uint64_t		soft;
-	uint64_t		hardmisses;
-	uint64_t		hits;
-	uint64_t		softmisses;
-	uint64_t 		comparisons;
-	size_t			max_blocks;
-	size_t 			entries_per_block;
-	gtb_block_t		*top;
-	gtb_block_t 	*bot;
-	size_t			n;
-	gtb_block_t 	*entry;
-	dtm_t			*buffer;
-};
-
-struct cache_table 		dtm_cache = {FALSE,0,0,0,0,0,0,0,0,NULL,NULL,0,NULL,NULL};
-
-*/
-
 struct cache_table {
 	/* defined at init */
 	bool_t			cached;
@@ -2250,6 +2225,14 @@ struct cache_table 	dtm_cache = {FALSE,0,0,NULL,
 								NULL,NULL,0,NULL,
 								0,0,0,0,0,0};
 
+struct general_counters {
+	/* counters */
+	uint64_t		hits;
+	uint64_t		miss;
+};
+
+struct general_counters drive = {0,0};
+
 
 static void 		split_index (size_t entries_per_block, index_t i, index_t *o, index_t *r);
 static gtb_block_t *point_block_to_replace (void);
@@ -2257,6 +2240,19 @@ static bool_t 		preload_cache (int key, int side, index_t idx);
 static void			movetotop (gtb_block_t *t);
 
 /*--------------------------------------------------------------------------*/
+
+
+static void
+dtm_cache_reset_counters (void)
+{
+	dtm_cache.hard = 0;
+	dtm_cache.soft = 0;
+	dtm_cache.hardmisses = 0;
+	dtm_cache.hits = 0;
+	dtm_cache.softmisses = 0;
+	dtm_cache.comparisons = 0;
+	return;
+}
 
 static bool_t
 dtm_cache_init (size_t cache_mem)
@@ -2275,14 +2271,14 @@ dtm_cache_init (size_t cache_mem)
 	max_blocks 			= cache_mem / block_mem;
 	cache_mem 			= max_blocks * block_mem;
 
-	tbcache_reset_counters ();
+	dtm_cache_reset_counters ();
 
-	dtm_cache.entries_per_block 	= entries_per_block;
+	dtm_cache.entries_per_block	= entries_per_block;
 	dtm_cache.max_blocks 		= max_blocks;
 	dtm_cache.cached 			= TRUE;
 	dtm_cache.top 				= NULL;
 	dtm_cache.bot 				= NULL;
-	dtm_cache.n 					= 0;
+	dtm_cache.n 				= 0;
 
 	if (NULL == (dtm_cache.buffer = malloc (cache_mem))) {
 		dtm_cache.cached = FALSE;
@@ -2296,7 +2292,6 @@ dtm_cache_init (size_t cache_mem)
 	}
 	
 	for (i = 0; i < max_blocks; i++) {
-		
 		p = &dtm_cache.entry[i];
 		p->key  = -1;
 		p->side = -1;
@@ -2344,7 +2339,6 @@ dtm_cache_done (void)
 	return;
 }
 
-
 static void
 dtm_cache_flush (void)
 {
@@ -2355,7 +2349,7 @@ dtm_cache_flush (void)
 
 	dtm_cache.top 				= NULL;
 	dtm_cache.bot 				= NULL;
-	dtm_cache.n 					= 0;
+	dtm_cache.n 				= 0;
 	
 	for (i = 0; i < max_blocks; i++) {
 		p = &dtm_cache.entry[i];
@@ -2366,29 +2360,10 @@ dtm_cache_flush (void)
 		p->prev = NULL;
 		p->next = NULL;
 	}
-	tbcache_reset_counters ();
+	dtm_cache_reset_counters ();
 	return;
 }
 
-
-static void
-dtm_cache_reset_counters (void)
-{
-	dtm_cache.hard = 0;
-	dtm_cache.soft = 0;
-	dtm_cache.hardmisses = 0;
-	dtm_cache.hits = 0;
-	dtm_cache.softmisses = 0;
-	dtm_cache.comparisons = 0;
-	return;
-}
-
-static void	
-dtm_stats_reset (void)
-{
-	tbcache_reset_counters ();
-	eg_was_open_reset();
-}
 
 /*---- end dtm_cache zone ----------------------------------------------------------------------*/
 
@@ -2400,16 +2375,20 @@ tbcache_is_on (void)
 
 /* STATISTICS OUTPUT */
 
-extern void tbstats_get (struct TB_STATS *x)
+extern void 
+tbstats_get (struct TB_STATS *x)
 {
-	uint64_t hh,hm,sh,sm;
+	uint64_t hh,hm,sh,sm,eh;
 	long unsigned mask = 0xfffffffflu;
 
 	hm = dtm_cache.hardmisses;
 	hh = dtm_cache.hard - dtm_cache.hardmisses;
 	sm = dtm_cache.softmisses;
 	sh = dtm_cache.soft - dtm_cache.softmisses;
+	eh = dtm_cache.hits;
 
+	x->probe_easy_hits[0] = (long unsigned)(eh & mask);
+	x->probe_easy_hits[1] = (long unsigned)(eh >> 32);
 
 	x->probe_hard_hits[0] = (long unsigned)(hh & mask);
 	x->probe_hard_hits[1] = (long unsigned)(hh >> 32);
@@ -2423,19 +2402,27 @@ extern void tbstats_get (struct TB_STATS *x)
 	x->probe_soft_miss[0] = (long unsigned)(sm & mask);
 	x->probe_soft_miss[1] = (long unsigned)(sm >> 32);
 
-	x->bytes_read[0]	  = (long unsigned)(Bytes_read & mask);
-	x->bytes_read[1] 	  = (long unsigned)(Bytes_read >> 32);
-
-	x->files_opened = eg_was_open_count();
 
 	x->blocks_occupied = dtm_cache.n;
 	x->blocks_max      = dtm_cache.max_blocks;	
 	x->comparisons     = dtm_cache.comparisons;
 
+
+	/* hard drive */
+	x->drive_hits[0] = (long unsigned)(drive.hits & mask);
+	x->drive_hits[1] = (long unsigned)(drive.hits >> 32);
+
+	x->drive_miss[0] = (long unsigned)(drive.miss & mask);
+	x->drive_miss[1] = (long unsigned)(drive.miss >> 32);
+
+	x->bytes_read[0] = (long unsigned)(Bytes_read & mask);
+	x->bytes_read[1] = (long unsigned)(Bytes_read >> 32);
+
+	x->files_opened = eg_was_open_count();
 }
 
 
-bool_t
+extern bool_t
 tbcache_init (size_t cache_mem)
 {
 	#ifdef WDL_PROBE
@@ -2444,48 +2431,44 @@ tbcache_init (size_t cache_mem)
 	#else
 	dtm_cache_init (cache_mem);
 	#endif
+	tbstats_reset ();
 	return TRUE;
 }
 
-void
+extern void
 tbcache_done (void)
 {
 	dtm_cache_done();
 	#ifdef WDL_PROBE
 	wdl_cache_done();
 	#endif
+	tbstats_reset ();
 	return;
 }
 
-void
+extern void
 tbcache_flush (void)
 {
 	dtm_cache_flush();
 	#ifdef WDL_PROBE
 	wdl_cache_flush();
 	#endif
+	tbstats_reset ();
 	return;
 }
 
-
-static void
-tbcache_reset_counters (void)
+extern void	
+tbstats_reset (void)
 {
 	dtm_cache_reset_counters ();
 	#ifdef WDL_PROBE
-	wdl_cache_reset_counters();
+	wdl_cache_reset_counters ();
 	#endif
+	eg_was_open_reset();
+	drive.hits = 0;
+	drive.miss = 0;
 	return;
 }
-
-extern void	tbstats_reset (void)
-{
-	dtm_stats_reset();
-	#ifdef WDL_PROBE
-	wdl_stats_reset();
-	#endif
-}
-
 
 static gtb_block_t	*
 dtm_cache_pointblock (int key, int side, index_t idx)
@@ -2975,6 +2958,14 @@ get_dtm (int key, int side, index_t idx, dtm_t *out, bool_t probe_hard_flag)
 		dtm_cache.hardmisses++;
 		found = preload_cache (key, side, idx) &&
 				get_dtm_from_cache (key, side, idx, out);
+
+		if (found) {
+			drive.hits++;			
+		} else {
+			drive.miss++;					
+		}
+			
+
 	} else {
 		dtm_cache.softmisses++;
 		found = FALSE;
@@ -7070,8 +7061,6 @@ static void				wdl_movetotop (wdl_block_t *t);
 #if 0
 static bool_t			wdl_cache_init (size_t cache_mem);
 static void				wdl_cache_flush (void);
-static void 			wdl_stats_get (struct TB_STATS *x);
-static void				wdl_stats_reset (void);
 static bool_t			get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag);
 #endif
 
@@ -7130,7 +7119,6 @@ wdl_cache_init (size_t cache_mem)
 	}
 	
 	for (i = 0; i < max_blocks; i++) {
-		
 		p = &wdl_cache.blocks[i];
 		p->key  = -1;
 		p->side = -1;
@@ -7185,10 +7173,9 @@ wdl_cache_flush (void)
 
 	wdl_cache.top 				= NULL;
 	wdl_cache.bot 				= NULL;
-	wdl_cache.n 					= 0;
+	wdl_cache.n 				= 0;
 	
 	for (i = 0; i < max_blocks; i++) {
-		
 		p = &wdl_cache.blocks[i];
 		p->key  = -1;
 		p->side = -1;
@@ -7225,16 +7212,20 @@ wdl_cache_is_on (void)
 
 /* STATISTICS OUTPUT */
 
-extern void wdl_stats_get (struct TB_STATS *x)
+extern void 
+wdl_stats_get (struct TB_STATS *x)
 {
-	uint64_t hh,hm,sh,sm;
+	uint64_t hh,hm,sh,sm,eh;
 	long unsigned mask = 0xfffffffflu;
 
 	hm = wdl_cache.hardmisses;
 	hh = wdl_cache.hard - wdl_cache.hardmisses;
 	sm = wdl_cache.softmisses;
 	sh = wdl_cache.soft - wdl_cache.softmisses;
+	eh = wdl_cache.hits;
 
+	x->probe_easy_hits[0] = (long unsigned)(eh & mask);
+	x->probe_easy_hits[1] = (long unsigned)(eh >> 32);
 
 	x->probe_hard_hits[0] = (long unsigned)(hh & mask);
 	x->probe_hard_hits[1] = (long unsigned)(hh >> 32);
@@ -7258,14 +7249,6 @@ extern void wdl_stats_get (struct TB_STATS *x)
 	x->comparisons     = wdl_cache.comparisons;
 
 }
-
-static void	
-wdl_stats_reset (void)
-{
-	wdl_cache_reset_counters ();
-	eg_was_open_reset();
-}
-
 
 /****************************************************************************\
 |						Replacement
@@ -7466,7 +7449,7 @@ static bool_t
 wdl_preload_cache (int key, int side, index_t idx)
 /* output to the least used block of the cache */
 {
-	gtb_block_t		*tb_block;
+	gtb_block_t		*dtm_block;
 	wdl_block_t 	*to_modify;
 	bool_t 			ok;
 
@@ -7478,18 +7461,18 @@ wdl_preload_cache (int key, int side, index_t idx)
 	}
 
 	/* find fresh block in dtm cache */
-	tb_block = dtm_cache_pointblock (key, side, idx); 
+	dtm_block = dtm_cache_pointblock (key, side, idx); 
 
 	/* find aged blocked in wdl cache */
 	to_modify = wdl_point_block_to_replace ();
 
-	ok = !(NULL == tb_block || NULL == to_modify);
+	ok = !(NULL == dtm_block || NULL == to_modify);
 
 	if (!ok)
 		return FALSE;
 	
 	/* transform and move a block */
-	dtm_block_2_wdl_block(tb_block, to_modify, dtm_cache.entries_per_block);	
+	dtm_block_2_wdl_block(dtm_block, to_modify, dtm_cache.entries_per_block);	
 
 	if (ok) {
 		index_t 		offset;

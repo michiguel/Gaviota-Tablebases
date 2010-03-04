@@ -154,7 +154,7 @@ extern void			tbcache_flush (void);
 For maximum portability, some stats are provided
 in two 32 bits integers rather than a single 64 bit
 number. For intance, prob_hard_hits[0] contains only the
-less significant 32 bits (bit 0 to 31), and prob_hard_hitsp[1] the
+less significant 32 bits (bit 0 to 31), and prob_hard_hits[1] the
 most significant ones (32 to 63). The number can be recreated
 like this
 uint64_t x = (uint64_t)probe_hard_hits[0] | ((uint64_t)probe_hard_hits[1] << 32);
@@ -163,15 +163,19 @@ proper 64 bit integers.
 */
 
 struct TB_STATS {
-	long unsigned int probe_hard_hits[2];
-	long unsigned int probe_hard_miss[2];
-	long unsigned int probe_soft_hits[2];
-	long unsigned int probe_soft_miss[2];
-	long unsigned int bytes_read[2];
-	long unsigned int files_opened;
-	long unsigned int blocks_occupied;
-	long unsigned int blocks_max;	
-	long unsigned int comparisons;
+	long unsigned int probe_easy_hits[2]; /* hits that were found in own cache */
+	long unsigned int probe_hard_hits[2]; /* hits found when probing hard: go to HD if needed */
+	long unsigned int probe_hard_miss[2]; /* misses when probing hard: went to HD and failed */
+	long unsigned int probe_soft_hits[2]; /* hits found when probing soft: Never go to HD */
+	long unsigned int probe_soft_miss[2]; /* misses when probing soft: Exhausted all the caches, this one and others, but did not try HD */
+	long unsigned int bytes_read     [2]; /* bytes read from Hard drive */
+	long unsigned int files_opened      ; /* number of files probed */
+	long unsigned int blocks_occupied   ; /* number of blocks occupied in this cache */
+	long unsigned int blocks_max        ; /* max number of blocks in this cache */
+	long unsigned int comparisons       ; /* number of comparisons performed to find a block in cache */
+
+	long unsigned int drive_hits     [2]; /* succesful probes to the Hard drive */
+	long unsigned int drive_miss     [2]; /* failing   probes to the Hard drive */
 };
 
 extern void			tbstats_reset (void);
