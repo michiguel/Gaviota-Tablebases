@@ -163,25 +163,27 @@ proper 64 bit integers.
 */
 
 struct TB_STATS {
-	long unsigned int probe_easy_hits[2]; /* hits that were found in own cache */
-	long unsigned int probe_hard_hits[2]; /* hits found when probing hard: go to HD if needed */
-	long unsigned int probe_hard_miss[2]; /* misses when probing hard: went to HD and failed */
-	long unsigned int probe_soft_hits[2]; /* hits found when probing soft: Never go to HD */
-	long unsigned int probe_soft_miss[2]; /* misses when probing soft: Exhausted all the caches, this one and others, but did not try HD */
-	long unsigned int bytes_read     [2]; /* bytes read from Hard drive */
-	long unsigned int files_opened      ; /* number of files probed */
-	long unsigned int blocks_occupied   ; /* number of blocks occupied in this cache */
-	long unsigned int blocks_max        ; /* max number of blocks in this cache */
-	long unsigned int comparisons       ; /* number of comparisons performed to find a block in cache */
+	long unsigned int wdl_easy_hits  [2]; /* hits that were found in own wdl cache */
+	long unsigned int wdl_hard_prob  [2]; /* hard probes to the wdl cache: if fail, they will go to HD */
+	long unsigned int wdl_soft_prob  [2]; /* soft probes to the wdl cache: if fail, they won't go to HD */	
+	double			  wdl_occupancy     ; /* % of slots filled in wdl cache */
 
-	long unsigned int drive_hits     [2]; /* succesful probes to the Hard drive */
-	long unsigned int drive_miss     [2]; /* failing   probes to the Hard drive */
+	long unsigned int dtm_easy_hits  [2]; /* hits that were found in own dtm cache */
+	long unsigned int dtm_hard_prob  [2]; /* hard probes to the dtm cache: if fail, they will go to HD */
+	long unsigned int dtm_soft_prob  [2]; /* soft probes to the dtm cache: if fail, they won't go to HD */	
+	double			  dtm_occupancy     ; /* % of slots filled in dtm cache */
+
+	long unsigned int  total_hits    [2]; /* succesful probes */
+	long unsigned int memory_hits    [2]; /* succesful probes to memory */
+	long unsigned int  drive_hits    [2]; /* succesful probes to the Hard drive */
+	long unsigned int  drive_miss    [2]; /* failing   probes to the Hard drive */
+	long unsigned int  bytes_read    [2]; /* bytes read from Hard drive */
+	long unsigned int files_opened      ; /* number of files newly opened */
+	double			  memory_efficiency ; /* % hits from memory over total hits */
 };
 
 extern void			tbstats_reset (void);
 extern void 		tbstats_get (struct TB_STATS *stats);
-
-extern void 		wdl_stats_get (struct TB_STATS *x);
 
 
 /*----------------------------------*\

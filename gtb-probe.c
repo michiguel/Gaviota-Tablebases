@@ -1816,7 +1816,6 @@ fd_openit (int key)
 		return finp;
 	}
 
-
 	start = 0;
 	end   = egkey[key].pathn;
 	for (pth = start; NULL == finp && pth < end && Gtbpath[pth] != NULL; pth++) {
@@ -2182,8 +2181,59 @@ fpark_entry_packed  (FILE *finp, int side, index_t max, index_t idx)
 |
 \*/
 
+
+/*---------------------------------------------------------------------*\|			WDL CACHE Implementation  ZONE
+\*---------------------------------------------------------------------*/
+
+#define WDL_entries_per_unit 4
+#define WDL_entry_mask     3
+static size_t		WDL_units_per_block = 0;
+
+static bool_t		WDL_cache_on = TRUE;
+static bool_t		WDL_CACHE_INITIALIZED = FALSE;
+
+typedef unsigned char unit_t; /* block unit */
+
+typedef struct wdl_block 	wdl_block_t;
+
+struct wdl_block {
+	int 			key;
+	int				side;
+	index_t 		offset;
+	unit_t			*p_arr;
+	wdl_block_t		*prev;
+	wdl_block_t		*next;
+};
+
+struct WDL_CACHE {
+	/* defined at init */
+	bool_t			cached;
+	size_t			max_blocks;
+	size_t 			entries_per_block;
+	unit_t		 *	buffer;
+
+	/* flushables */
+	wdl_block_t	*	top;
+	wdl_block_t *	bot;
+	size_t			n;
+	wdl_block_t *	blocks; /* was entry */
+
+	/* counters */
+	uint64_t		hard;
+	uint64_t		soft;
+	uint64_t		hardmisses;
+	uint64_t		hits;
+	uint64_t		softmisses;
+	uint64_t 		comparisons;
+};
+
+struct WDL_CACHE 	wdl_cache = {FALSE,0,0,NULL,
+								 NULL,NULL,0,NULL,
+								 0,0,0,0,0,0};
+
+
 /*---------------------------------------------------------------------*\
-|			GTB CACHE Implementation  ZONE
+|			DTM CACHE Implementation  ZONE
 \*---------------------------------------------------------------------*/
 
 struct gtb_bock;
@@ -2231,7 +2281,7 @@ struct general_counters {
 	uint64_t		miss;
 };
 
-struct general_counters drive = {0,0};
+static struct general_counters Drive = {0,0};
 
 
 static void 		split_index (size_t entries_per_block, index_t i, index_t *o, index_t *r);
@@ -2374,7 +2424,7 @@ tbcache_is_on (void)
 }
 
 /* STATISTICS OUTPUT */
-
+#if 0
 extern void 
 tbstats_get (struct TB_STATS *x)
 {
@@ -2409,18 +2459,89 @@ tbstats_get (struct TB_STATS *x)
 
 
 	/* hard drive */
-	x->drive_hits[0] = (long unsigned)(drive.hits & mask);
-	x->drive_hits[1] = (long unsigned)(drive.hits >> 32);
+	x->drive_hits[0] = (long unsigned)(Drive.hits & mask);
+	x->drive_hits[1] = (long unsigned)(Drive.hits >> 32);
 
-	x->drive_miss[0] = (long unsigned)(drive.miss & mask);
-	x->drive_miss[1] = (long unsigned)(drive.miss >> 32);
+	x->drive_miss[0] = (long unsigned)(Drive.miss & mask);
+	x->drive_miss[1] = (long unsigned)(Drive.miss >> 32);
 
 	x->bytes_read[0] = (long unsigned)(Bytes_read & mask);
 	x->bytes_read[1] = (long unsigned)(Bytes_read >> 32);
 
 	x->files_opened = eg_was_open_count();
 }
+#else
 
+extern void 
+tbstats_get (struct TB_STATS *x)
+{
+	long unsigned mask = 0xfffffffflu;
+	uint64_t memory_hits, total_hits;
+
+
+	/*
+	|	WDL CACHE
+	\*---------------------------------------------------*/
+
+	x->wdl_easy_hits[0] = (long unsigned)(wdl_cache.hits & mask);
+	x->wdl_easy_hits[1] = (long unsigned)(wdl_cache.hits >> 32);
+
+	x->wdl_hard_prob[0] = (long unsigned)(wdl_cache.hard & mask);
+	x->wdl_hard_prob[1] = (long unsigned)(wdl_cache.hard >> 32);
+
+	x->wdl_soft_prob[0] = (long unsigned)(wdl_cache.soft & mask);
+	x->wdl_soft_prob[1] = (long unsigned)(wdl_cache.soft >> 32);
+
+	/* occupancy */
+	x->wdl_occupancy = wdl_cache.max_blocks==0? 0:(double)100.0*wdl_cache.n/(double)wdl_cache.max_blocks;
+
+	/*
+	|	DTM CACHE
+	\*---------------------------------------------------*/
+
+	x->dtm_easy_hits[0] = (long unsigned)(dtm_cache.hits & mask);
+	x->dtm_easy_hits[1] = (long unsigned)(dtm_cache.hits >> 32);
+
+	x->dtm_hard_prob[0] = (long unsigned)(dtm_cache.hard & mask);
+	x->dtm_hard_prob[1] = (long unsigned)(dtm_cache.hard >> 32);
+
+	x->dtm_soft_prob[0] = (long unsigned)(dtm_cache.soft & mask);
+	x->dtm_soft_prob[1] = (long unsigned)(dtm_cache.soft >> 32);
+
+	/* occupancy */
+	x->dtm_occupancy = dtm_cache.max_blocks==0? 0:(double)100.0*dtm_cache.n/(double)dtm_cache.max_blocks;
+
+	/*
+	|	GENERAL
+	\*---------------------------------------------------*/
+
+	/* memory */
+	memory_hits = wdl_cache.hits + dtm_cache.hits;
+	x->memory_hits[0] = (long unsigned)(memory_hits & mask);
+	x->memory_hits[1] = (long unsigned)(memory_hits >> 32);
+
+	/* hard drive */
+	x->drive_hits[0] = (long unsigned)(Drive.hits & mask);
+	x->drive_hits[1] = (long unsigned)(Drive.hits >> 32);
+
+	x->drive_miss[0] = (long unsigned)(Drive.miss & mask);
+	x->drive_miss[1] = (long unsigned)(Drive.miss >> 32);
+
+	x->bytes_read[0] = (long unsigned)(Bytes_read & mask);
+	x->bytes_read[1] = (long unsigned)(Bytes_read >> 32);
+
+	x->files_opened = eg_was_open_count();
+
+	/* total */
+	total_hits = memory_hits + Drive.hits;
+	x->total_hits[0] = (long unsigned)(total_hits & mask);
+	x->total_hits[1] = (long unsigned)(total_hits >> 32);
+
+	/* efficiency */
+	x->memory_efficiency = 100.0 * (double)(memory_hits) / (double)(memory_hits + Drive.hits + Drive.miss);
+}
+
+#endif
 
 extern bool_t
 tbcache_init (size_t cache_mem)
@@ -2465,8 +2586,8 @@ tbstats_reset (void)
 	wdl_cache_reset_counters ();
 	#endif
 	eg_was_open_reset();
-	drive.hits = 0;
-	drive.miss = 0;
+	Drive.hits = 0;
+	Drive.miss = 0;
 	return;
 }
 
@@ -2960,9 +3081,9 @@ get_dtm (int key, int side, index_t idx, dtm_t *out, bool_t probe_hard_flag)
 				get_dtm_from_cache (key, side, idx, out);
 
 		if (found) {
-			drive.hits++;			
+			Drive.hits++;			
 		} else {
-			drive.miss++;					
+			Drive.miss++;					
 		}
 			
 
@@ -7006,7 +7127,7 @@ list_index (void)
 /*
 |			WDL CACHE Statics
 \*---------------------------------------------------------------------*/
-
+#if 0
 #define WDL_entries_per_unit 4
 #define WDL_entry_mask     3
 static size_t		WDL_units_per_block = 0;
@@ -7052,6 +7173,8 @@ struct WDL_CACHE {
 struct WDL_CACHE 	wdl_cache = {FALSE,0,0,NULL,
 								 NULL,NULL,0,NULL,
 								 0,0,0,0,0,0};
+
+#endif
 
 /*--------------------------------------------------------------------------*/
 static unsigned int		wdl_extract (unit_t *uarr, unsigned int x);
@@ -7211,7 +7334,7 @@ wdl_cache_is_on (void)
 }
 
 /* STATISTICS OUTPUT */
-
+#if 0
 extern void 
 wdl_stats_get (struct TB_STATS *x)
 {
@@ -7249,6 +7372,7 @@ wdl_stats_get (struct TB_STATS *x)
 	x->comparisons     = wdl_cache.comparisons;
 
 }
+#endif
 
 /****************************************************************************\
 |						Replacement
