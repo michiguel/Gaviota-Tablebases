@@ -190,9 +190,9 @@ extern void 		tbstats_get (struct TB_STATS *stats);
 |         	PATH MANAGEMENT
 \*----------------------------------*/
 
-extern char ** 		tbpaths_init(void);
-extern char ** 		tbpaths_add(char **ps, char *newpath);
-extern char ** 		tbpaths_done(char **ps);
+extern const char ** 		tbpaths_init	(void);
+extern const char ** 		tbpaths_add		(const char **ps, const char *newpath);
+extern const char ** 		tbpaths_done	(const char **ps);
 
 extern const char *	tbpaths_getmain (void);
 

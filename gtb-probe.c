@@ -846,10 +846,10 @@ extern const char *tbpaths_getmain (void)
 	return Gtbpath[0];
 }
 
-extern char **
+extern const char **
 tbpaths_init(void)
 {
-	char **newps;
+	const char **newps;
 	newps = malloc (sizeof (char *));
 	if (newps != NULL) {
 		newps[0] = NULL;
@@ -857,11 +857,11 @@ tbpaths_init(void)
 	return newps;
 }
 
-extern char **
-tbpaths_add(char **ps, char *newpath)
+extern const char **
+tbpaths_add(const char **ps, const char *newpath)
 {
 	int counter;
-	char **newps;
+	const char **newps;
 	for (counter = 0; ps[counter] != NULL; counter++)
 		; 
 
@@ -873,8 +873,8 @@ tbpaths_add(char **ps, char *newpath)
 	return newps;
 }
 
-extern char **
-tbpaths_done(char **ps)
+extern const char **
+tbpaths_done(const char **ps)
 {
 	if (ps != NULL) {
 		free(ps);
