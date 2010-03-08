@@ -843,7 +843,7 @@ extern char **
 tbpaths_init(void)
 {
 	char **newps;
-	newps = malloc (sizeof (char *));
+	newps = (char **) malloc (sizeof (char *));
 	if (newps != NULL) {
 		newps[0] = NULL;
 	}
@@ -902,7 +902,7 @@ path_system_init (char **path)
 	sz = i; /* sz includes the NULL */
 
 
-	Gtbpath = malloc (sz * sizeof(char *));
+	Gtbpath = (char **) malloc (sz * sizeof(char *));
 
 	if (Gtbpath) {
 		
@@ -1169,7 +1169,7 @@ fd_init (struct filesopen *pfd)
 	if (allowed > 32)
 		GTB_MAXOPEN = 32;		
 
-	p =	malloc(sizeof(int)*GTB_MAXOPEN);
+	p =	(int *) malloc(sizeof(int)*GTB_MAXOPEN);
 
 	if (p != NULL) {
 		for (i = 0; i < GTB_MAXOPEN; i++) {
@@ -2582,7 +2582,7 @@ egtb_loadindexes (int key)
 
 	p = NULL;
 
-	ok = ok && NULL != (p = malloc (n_idx * 4));
+	ok = ok && NULL != (p = (index_t *)malloc (n_idx * 4));
 
 	/* Input of Indexes */
 	for (i = 0; ok && i < n_idx; i++) {
