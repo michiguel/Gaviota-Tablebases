@@ -837,7 +837,7 @@ static uint64_t Bytes_read = 0;
 
 static int  Gtbpath_end_index = 0;
 
-static char **	Gtbpath = NULL;
+static const char **	Gtbpath = NULL;
 
 /*---------------- EXTERNAL PATH MANAGEMENT --------------------------------*/
 
@@ -887,11 +887,11 @@ tbpaths_done(const char **ps)
 static void path_system_reset(void) {Gtbpath_end_index = 0;}
 
 static bool_t
-path_system_init (char **path)
+path_system_init (const char **path)
 {
 	int i;
 	int sz;
-	char *x;
+	const char *x;
 	bool_t ok = TRUE;
 	path_system_reset();
 
@@ -978,7 +978,7 @@ static int	eg_was_open_count(void)
 
 
 extern void
-tb_init (int verbosity, int decoding_scheme, char **paths)
+tb_init (int verbosity, int decoding_scheme, const char **paths)
 {
 	int zi;
 
@@ -990,7 +990,7 @@ tb_init (int verbosity, int decoding_scheme, char **paths)
 		int g;
 		printf ("\nGTB PATHS\n");
 		for (g = 0; Gtbpath[g] != NULL; g++) {
-			char *p = Gtbpath[g];
+			const char *p = Gtbpath[g];
 			printf ("  #%d: %s\n", g, p);
 		}
 		fflush(stdout);
@@ -1086,7 +1086,7 @@ tb_done (void)
 
 
 extern void
-tb_restart(int verbosity, int decoding_scheme, char **paths)
+tb_restart(int verbosity, int decoding_scheme, const char **paths)
 {
 	if (tb_is_initialized()) {
 		tb_done();
