@@ -991,7 +991,11 @@ tb_init (int verbosity, int decoding_scheme, const char **paths)
 		printf ("\nGTB PATHS\n");
 		for (g = 0; Gtbpath[g] != NULL; g++) {
 			const char *p = Gtbpath[g];
-			printf ("  #%d: %s\n", g, p);
+			if (0 == g) {
+				printf ("  main: %s\n", p);
+			} else {
+				printf ("    #%d: %s\n", g, p);
+			}
 		}
 		fflush(stdout);
 	}
