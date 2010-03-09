@@ -2542,7 +2542,9 @@ tbstats_get (struct TB_STATS *x)
 	x->total_hits[1] = (long unsigned)(total_hits >> 32);
 
 	/* efficiency */
-	x->memory_efficiency = 100.0 * (double)(memory_hits) / (double)(memory_hits + Drive.hits + Drive.miss);
+	{ uint64_t denominator = memory_hits + Drive.hits + Drive.miss;
+	x->memory_efficiency = 0==denominator? 0: 100.0 * (double)(memory_hits) / (double)(denominator);
+	}
 }
 
 #endif
