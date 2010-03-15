@@ -2230,12 +2230,12 @@ tbcache_init (size_t cache_mem)
 	cachetab.bot 				= NULL;
 	cachetab.n 					= 0;
 
-	if (NULL == (cachetab.buffer = malloc (cache_mem))) {
+	if (NULL == (cachetab.buffer = (dtm_t *) malloc (cache_mem))) {
 		cachetab.cached = FALSE;
 		return FALSE;
 	}
 
-	if (NULL == (cachetab.entry = malloc (max_blocks * sizeof(gtb_block_t)))) {
+	if (NULL == (cachetab.entry = (gtb_block_t *) malloc (max_blocks * sizeof(gtb_block_t)))) {
 		cachetab.cached = FALSE;
 		free (cachetab.buffer);
 		return FALSE;
