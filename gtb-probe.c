@@ -2392,7 +2392,7 @@ tbcache_pointblock (int key, int side, index_t idx)
 
 	ret   = NULL;
 	found = FALSE;
-	for (p = cachetab.top; p != NULL; p = p->prev) {
+	for (p = cachetab.top; !found && p != NULL; p = p->prev) {
 
 		cachetab.comparisons++;
 

@@ -134,7 +134,7 @@ int inflate_table(codetype type, short unsigned int *lens, unsigned int codes, c
     /* generate offsets into symbol table for each length for sorting */
     offs[1] = 0;
     for (len = 1; len < MAXBITS; len++)
-        offs[len + 1] = offs[len] + count[len];
+        offs[len + 1] = (unsigned short) (offs[len] + count[len]); /*MAB: Cast to unsigned short to silence compiler */
 
     /* sort symbols by length, by symbol order within each length */
     for (sym = 0; sym < codes; sym++)
