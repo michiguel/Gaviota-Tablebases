@@ -1,2 +1,2 @@
-#define VERSION "0.1.6.4b-bugfixing-06"
+#define VERSION "0.1.6.4b-bugfixing-07"
 

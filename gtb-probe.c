@@ -200,7 +200,6 @@ enum SQUARES {
 #endif
 #include "assert.h"
 
-static bool_t TB_compression = FALSE;
 static bool_t TB_cache_on = TRUE;
 
 /*************************************************\
@@ -992,11 +991,9 @@ tb_init (int verbosity, int decoding_scheme, char **paths)
 	
 	GTB_scheme = decoding_scheme;
 	Uncompressed = GTB_scheme == 0;
-	TB_compression = !Uncompressed;
 
 	if (GTB_scheme == 0) {
 		Uncompressed = TRUE;
-		TB_compression = FALSE;
 	}
 
 	set_decoding_scheme(GTB_scheme);
@@ -1608,7 +1605,7 @@ egtb_get_dtm (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t pr
 
 					#if defined(DEBUG)
 					if (Uncompressed) {
-						assert (TB_compression == FALSE && 	decoding_scheme() == 0 && GTB_scheme == 0);
+						assert (decoding_scheme() == 0 && GTB_scheme == 0);
 						dtm_t dtm_temp;
 						bool_t ok;
 						bool_t success2 = egtb_filepeek (k, stm, index, &dtm_temp);
@@ -1716,7 +1713,7 @@ fd_openit (int key)
 
 	/* set proper extensions to the File */
 	if (Uncompressed) {
-		assert (TB_compression == FALSE && 	decoding_scheme() == 0 && GTB_scheme == 0);
+		assert (decoding_scheme() == 0 && GTB_scheme == 0);
 		extension = ".gtb";
 	} else {
 		extension = Extension[decoding_scheme()];
@@ -2555,7 +2552,7 @@ egtb_loadindexes (int key)
 	FILE *f;
 
 	if (Uncompressed) {
-		assert (TB_compression == FALSE && 	decoding_scheme() == 0 && GTB_scheme == 0);	
+		assert (decoding_scheme() == 0 && GTB_scheme == 0);	
 		return TRUE; /* no need to load indexes */
 	}
 	if (Zipinfo[key].blockindex != NULL)
@@ -2696,7 +2693,7 @@ egtb_block_park  (int key, index_t block)
 	assert (egkey[key].fd != NULL);
 
 	if (Uncompressed) {
-		assert (TB_compression == FALSE && 	decoding_scheme() == 0 && GTB_scheme == 0);	
+		assert (decoding_scheme() == 0 && GTB_scheme == 0);	
 		i = egtb_block_uncompressed_to_index (key, block);
 	} else {
 		assert (Zipinfo[key].blockindex != NULL);
@@ -2768,7 +2765,7 @@ preload_cache (int key, int side, index_t idx)
 
 		FOLLOW_LULU("preload_cache", __LINE__, ok)
 
-		assert (TB_compression == FALSE && 	decoding_scheme() == 0 && GTB_scheme == 0);	
+		assert (decoding_scheme() == 0 && GTB_scheme == 0);	
 
 		if (ok) Bytes_read += n;
 

@@ -4,7 +4,8 @@ $target   = 'tbprobe'
 $sources  = 'sources.txt'
 
 $switches_gcc = '-lpthread -lm -Wall -Wextra -O2 '
-$switches_icc = '-lpthread -Wall -wd981,593 -O2 '
+$switches_icc = '-lpthread -Wall -O2 '
+#-wd981,593
 #warning for intel: 2259
 
 $include = []
