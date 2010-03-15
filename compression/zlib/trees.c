@@ -214,6 +214,8 @@ local void send_bits(s, value, length)
 }
 #else /* !DEBUG */
 
+/*MAB: ORIGINAL, with warnings demanding castings.
+
 #define send_bits(s, value, length) \
 { int len = length;\
   if (s->bi_valid > (int)Buf_size - len) {\
@@ -227,7 +229,52 @@ local void send_bits(s, value, length)
     s->bi_valid += len;\
   }\
 }
+*/
+
+
+/*MAB: modified */
+#define send_bits(s, value, length) \
+{ int len = length;\
+  if (s->bi_valid > (int)Buf_size - len) {\
+    int val = value;\
+    s->bi_buf = (ush)(s->bi_buf | (val << s->bi_valid));/*MAB: Cast to silence compiler, see [1] above */\
+    put_short(s, s->bi_buf);\
+    s->bi_buf =  (ush) ((ush)val >> (Buf_size - s->bi_valid));/*MAB: Cast to silence compiler */\
+    s->bi_valid += len - Buf_size;\
+  } else {\
+    s->bi_buf = (ush) (s->bi_buf | ((value) << s->bi_valid));/*MAB: Cast to silence compiler, see [2] above */\
+    s->bi_valid += len;\
+  }\
+}
+
 #endif /* DEBUG */
+
+/*MAB:
+
+FUNCTION USED TO TEST THE CHANGES ABOVE
+
+[1] original: 
+    s->bi_buf |= (ush)(val << s->bi_valid);\
+
+[2] original:
+    s->bi_buf |= (ush) ((value) << s->bi_valid);\
+*/
+
+#if 0
+static void send_bits(deflate_state *s, int value, int length)
+{ int len = length;\
+  if (s->bi_valid > (int)Buf_size - len) {\
+    int val = value;\
+    s->bi_buf = (ush)(s->bi_buf | (val << s->bi_valid));/*MAB: Cast to silence compiler, see [1] above */\
+    put_short(s, s->bi_buf);\
+    s->bi_buf =  (ush) ((ush)val >> (Buf_size - s->bi_valid));/*MAB: Cast to silence compiler */\
+    s->bi_valid += len - Buf_size;\
+  } else {\
+    s->bi_buf = (ush) (s->bi_buf | ((value) << s->bi_valid));/*MAB: Cast to silence compiler, see [2] above */\
+    s->bi_valid += len;\
+  }\
+}
+#endif
 
 
 /* the arguments must not have side effects */
@@ -586,7 +633,7 @@ local void gen_codes (ct_data *tree, int max_code, ushf *bl_count)
      * without bit reversal.
      */
     for (bits = 1; bits <= MAX_BITS; bits++) {
-        next_code[bits] = code = (code + bl_count[bits-1]) << 1;
+        next_code[bits] = code = (ush) ((code + bl_count[bits-1]) << 1); /*MAB: Casting to silence compiler */
     }
     /* Check that the bit counts in bl_count are consistent. The last code
      * must be all ones.
@@ -599,7 +646,7 @@ local void gen_codes (ct_data *tree, int max_code, ushf *bl_count)
         int len = tree[n].Len;
         if (len == 0) continue;
         /* Now reverse the bits */
-        tree[n].Code = bi_reverse(next_code[len]++, len);
+        tree[n].Code = (ush) bi_reverse(next_code[len]++, len); /*MAB: Casting to silence compiler */
 
         Tracecv(tree != static_ltree, (stderr,"\nn %3d %c l %2d c %4x (%x) ",
              n, (isgraph(n) ? n : ' '), len, tree[n].Code, next_code[len]-1));
@@ -671,7 +718,7 @@ local void build_tree(deflate_state *s, tree_desc *desc)
         s->heap[--(s->heap_max)] = m;
 
         /* Create a new node father of n and m */
-        tree[node].Freq = tree[n].Freq + tree[m].Freq;
+        tree[node].Freq = (ush) (tree[n].Freq + tree[m].Freq); /*MAB: Casting to silence compiler */
         s->depth[node] = (uch)((s->depth[n] >= s->depth[m] ?
                                 s->depth[n] : s->depth[m]) + 1);
         tree[n].Dad = tree[m].Dad = (ush)node;
@@ -723,7 +770,13 @@ local void scan_tree (deflate_state *s, ct_data *tree, int max_code)
         if (++count < max_count && curlen == nextlen) {
             continue;
         } else if (count < min_count) {
-            s->bl_tree[curlen].Freq += count;
+		#if 0
+            s->bl_tree[curlen].Freq += count; 
+		#else	
+			/*MAB: This modification and casting to silence compiler */
+            s->bl_tree[curlen].Freq = (ush) (s->bl_tree[curlen].Freq + count); 
+		#endif
+
         } else if (curlen != 0) {
             if (curlen != prevlen) s->bl_tree[curlen].Freq++;
             s->bl_tree[REP_3_6].Freq++;
