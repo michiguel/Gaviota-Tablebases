@@ -4,7 +4,8 @@ $target   = 'tbprobe'
 $sources  = 'sources.txt'
 
 $switches_gcc = '-D NDEBUG -lpthread -lm -Wall -Wextra -O2 '
-$switches_icc = '-D NDEBUG -lpthread -Wall -wd981,593,2259 -O2 '
+$switches_icc = '-D NDEBUG -lpthread -Wall -wd981,593 -O2 '
+#warning for intel: 2259
 
 $include = []
 $include << 'sysport/'

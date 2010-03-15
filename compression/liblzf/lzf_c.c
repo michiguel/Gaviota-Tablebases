@@ -151,11 +151,13 @@ lzf_compress (const void *const in_data, unsigned int in_len,
       hslot = htab + IDX (hval);
       ref = *hslot; *hslot = ip;
 
-      if (1
+      if (
+/*MAB: Remove 1, it was a constant, to silence compiler */
 #if INIT_HTAB
-          && ref < ip /* the next test will actually take care of this, but this is faster */
+             ref < ip /* the next test will actually take care of this, but this is faster */
+		  &&	
 #endif
-          && (off = ip - ref - 1) < MAX_OFF
+             (off = ip - ref - 1) < MAX_OFF
           && ip + 4 < in_end
           && ref > (u8 *)in_data
 #if STRICT_ALIGN
@@ -177,7 +179,7 @@ lzf_compress (const void *const in_data, unsigned int in_len,
             if (op - !lit + 3 + 1 >= out_end) /* second the exact but rare test */
               return 0;
 
-          op [- lit - 1] = lit - 1; /* stop run */
+          op [- lit - 1] = (u8) (lit - 1); /* stop run */ /*MAB: Casting to u8 to silence compiler */
           op -= !lit; /* undo run if length is zero */
 
           for (;;)
@@ -217,15 +219,15 @@ lzf_compress (const void *const in_data, unsigned int in_len,
 
           if (len < 7)
             {
-              *op++ = (off >> 8) + (len << 5);
+              *op++ = (u8) ((off >> 8) + (len << 5)); /*MAB: Casting to u8 to silence compiler */
             }
           else
             {
-              *op++ = (off >> 8) + (  7 << 5);
-              *op++ = len - 7;
+              *op++ = (u8) ((off >> 8) + (  7 << 5)); /*MAB: Casting to u8 to silence compiler */
+              *op++ = (u8) (len - 7); /*MAB: Casting to u8 to silence compiler */
             }
 
-          *op++ = off;
+          *op++ = (u8) off; /*MAB: Casting to u8 to silence compiler */
           lit = 0; op++; /* start run */
 
           ip += len + 1;
@@ -271,7 +273,7 @@ lzf_compress (const void *const in_data, unsigned int in_len,
 
           if (expect_false (lit == MAX_LIT))
             {
-              op [- lit - 1] = lit - 1; /* stop run */
+              op [- lit - 1] = (u8) (lit - 1); /* stop run */ /*MAB: Casting to u8 to silence compiler */
               lit = 0; op++; /* start run */
             }
         }
@@ -286,12 +288,12 @@ lzf_compress (const void *const in_data, unsigned int in_len,
 
       if (expect_false (lit == MAX_LIT))
         {
-          op [- lit - 1] = lit - 1; /* stop run */
+          op [- lit - 1] = (u8) (lit - 1); /* stop run */ /*MAB: Casting to u8 to silence compiler */
           lit = 0; op++; /* start run */
         }
     }
 
-  op [- lit - 1] = lit - 1; /* end run */
+  op [- lit - 1] = (u8) (lit - 1); /* end run */ /*MAB: Casting to u8 to silence compiler */
   op -= !lit; /* undo run if length is zero */
 
   return op - (u8 *)out_data;
