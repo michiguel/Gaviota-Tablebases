@@ -220,10 +220,10 @@ huff_encode
 	bool_t ok;
 	size_t hlen = 0;
 	TB_hzip_unused = out_max;
-	out_start[0] = (in_len      ) & 0xffu;
-	out_start[1] = (in_len >>  8) & 0xffu;
-	out_start[2] = (in_len >> 16) & 0xffu;
-	out_start[3] = (in_len >> 24) & 0xffu;
+	out_start[0] = (unsigned char) ((in_len      ) & 0xffu);
+	out_start[1] = (unsigned char) ((in_len >>  8) & 0xffu);
+	out_start[2] = (unsigned char) ((in_len >> 16) & 0xffu);
+	out_start[3] = (unsigned char) ((in_len >> 24) & 0xffu);
 	ok = huffman_encode (in_len, in_start, &hlen, out_start+4);
 	*pout_len = hlen + 4;
 	return ok;

@@ -57,6 +57,14 @@ Copyright (c) 2010 Miguel A. Ballicora
 #include "bzlib.h"
 #endif
 
+#if !defined(NDEBUG)
+#define NDEBUG
+#endif
+#ifdef DEBUG
+#undef NDEBUG
+#endif
+#include "assert.h"
+
 /* external, so the compiler can be silenced */
 size_t TB_DUMMY_unused;
 
@@ -245,8 +253,9 @@ rle_encode
 				}
 
 				*out++ = RLE_ESC;
-				*out++ = p - in;
-				*out++ = ch;
+				assert (RLE_MAX < 256);
+				*out++ = (unsigned char)(p - in);
+				*out++ = (unsigned char)ch;
 				in = p;
 
 			} else {	
@@ -294,7 +303,7 @@ rle_decode
 				n  = *in++; 		if (in >= in_end) { ok = FALSE;	break;}
 				ch = *in++;			
 				while (n-->0) {		if (out >= out_end) { ok = FALSE; break;}
-					*out++ = ch;	
+					*out++ = (unsigned char)ch;	
 				}
 			}
 		} else {
