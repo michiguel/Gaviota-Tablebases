@@ -2379,7 +2379,7 @@ extern void	tbstats_reset (void)
 }
 
 
-extern gtb_block_t	*
+static gtb_block_t	*
 tbcache_pointblock (int key, int side, index_t idx)
 {
 	index_t 		offset;
