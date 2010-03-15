@@ -3,14 +3,13 @@ require 'date'
 $target   = 'tbprobe'
 $sources  = 'sources.txt'
 
-$switches_gcc = '-D NDEBUG -lpthread -lm -Wall -Wextra -O2 '
-$switches_icc = '-D NDEBUG -lpthread -Wall -wd981,593 -O2 '
+$switches_gcc = '-lpthread -lm -Wall -Wextra -O2 '
+$switches_icc = '-lpthread -Wall -wd981,593 -O2 '
 #warning for intel: 2259
 
 $include = []
 $include << 'sysport/'
 $include << 'compression/'
-#$include << 'compression/bzip2-1.0.5/'
 $include << 'compression/liblzf/'
 $include << 'compression/zlib/'
 $include << 'compression/lzma/'
@@ -18,15 +17,14 @@ $include << 'compression/huffman/'
 
 $dswitches = []
 $dswitches << 'Z_PREFIX'
-#$dswitches << 'GCCLINUX'
-
+$dswitches << 'NDEBUG'
 
 $profile_data_folder = '/media/bigdisk/profdata/'
 $benchfile = 'pgo-medium.txt'
 
 $sync_line = ''
 
-$windows_destiny	= '/home/miguel/Desktop/gaviota-windows'
+$windows_destiny	= '/home/miguel/Desktop/tbprobe-windows'
 $version_sensitive = 'main.o'
 #------------------------------------------------------------------------------------
 $errors_comp = 'errors_comp.txt'
