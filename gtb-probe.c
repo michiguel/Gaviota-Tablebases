@@ -1500,8 +1500,10 @@ tb_probe_	(unsigned int stm,
 	return okdtm && okcall;
 } 
 
+#ifdef _MSC_VER
 /* to silence warning for sprintf usage */
 #pragma warning(disable:4996)
+#endif
 
 static bool_t
 egtb_filepeek (int key, int side, index_t idx, dtm_t *out_dtm)
@@ -1800,8 +1802,10 @@ fd_openit (int key)
 	return finp;
 }
 
+#ifdef _MSC_VER
 /* to silence warning for sprintf usage */
 #pragma warning(default:4996)
+#endif
 
 mySHARED void
 sortlists (SQUARE *ws, SQ_CONTENT *wp)
