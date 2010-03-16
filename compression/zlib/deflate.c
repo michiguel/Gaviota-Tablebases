@@ -1102,15 +1102,15 @@ local uInt longest_match(deflate_state *s, IPos cur_match)
 #else
 		/*MAB: to silence compiler warning, intel 981*/
 		do {
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
 
 			++scan; ++match; if (*scan != *match) break;
 			++scan; ++match; if (*scan != *match) break;
 			++scan; ++match; if (*scan != *match) break;
 			++scan; ++match; if (*scan != *match) break;
-			++scan; ++match; if (*scan != *match) break;
-			++scan; ++match; if (*scan != *match) break;
-			++scan; ++match; if (*scan != *match) break;
-
 		} while (scan < strend);
 #endif
 
@@ -1191,15 +1191,15 @@ local uInt longest_match_fast(deflate_state *s, IPos cur_match)
 #else
 		/*MAB: to silence compiler warning, intel 981*/
 		do {
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
 
 			++scan; ++match; if (*scan != *match) break;
 			++scan; ++match; if (*scan != *match) break;
 			++scan; ++match; if (*scan != *match) break;
 			++scan; ++match; if (*scan != *match) break;
-			++scan; ++match; if (*scan != *match) break;
-			++scan; ++match; if (*scan != *match) break;
-			++scan; ++match; if (*scan != *match) break;
-
 		} while (scan < strend);
 #endif
 
