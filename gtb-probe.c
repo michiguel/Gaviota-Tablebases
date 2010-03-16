@@ -1500,10 +1500,8 @@ tb_probe_	(unsigned int stm,
 	return okdtm && okcall;
 } 
 
-/* to silence warning about sprintf in windows */
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
+/* to silence warning for sprintf usage */
+#pragma warning(disable:4996)
 
 static bool_t
 egtb_filepeek (int key, int side, index_t idx, dtm_t *out_dtm)
@@ -1802,9 +1800,8 @@ fd_openit (int key)
 	return finp;
 }
 
-#ifdef _CRT_SECURE_NO_WARNINGS
-#undef _CRT_SECURE_NO_WARNINGS
-#endif
+/* to silence warning for sprintf usage */
+#pragma warning(default:4996)
 
 mySHARED void
 sortlists (SQUARE *ws, SQ_CONTENT *wp)
@@ -2195,7 +2192,7 @@ struct cache_table {
 	uint64_t		hardmisses;
 	uint64_t		hits;
 	uint64_t		softmisses;
-	uint64_t 		comparisons;
+	unsigned long	comparisons;
 };
 
 struct cache_table 	cachetab = {FALSE,0,0,NULL,
