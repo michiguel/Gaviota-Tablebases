@@ -1091,12 +1091,28 @@ local uInt longest_match(deflate_state *s, IPos cur_match)
         /* We check for insufficient lookahead only every 8th comparison;
          * the 256th check will be made at strstart+258.
          */
+#if 0
+
         do {
         } while (*++scan == *++match && *++scan == *++match &&
                  *++scan == *++match && *++scan == *++match &&
                  *++scan == *++match && *++scan == *++match &&
                  *++scan == *++match && *++scan == *++match &&
                  scan < strend);
+#else
+		/*MAB: to silence compiler warning, intel 981*/
+		do {
+
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
+
+		} while (scan < strend);
+#endif
 
         Assert(scan <= s->window+(unsigned)(s->window_size-1), "wild scan");
 
@@ -1164,12 +1180,29 @@ local uInt longest_match_fast(deflate_state *s, IPos cur_match)
     /* We check for insufficient lookahead only every 8th comparison;
      * the 256th check will be made at strstart+258.
      */
+#if 0
     do {
     } while (*++scan == *++match && *++scan == *++match &&
              *++scan == *++match && *++scan == *++match &&
              *++scan == *++match && *++scan == *++match &&
              *++scan == *++match && *++scan == *++match &&
              scan < strend);
+
+#else
+		/*MAB: to silence compiler warning, intel 981*/
+		do {
+
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
+			++scan; ++match; if (*scan != *match) break;
+
+		} while (scan < strend);
+#endif
+
 
     Assert(scan <= s->window+(unsigned)(s->window_size-1), "wild scan");
 
