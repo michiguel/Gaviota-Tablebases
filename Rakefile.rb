@@ -5,8 +5,7 @@ $sources  = 'sources.txt'
 
 $switches_gcc = '-lpthread -lm -Wall -Wextra -O2 '
 $switches_icc = '-lpthread -Wall -O2 '
-#-wd981,593
-#warning for intel: 2259
+#-wd981,593,2259
 
 $include = []
 $include << 'sysport/'

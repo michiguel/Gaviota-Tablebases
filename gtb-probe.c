@@ -1500,7 +1500,10 @@ tb_probe_	(unsigned int stm,
 	return okdtm && okcall;
 } 
 
-
+/* to silence warning about sprintf in windows */
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 
 static bool_t
 egtb_filepeek (int key, int side, index_t idx, dtm_t *out_dtm)
@@ -1799,6 +1802,9 @@ fd_openit (int key)
 	return finp;
 }
 
+#ifdef _CRT_SECURE_NO_WARNINGS
+#undef _CRT_SECURE_NO_WARNINGS
+#endif
 
 mySHARED void
 sortlists (SQUARE *ws, SQ_CONTENT *wp)
