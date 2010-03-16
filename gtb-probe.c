@@ -116,19 +116,14 @@ struct endgamekey {
 	int 		status;
 	int			pathn; 
 };
-
-/*
-static struct 	endgamekey egkey[];
-static int 		bettarr [2] [8] [8];
-*/
-
 #endif
 
 /*----------------------------------------------------------------------------------------------------------*/
 
 /* array for better moves */
+#ifdef GTB_SHARE
 mySHARED int		bettarr [2] [8] [8];
-
+#endif
 
 /*------------ ENUMS ----------------------------------------------------------*/
 
@@ -938,7 +933,9 @@ path_system_done (void)
  *
  ****************************************************************************/
 
+#ifdef GTB_SHARE
 static void 	init_bettarr (void);
+#endif
 
 static void	eg_was_open_reset(void)
 {
@@ -983,7 +980,11 @@ tb_init (int verbosity, int decoding_scheme, char **paths)
 	attack_maps_init (); /* external initialization */
 
 	init_indexing(0 /* no verbosity */);	
+
+	#ifdef GTB_SHARE
 	init_bettarr();
+	#endif
+
 	if (!fd_init (&fd) && verbosity) {
 		printf ("  File Open Memory initialization = **FAILED**\n");
 		return;
@@ -1086,6 +1087,7 @@ RAM_egtbfree (void)
 
 /*--------------------------------------------------------------------------*/
 
+#ifdef GTB_SHARE
 static void
 init_bettarr (void)
 {
@@ -1145,6 +1147,7 @@ init_bettarr (void)
 
 	return;
 }
+#endif
 
 /*
 |
