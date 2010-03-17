@@ -232,6 +232,11 @@ local void fixedtables(struct inflate_state *state)
    inflateBack() can also return Z_STREAM_ERROR if the input parameters
    are not correct, i.e. strm is Z_NULL or the state was not initialized.
  */
+
+#ifdef _MSC_VER
+#pragma warning(disable:4127)
+#endif
+
 int ZEXPORT inflateBack(z_streamp strm, in_func in, void *in_desc, out_func out, void *out_desc)
 {
     struct inflate_state FAR *state;
@@ -599,6 +604,10 @@ int ZEXPORT inflateBack(z_streamp strm, in_func in, void *in_desc, out_func out,
     strm->avail_in = have;
     return ret;
 }
+
+#ifdef _MSC_VER
+#pragma warning(default:4127)
+#endif
 
 int ZEXPORT inflateBackEnd(z_streamp strm)
 {
