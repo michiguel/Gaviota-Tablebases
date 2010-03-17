@@ -59,7 +59,7 @@ int main (int argc, char *argv[])
 
 	int verbosity = 0;		/* initialization 0 = non-verbose, 1 = verbose */
 	int	scheme = tb_CP4;	/* compression scheme to be used */
-	char ** paths;			/* paths where files will be searched */
+	const char ** paths;	/* paths where files will be searched */
 	size_t cache_size = 32*1024*1024; /* 32 MiB in this example */
 
 
