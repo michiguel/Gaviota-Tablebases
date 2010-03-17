@@ -87,9 +87,9 @@ enum TB_compression_scheme {
 |         	FUNCTIONS
 \*----------------------------------*/
 
-extern void			tb_init   (int verbosity, int compression_scheme, char **paths);
+extern void			tb_init   (int verbosity, int compression_scheme, const char **paths);
 
-extern void			tb_restart(int verbosity, int compression_scheme, char **paths);
+extern void			tb_restart(int verbosity, int compression_scheme, const char **paths);
 
 extern void			tb_done (void);
 
@@ -154,7 +154,7 @@ extern void			tbcache_flush (void);
 For maximum portability, some stats are provided
 in two 32 bits integers rather than a single 64 bit
 number. For intance, prob_hard_hits[0] contains only the
-less significant 32 bits (bit 0 to 31), and prob_hard_hitsp[1] the
+less significant 32 bits (bit 0 to 31), and prob_hard_hits[1] the
 most significant ones (32 to 63). The number can be recreated
 like this
 uint64_t x = (uint64_t)probe_hard_hits[0] | ((uint64_t)probe_hard_hits[1] << 32);
@@ -163,29 +163,38 @@ proper 64 bit integers.
 */
 
 struct TB_STATS {
-	long unsigned int probe_hard_hits[2];
-	long unsigned int probe_hard_miss[2];
-	long unsigned int probe_soft_hits[2];
-	long unsigned int probe_soft_miss[2];
-	long unsigned int bytes_read[2];
-	long unsigned int files_opened;
-	long unsigned int blocks_occupied;
-	long unsigned int blocks_max;	
-	long unsigned int comparisons;
+	long unsigned int wdl_easy_hits  [2]; /* hits that were found in own wdl cache */
+	long unsigned int wdl_hard_prob  [2]; /* hard probes to the wdl cache: if fail, they will go to HD */
+	long unsigned int wdl_soft_prob  [2]; /* soft probes to the wdl cache: if fail, they won't go to HD */	
+	double			  wdl_occupancy     ; /* % of slots filled in wdl cache */
+
+	long unsigned int dtm_easy_hits  [2]; /* hits that were found in own dtm cache */
+	long unsigned int dtm_hard_prob  [2]; /* hard probes to the dtm cache: if fail, they will go to HD */
+	long unsigned int dtm_soft_prob  [2]; /* soft probes to the dtm cache: if fail, they won't go to HD */	
+	double			  dtm_occupancy     ; /* % of slots filled in dtm cache */
+
+	long unsigned int  total_hits    [2]; /* succesful probes */
+	long unsigned int memory_hits    [2]; /* succesful probes to memory */
+	long unsigned int  drive_hits    [2]; /* succesful probes to the Hard drive */
+	long unsigned int  drive_miss    [2]; /* failing   probes to the Hard drive */
+	long unsigned int  bytes_read    [2]; /* bytes read from Hard drive */
+	long unsigned int files_opened      ; /* number of files newly opened */
+	double			  memory_efficiency ; /* % hits from memory over total hits */
 };
 
 extern void			tbstats_reset (void);
 extern void 		tbstats_get (struct TB_STATS *stats);
 
+
 /*----------------------------------*\
 |         	PATH MANAGEMENT
 \*----------------------------------*/
 
-extern char ** 		tbpaths_init(void);
-extern char ** 		tbpaths_add(char **ps, char *newpath);
-extern char ** 		tbpaths_done(char **ps);
+extern const char ** 		tbpaths_init	(void);
+extern const char ** 		tbpaths_add		(const char **ps, const char *newpath);
+extern const char ** 		tbpaths_done	(const char **ps);
 
-extern const char *	tbpaths_getmain (void);
+extern const char *			tbpaths_getmain (void);
 
 /*<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
 #ifdef __cplusplus
