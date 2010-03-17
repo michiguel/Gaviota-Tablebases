@@ -3095,6 +3095,10 @@ init_indexing (int verbosity)
 
 	/* testing used only in development stage */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4127)
+#endif
+
 	if (0) {
 		list_index ();
 		printf ("\nTEST indexing functions\n");
@@ -3119,6 +3123,11 @@ init_indexing (int verbosity)
 	 	test_kppkp ();
 	 	test_kpppk ();
 	}	
+
+#ifdef _MSC_VER
+#pragma warning(default:4127)
+#endif
+
 	return;
 }
 
@@ -3224,8 +3233,8 @@ init_ppidx (void)
 	}
 		
 	for (idx = 0; idx < MAX_PPINDEX; idx++) {
-		pp_hi24 [idx] = NOINDEX;	
-		pp_lo48 [idx] =	NOINDEX;			
+		pp_hi24 [idx] = (unsigned int) NOINDEX;	
+		pp_lo48 [idx] =	(unsigned int) NOINDEX;			
 	}		
 		
 	idx = 0;
@@ -4358,9 +4367,9 @@ init_aaa (void)
 
 	/* initialize aaa_xyz [][] */
 	for (index = 0; index < MAX_AAAINDEX; index++) {
-		aaa_xyz[index][0] = NOINDEX;
-		aaa_xyz[index][1] = NOINDEX;				
-		aaa_xyz[index][2] = NOINDEX;
+		aaa_xyz[index][0] = (sq_t) NOINDEX;
+		aaa_xyz[index][1] = (sq_t) NOINDEX;				
+		aaa_xyz[index][2] = (sq_t) NOINDEX;
 
 	}
 
