@@ -1262,8 +1262,15 @@ local void fill_window(deflate_state *s)
     do {
         more = (unsigned)(s->window_size -(ulg)s->lookahead -(ulg)s->strstart);
 
+#ifdef _MSC_VER
+#pragma warning(disable:4127)
+#endif
         /* Deal with !@#$% 64K limit: */
         if (sizeof(int) <= 2) {
+
+#ifdef _MSC_VER
+#pragma warning(default:4127)
+#endif
             if (more == 0 && s->strstart == 0 && s->lookahead == 0) {
                 more = wsize;
 

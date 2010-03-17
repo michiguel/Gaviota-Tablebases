@@ -537,6 +537,11 @@ local int updatewindow(z_streamp strm, unsigned int out)
    will return Z_BUF_ERROR if it has not reached the end of the stream.
  */
 
+
+#ifdef _MSC_VER
+#pragma warning(disable:4127)
+#endif
+
 int ZEXPORT inflate(z_streamp strm, int flush)
 {
     struct inflate_state FAR *state;
@@ -1135,6 +1140,10 @@ int ZEXPORT inflate(z_streamp strm, int flush)
         ret = Z_BUF_ERROR;
     return ret;
 }
+
+#ifdef _MSC_VER
+#pragma warning(default:4127)
+#endif
 
 int ZEXPORT inflateEnd(z_streamp strm)
 {

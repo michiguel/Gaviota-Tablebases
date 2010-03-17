@@ -226,7 +226,17 @@ unsigned long ZEXPORT crc32(long unsigned int crc, const unsigned char *buf, uns
 #endif /* DYNAMIC_CRC_TABLE */
 
 #ifdef BYFOUR
+
+
+#ifdef _MSC_VER
+#pragma warning(disable:4127)
+#endif
+
     if (sizeof(void *) == sizeof(ptrdiff_t)) {
+
+#ifdef _MSC_VER
+#pragma warning(default:4127)
+#endif
         u4 endian;
 
         endian = 1;
