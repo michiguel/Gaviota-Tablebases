@@ -903,7 +903,7 @@ path_system_init (const char **path)
 	sz = i; /* sz includes the NULL */
 
 
-	Gtbpath = (char **) malloc (sz * sizeof(char *));
+	Gtbpath = (const char **) malloc (sz * sizeof(char *));
 
 	if (Gtbpath) {
 		
@@ -7664,13 +7664,13 @@ dtm_block_2_wdl_block(gtb_block_t *g, wdl_block_t *w, size_t n)
 		y |= (x << shifting);		
 		
 		if (j == 3) {
-			d[i/WDL_entries_per_unit] = y;
+			d[i/WDL_entries_per_unit] = (unit_t) y;
 			y = 0;
 		}
 	}
 
 	if (0 != (n & 3)) { /* not multiple of 4 */
-		d[(n-1)/WDL_entries_per_unit] = y; /* save the rest     */
+		d[(n-1)/WDL_entries_per_unit] = (unit_t) y; /* save the rest     */
 		y = 0;
 	}
 
@@ -7710,12 +7710,12 @@ tb_probe_wdl
 	SQUARE     *bs = storage_bs;
 	SQ_CONTENT *wp = storage_wp;
 	SQ_CONTENT *bp = storage_bp;
-
+/*
 	SQUARE     *xs;
 	SQUARE     *ys;
 	SQ_CONTENT *xp;
 	SQ_CONTENT *yp;
-
+*/
 	SQUARE 		tmp_ws [MAX_LISTSIZE], tmp_bs [MAX_LISTSIZE];
 	SQ_CONTENT  tmp_wp [MAX_LISTSIZE], tmp_bp [MAX_LISTSIZE];
 
@@ -7780,6 +7780,7 @@ tb_probe_wdl
 	list_sq_copy (bs, tmp_bs);
 
 	/* x will be stm and y will be stw */
+/*
 	if (stm == WH) {
         xs = ws;
         xp = wp;
@@ -7791,7 +7792,7 @@ tb_probe_wdl
         ys = ws;
         yp = wp;
 	}
-
+*/
 	okcall = egtb_get_wdl (id, stm, ws, bs, probingtype, &wdl);
 
 	FOLLOW_LU("dtmok?",okcall)
