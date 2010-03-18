@@ -316,6 +316,9 @@ static struct filesopen 	fd = {0, NULL};
 static bool_t 	TB_INITIALIZED = FALSE;
 static bool_t	TBCACHE_INITIALIZED = FALSE;
 
+static int		WDL_FRACTION = 64;
+static int		WDL_FRACTION_MAX = 128;
+
 /* LOCKS */
 static mythread_mutex_t	Egtb_lock;
 
@@ -2550,11 +2553,13 @@ tbstats_get (struct TB_STATS *x)
 #endif
 
 extern bool_t
-tbcache_init (size_t cache_mem)
+tbcache_init (size_t cache_mem, int wdl_fraction)
 {
+	wdl_fraction = 96;
+	WDL_FRACTION = wdl_fraction;
 	#ifdef WDL_PROBE
-	dtm_cache_init (1*cache_mem/4);
-	wdl_cache_init (3*cache_mem/4);
+	dtm_cache_init ((cache_mem/WDL_FRACTION_MAX)*WDL_FRACTION);
+	wdl_cache_init ((cache_mem/WDL_FRACTION_MAX)*WDL_FRACTION);
 	#else
 	dtm_cache_init (cache_mem);
 	#endif
