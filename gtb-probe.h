@@ -141,7 +141,7 @@ extern int /*bool*/	tb_is_initialized (void);
 |         	cache
 \*----------------------------------*/
 
-extern int /*bool*/	tbcache_init (size_t cache_mem);
+extern int /*bool*/	tbcache_init (size_t cache_mem, int wdl_fraction);
 extern void			tbcache_done (void);
 extern int /*bool*/	tbcache_is_on (void);
 extern void			tbcache_flush (void);
