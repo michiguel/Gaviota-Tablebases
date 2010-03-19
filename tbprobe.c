@@ -88,7 +88,7 @@ int main (int argc, char *argv[])
 
 	tb_init (verbosity, scheme, paths);
 
-	tbcache_init(cache_size);
+	tbcache_init(cache_size,96); /*96 is the fraction, over 128, that will be dedicated to wdl information */
 
 	tbstats_reset();
 
