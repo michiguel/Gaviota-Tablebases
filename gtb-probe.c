@@ -624,6 +624,7 @@ mySHARED bool_t		get_dtm (int key, int side, index_t idx, dtm_t *out, bool_t pro
 
 static bool_t	 	get_dtm_from_cache (int key, int side, index_t idx, dtm_t *out);
 
+
 /*--------------------------------*\
 |
 |
@@ -1613,7 +1614,8 @@ egtb_filepeek (int key, int side, index_t idx, dtm_t *out_dtm)
 	return ok;
 }
 
-
+/* will get defined later */
+static bool_t			dtm_cache_is_on (void);
 
 static bool_t
 egtb_get_dtm (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard_flag, dtm_t *dtm)
@@ -1658,7 +1660,7 @@ egtb_get_dtm (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t pr
 			*-------------------------------*/
 			mythread_mutex_lock (&Egtb_lock);	
 
-			if (tbcache_is_on()) {
+			if (dtm_cache_is_on()) {
 
 				success = get_dtm       (k, stm, index, dtm, probe_hard_flag);
 
@@ -2304,8 +2306,45 @@ static gtb_block_t *point_block_to_replace (void);
 static bool_t 		preload_cache (int key, int side, index_t idx);
 static void			movetotop (gtb_block_t *t);
 
+/*--cache prototypes--------------------------------------------------------*/
+
+/*- WDL --------------------------------------------------------------------*/
+#ifdef WDL_PROBE
+static unsigned int		wdl_extract (unit_t *uarr, unsigned int x);
+static wdl_block_t *	wdl_point_block_to_replace (void);
+static void				wdl_movetotop (wdl_block_t *t);
+
+#if 0
+static bool_t			wdl_cache_init (size_t cache_mem);
+static void				wdl_cache_flush (void);
+static bool_t			get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag);
+#endif
+
+static bool_t			wdl_cache_is_on (void);
+static void				wdl_cache_reset_counters (void);
+static void				wdl_cache_done (void);
+
+static wdl_block_t *	wdl_point_block_to_replace (void);
+static bool_t			get_WDL_from_cache (int key, int side, index_t idx, unsigned int *out);
+static unsigned int		wdl_extract (unit_t *uarr, unsigned int x);
+static void				wdl_movetotop (wdl_block_t *t);
+static bool_t			wdl_preload_cache (int key, int side, index_t idx);
+#endif
+/*--------------------------------------------------------------------------*/
+/*- DTM --------------------------------------------------------------------*/
+static bool_t			dtm_cache_is_on (void);
+static void				dtm_cache_reset_counters (void);
+static void				dtm_cache_done (void);
+
+static bool_t			dtm_cache_init (size_t cache_mem);
+static void				dtm_cache_flush (void);
 /*--------------------------------------------------------------------------*/
 
+static bool_t
+dtm_cache_is_on (void)
+{
+	return dtm_cache.cached;
+}
 
 static void
 dtm_cache_reset_counters (void)
@@ -2430,13 +2469,14 @@ dtm_cache_flush (void)
 }
 
 
-/*---- end dtm_cache zone ----------------------------------------------------------------------*/
+/*---- end tbcache zone ----------------------------------------------------------------------*/
 
 extern bool_t
 tbcache_is_on (void)
 {
-	return dtm_cache.cached;
+	return dtm_cache_is_on() || wdl_cache_is_on();
 }
+
 
 /* STATISTICS OUTPUT */
 #if 0
@@ -7154,7 +7194,7 @@ list_index (void)
 
 /**************************************************************************************************************
 
- NEW_DWL
+ NEW_WDL
 
 **************************************************************************************************************/
 
