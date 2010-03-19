@@ -2326,7 +2326,7 @@ dtm_cache_init (size_t cache_mem)
 	gtb_block_t 	*p;
 	size_t 			entries_per_block;
 	size_t 			max_blocks;
-	size_t block_mem = 32 * 1024; /* 32k fixed, needed for the compression schemes */
+	size_t 			block_mem = 32 * 1024; /* 32k fixed, needed for the compression schemes */
 
 	if (TBCACHE_INITIALIZED)
 		tbcache_done();
@@ -2564,7 +2564,14 @@ extern bool_t
 tbcache_init (size_t cache_mem, int wdl_fraction)
 {
 	wdl_fraction = 96;
+
+	assert (wdl_fraction <= WDL_FRACTION_MAX && wdl_fraction >= 0);
+
+	/* defensive against input */
+	if (wdl_fraction > WDL_FRACTION_MAX) wdl_fraction = WDL_FRACTION_MAX;
+	if (wdl_fraction <                0) wdl_fraction = 0;
 	WDL_FRACTION = wdl_fraction;
+
 	#ifdef WDL_PROBE
 	dtm_cache_init ((cache_mem/WDL_FRACTION_MAX)*WDL_FRACTION);
 	wdl_cache_init ((cache_mem/WDL_FRACTION_MAX)*WDL_FRACTION);
