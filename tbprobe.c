@@ -88,7 +88,12 @@ int main (int argc, char *argv[])
 
 	tb_init (verbosity, scheme, paths);
 
-	tbcache_init(cache_size,96); /*96 is the fraction, over 128, that will be dedicated to wdl information */
+	/* 	initialize tb cache. 96 is the fraction, over 128, that will be 
+		dedicated to wdl information. In other words, 3/4 of the cache
+		will be dedicated to win-draw-loss info, and 1/4 dedicated to
+		distance to mate information. 
+	*/
+	tbcache_init(cache_size, 96); 
 
 	tbstats_reset();
 
