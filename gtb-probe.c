@@ -308,7 +308,7 @@ struct filesopen {
 static struct filesopen 	fd = {0, NULL};
 
 static bool_t 	TB_INITIALIZED = FALSE;
-static bool_t	TBCACHE_INITIALIZED = FALSE;
+static bool_t	DTM_CACHE_INITIALIZED = FALSE;
 
 static int		WDL_FRACTION = 64;
 static int		WDL_FRACTION_MAX = 128;
@@ -2253,17 +2253,17 @@ struct WDL_CACHE 	wdl_cache = {FALSE,0,0,NULL,
 |			DTM CACHE Implementation  ZONE
 \*---------------------------------------------------------------------*/
 
-struct gtb_bock;
+struct dtm_block;
 
-typedef struct gtb_block gtb_block_t;
+typedef struct dtm_block dtm_block_t;
 
-struct gtb_block {
+struct dtm_block {
 	int 			key;
 	int				side;
 	index_t 		offset;
 	dtm_t			*p_arr;
-	gtb_block_t		*prev;
-	gtb_block_t		*next;
+	dtm_block_t		*prev;
+	dtm_block_t		*next;
 };
 
 struct cache_table {
@@ -2274,10 +2274,10 @@ struct cache_table {
 	dtm_t *			buffer;
 
 	/* flushables */
-	gtb_block_t	*	top;
-	gtb_block_t *	bot;
+	dtm_block_t	*	top;
+	dtm_block_t *	bot;
 	size_t			n;
-	gtb_block_t *	entry;
+	dtm_block_t *	entry;
 
 	/* counters */
 	uint64_t		hard;
@@ -2302,9 +2302,9 @@ static struct general_counters Drive = {0,0};
 
 
 static void 		split_index (size_t entries_per_block, index_t i, index_t *o, index_t *r);
-static gtb_block_t *point_block_to_replace (void);
+static dtm_block_t *point_block_to_replace (void);
 static bool_t 		preload_cache (int key, int side, index_t idx);
-static void			movetotop (gtb_block_t *t);
+static void			movetotop (dtm_block_t *t);
 
 /*--cache prototypes--------------------------------------------------------*/
 
@@ -2358,17 +2358,18 @@ dtm_cache_reset_counters (void)
 	return;
 }
 
+#if 0
 static bool_t
 dtm_cache_init (size_t cache_mem)
 {
 	unsigned int 	i;
-	gtb_block_t 	*p;
+	dtm_block_t 	*p;
 	size_t 			entries_per_block;
 	size_t 			max_blocks;
 	size_t 			block_mem = 32 * 1024; /* 32k fixed, needed for the compression schemes */
 
-	if (TBCACHE_INITIALIZED)
-		tbcache_done();
+	if (DTM_CACHE_INITIALIZED)
+		dtm_cache_done();
 
 	entries_per_block 	= block_mem / sizeof(dtm_t);
 	block_mem 			= entries_per_block * sizeof(dtm_t);
@@ -2389,7 +2390,7 @@ dtm_cache_init (size_t cache_mem)
 		return FALSE;
 	}
 
-	if (NULL == (dtm_cache.entry = (gtb_block_t *) malloc (max_blocks * sizeof(gtb_block_t)))) {
+	if (NULL == (dtm_cache.entry = (dtm_block_t *) malloc (max_blocks * sizeof(dtm_block_t)))) {
 		dtm_cache.cached = FALSE;
 		free (dtm_cache.buffer);
 		return FALSE;
@@ -2405,11 +2406,67 @@ dtm_cache_init (size_t cache_mem)
 		p->next = NULL;
 	}
 
-	TBCACHE_INITIALIZED = TRUE;
+	DTM_CACHE_INITIALIZED = TRUE;
 
 	return TRUE;
 }
+#else
+static bool_t
+dtm_cache_init (size_t cache_mem)
+{
+	unsigned int 	i;
+	dtm_block_t 	*p;
+	size_t 			entries_per_block;
+	size_t 			max_blocks;
+	size_t 			block_mem; 
 
+	if (DTM_CACHE_INITIALIZED)
+		dtm_cache_done();
+
+	entries_per_block 	= 16 * 1024;  /* fixed, needed for the compression schemes */
+
+
+	block_mem 			= entries_per_block * sizeof(dtm_t);
+
+	max_blocks 			= cache_mem / block_mem;
+	cache_mem 			= max_blocks * block_mem;
+
+
+	dtm_cache_reset_counters ();
+
+	dtm_cache.entries_per_block	= entries_per_block;
+	dtm_cache.max_blocks 		= max_blocks;
+	dtm_cache.cached 			= TRUE;
+	dtm_cache.top 				= NULL;
+	dtm_cache.bot 				= NULL;
+	dtm_cache.n 				= 0;
+
+	if (NULL == (dtm_cache.buffer = (dtm_t *)  malloc (cache_mem))) {
+		dtm_cache.cached = FALSE;
+		return FALSE;
+	}
+
+	if (NULL == (dtm_cache.entry  = (dtm_block_t *) malloc (max_blocks * sizeof(dtm_block_t)))) {
+		dtm_cache.cached = FALSE;
+		free (dtm_cache.buffer);
+		return FALSE;
+	}
+	
+	for (i = 0; i < max_blocks; i++) {
+		p = &dtm_cache.entry[i];
+		p->key  = -1;
+		p->side = -1;
+		p->offset = -1;
+		p->p_arr = dtm_cache.buffer + i * entries_per_block;
+		p->prev = NULL;
+		p->next = NULL;
+	}
+
+	DTM_CACHE_INITIALIZED = TRUE;
+
+	return TRUE;
+}
+#endif
 
 static void
 dtm_cache_done (void)
@@ -2438,7 +2495,7 @@ dtm_cache_done (void)
 		free (dtm_cache.entry);
 	dtm_cache.entry = NULL;
 
-	TBCACHE_INITIALIZED = FALSE;
+	DTM_CACHE_INITIALIZED = FALSE;
 
 	return;
 }
@@ -2447,7 +2504,7 @@ static void
 dtm_cache_flush (void)
 {
 	unsigned int 	i;
-	gtb_block_t 	*p;
+	dtm_block_t 	*p;
 	size_t entries_per_block = dtm_cache.entries_per_block;
 	size_t max_blocks = dtm_cache.max_blocks;
 
@@ -2657,15 +2714,13 @@ tbstats_reset (void)
 	return;
 }
 
-static gtb_block_t	*
-
+static dtm_block_t	*
 dtm_cache_pointblock (int key, int side, index_t idx)
-
 {
 	index_t 		offset;
 	index_t			remainder;
-	gtb_block_t	*	p;
-	gtb_block_t	*	ret;
+	dtm_block_t	*	p;
+	dtm_block_t	*	ret;
 
 	if (!TB_cache_on)
 		return FALSE;
@@ -2684,7 +2739,7 @@ dtm_cache_pointblock (int key, int side, index_t idx)
 		}
 	}
 
-	FOLLOW_LU("point_to_gtb_block ok?",(ret!=NULL))
+	FOLLOW_LU("point_to_dtm_block ok?",(ret!=NULL))
 
 	return ret;
 }
@@ -3018,7 +3073,7 @@ static bool_t
 preload_cache (int key, int side, index_t idx)
 /* output to the least used block of the cache */
 {
-	gtb_block_t 	*pblock;
+	dtm_block_t 	*pblock;
 	dtm_t 			*p;
 	bool_t 			ok;
 
@@ -3170,7 +3225,7 @@ get_dtm_from_cache (int key, int side, index_t idx, dtm_t *out)
 	index_t 	offset;
 	index_t		remainder;
 	bool_t 		found;
-	gtb_block_t	*p;
+	dtm_block_t	*p;
 
 	if (!TB_cache_on)
 		return FALSE;
@@ -3201,10 +3256,10 @@ split_index (size_t entries_per_block, index_t i, index_t *o, index_t *r)
 }
 
 
-static gtb_block_t *
+static dtm_block_t *
 point_block_to_replace (void)
 {
-	gtb_block_t *p, *t, *s;
+	dtm_block_t *p, *t, *s;
 
 	assert (0 == dtm_cache.n || dtm_cache.top != NULL);
 	assert (0 == dtm_cache.n || dtm_cache.bot != NULL);
@@ -3261,9 +3316,9 @@ point_block_to_replace (void)
 }
 
 static void
-movetotop (gtb_block_t *t)
+movetotop (dtm_block_t *t)
 {
-	gtb_block_t *s, *nx, *pv;
+	dtm_block_t *s, *nx, *pv;
 
 	assert (t != NULL);
 
@@ -7281,6 +7336,7 @@ static bool_t			wdl_preload_cache (int key, int side, index_t idx);
 |			WDL CACHE Maintainance
 \*---------------------------------------------------------------------*/
 
+#if 0
 static bool_t
 wdl_cache_init (size_t cache_mem)
 {
@@ -7332,6 +7388,65 @@ wdl_cache_init (size_t cache_mem)
 	WDL_CACHE_INITIALIZED = TRUE;
 	return TRUE;
 }
+
+#else
+static bool_t
+wdl_cache_init (size_t cache_mem)
+{
+	unsigned int 	i;
+	wdl_block_t 	*p;
+	size_t 			entries_per_block;
+	size_t 			max_blocks;
+	size_t 			block_mem;
+
+	if (WDL_CACHE_INITIALIZED)
+		wdl_cache_done();
+
+	entries_per_block 	= 16 * 1024;  /* fixed, needed for the compression schemes */
+
+	WDL_units_per_block	= entries_per_block / WDL_entries_per_unit;
+	block_mem			= WDL_units_per_block * sizeof(unit_t);
+
+	max_blocks 			= cache_mem / block_mem;
+	cache_mem 			= max_blocks * block_mem;
+
+
+	wdl_cache_reset_counters ();
+
+	wdl_cache.entries_per_block = entries_per_block;
+	wdl_cache.max_blocks 		= max_blocks;
+	wdl_cache.cached 			= TRUE;
+	wdl_cache.top 				= NULL;
+	wdl_cache.bot 				= NULL;
+	wdl_cache.n 				= 0;
+
+	if (NULL == (wdl_cache.buffer = (unit_t *) malloc (cache_mem))) {
+		wdl_cache.cached = FALSE;
+		return FALSE;
+	}
+
+	if (NULL == (wdl_cache.blocks = (wdl_block_t *) malloc (max_blocks * sizeof(wdl_block_t)))) {
+		wdl_cache.cached = FALSE;
+		free (wdl_cache.buffer);
+		return FALSE;
+	}
+	
+	for (i = 0; i < max_blocks; i++) {
+		p = &wdl_cache.blocks[i];
+		p->key  = -1;
+		p->side = -1;
+		p->offset = -1;
+		p->p_arr = wdl_cache.buffer + i * WDL_units_per_block;
+		p->prev = NULL;
+		p->next = NULL;
+	}
+
+	WDL_CACHE_INITIALIZED = TRUE;
+
+	return TRUE;
+}
+
+#endif
 
 static void
 wdl_cache_done (void)
@@ -7526,7 +7641,7 @@ static bool_t		get_WDL_from_cache (int key, int side, index_t idx, unsigned int 
 static unsigned 	dtm2WDL(dtm_t dtm);	
 static void			wdl_movetotop (wdl_block_t *t);
 static bool_t		wdl_preload_cache (int key, int side, index_t idx);
-static void			dtm_block_2_wdl_block(gtb_block_t *g, wdl_block_t *w, size_t n);	
+static void			dtm_block_2_wdl_block(dtm_block_t *g, wdl_block_t *w, size_t n);	
 
 static bool_t
 get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag)
@@ -7651,7 +7766,7 @@ static bool_t
 wdl_preload_cache (int key, int side, index_t idx)
 /* output to the least used block of the cache */
 {
-	gtb_block_t		*dtm_block;
+	dtm_block_t		*dtm_block;
 	wdl_block_t 	*to_modify;
 	bool_t 			ok;
 
@@ -7699,7 +7814,7 @@ wdl_preload_cache (int key, int side, index_t idx)
 /****************************************************************************************************/
 
 static void			
-dtm_block_2_wdl_block(gtb_block_t *g, wdl_block_t *w, size_t n)
+dtm_block_2_wdl_block(dtm_block_t *g, wdl_block_t *w, size_t n)
 {
 	int width = 2;
 	int shifting;
