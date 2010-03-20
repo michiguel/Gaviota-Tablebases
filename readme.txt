@@ -2,42 +2,43 @@
                 Copyright (c) 2010 Miguel A. Ballicora
 -----------------------------------------------------------------------------
 
-This software provides the C code that probes the Gaviota Endgame Tablebases
-and it is released under then X11 ("MIT") license (see license.txt).
+This software provides C code to probe the Gaviota Endgame Tablebases.
+It is released under then X11 ("MIT") license (see license.txt).
 
 This API (Application Programming Interface) is designed to be as portable 
-as possible. Functions could be called from programs running Linux or Windows. 
-Most likely it will work in other operating sysmtes but that has not been 
-tested. This API is a beta version and it is not guaranteed that it will 
-remain untouched, at least until version 1.0 is released. 
+as possible. Functions could be called from Linux or Windows. 
+Most likely it will work in other operating systems but it has not been 
+tested. This API is a beta version and it is not guaranteed any type of
+backward compatibility or to remain untouched, at least until version 
+1.0 is released. 
 
 A very small set of tablebase files is included in this distribution 
 for testing purposes (only 3 pieces). They are compressed with four
 different compression schemes. For a more complete set, please download 
 Gaviota from
 http://sites.google.com/site/gaviotachessengine/ 
-and generate the 4 and 5 piece tablebases. Instructions how to generate them
+and generate the 4 and 5 piece tablebases. Instructions how to generate
 and compressed them are in the website.
 
 "tbprobe" is distributed here as a tablebase probing example. The current API
-is relatively "low level" to make sure that performance won't suffer. 
-Hopefully, the small program tbprobe is self explanatory. A more complete
-documentation may be released later.
+is relatively "low level" to opimize performance. We hope the small program 
+tbprobe is self explanatory. A more complete documentation may be 
+released later.
 
-In the future I planned to support an interface with a FEN notation and
+In the future we planned to support an interface with a FEN notation and
 an interface to bitbases. Thus, it is expected that some other functions
 maybe added to this API.
 
 Four different types of compression are provided. It is possible that in the
-future some other compression schemes could be provided, only if they
+future some other compression schemes could be provided, but only if they
 represent a serious improvement in speed or memory size. To maximize
 backward compatibility between versions of programs and TBs, it is strongly
 recommended that engine developers always support at least scheme 4 (tb_CP4), 
-which is considered the default. For that reason, it is suggested that
-testers always have a set of 3-4-5 TBs compressed with scheme 4.
+which is considered the default at this point. For that reason, it is 
+suggested that testers always have a set of TBs compressed with scheme 4.
 
-This API is designed to be multithreading friendly. Where the access to data
-by this API from two different threads could cause a problem, that region was 
+This API is designed to be multithreading friendly. Regions where the access 
+to data by this API from two different threads could cause a problem were 
 protected with a mutex.
 
 -------------------------- How to use this API ------------------------------
