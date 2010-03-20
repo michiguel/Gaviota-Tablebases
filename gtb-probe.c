@@ -2468,7 +2468,7 @@ dtm_cache_init (size_t cache_mem)
 static void
 dtm_cache_done (void)
 {
-	assert(TBCACHE_INITIALIZED);
+	assert(DTM_CACHE_INITIALIZED);
 
 	dtm_cache.cached = FALSE;
 	dtm_cache.hard = 0;
@@ -7894,8 +7894,6 @@ tb_probe_wdl
 	/************************************/
 
 	assert (stm == WH || stm == BL);
-	/*assert (inp_wPC[0] == KING && inp_bPC[0] == KING );*/
-	assert ((epsq >> 3) == 2 || (epsq >> 3) == 5 || epsq == NOSQUARE);
 
 	/* VALID ONLY FOR KK!! */
 	if (inp_wPC[1] == NOPIECE && inp_bPC[1] == NOPIECE) {
