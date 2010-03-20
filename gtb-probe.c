@@ -311,6 +311,9 @@ static bool_t	DTM_CACHE_INITIALIZED = FALSE;
 static int		WDL_FRACTION = 64;
 static int		WDL_FRACTION_MAX = 128;
 
+static size_t	DTM_cache_size = 0;
+static size_t	WDL_cache_size = 0;
+
 /* LOCKS */
 static mythread_mutex_t	Egtb_lock;
 
@@ -2601,6 +2604,8 @@ tbstats_get (struct TB_STATS *x)
 	x->wdl_soft_prob[0] = (long unsigned)(wdl_cache.soft & mask);
 	x->wdl_soft_prob[1] = (long unsigned)(wdl_cache.soft >> 32);
 
+	x->wdl_cachesize    = WDL_cache_size;
+
 	/* occupancy */
 	x->wdl_occupancy = wdl_cache.max_blocks==0? 0:(double)100.0*wdl_cache.n/(double)wdl_cache.max_blocks;
 
@@ -2616,6 +2621,8 @@ tbstats_get (struct TB_STATS *x)
 
 	x->dtm_soft_prob[0] = (long unsigned)(dtm_cache.soft & mask);
 	x->dtm_soft_prob[1] = (long unsigned)(dtm_cache.soft >> 32);
+
+	x->dtm_cachesize    = DTM_cache_size;
 
 	/* occupancy */
 	x->dtm_occupancy = dtm_cache.max_blocks==0? 0:(double)100.0*dtm_cache.n/(double)dtm_cache.max_blocks;
@@ -2665,12 +2672,15 @@ tbcache_init (size_t cache_mem, int wdl_fraction)
 	if (wdl_fraction > WDL_FRACTION_MAX) wdl_fraction = WDL_FRACTION_MAX;
 	if (wdl_fraction <                0) wdl_fraction = 0;
 	WDL_FRACTION = wdl_fraction;
+	
+	DTM_cache_size = (cache_mem/WDL_FRACTION_MAX)*(128-WDL_FRACTION);
+	WDL_cache_size = (cache_mem/WDL_FRACTION_MAX)*     WDL_FRACTION ;
 
 	#ifdef WDL_PROBE
-	dtm_cache_init ((cache_mem/WDL_FRACTION_MAX)*(128-WDL_FRACTION));
-	wdl_cache_init ((cache_mem/WDL_FRACTION_MAX)*     WDL_FRACTION );
+	dtm_cache_init (DTM_cache_size);
+	wdl_cache_init (WDL_cache_size);
 	#else
-	dtm_cache_init (cache_mem);
+	dtm_cache_init (DTM_cache_size);
 	#endif
 	tbstats_reset ();
 	return TRUE;

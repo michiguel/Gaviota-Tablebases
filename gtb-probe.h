@@ -166,11 +166,13 @@ struct TB_STATS {
 	long unsigned int wdl_easy_hits  [2]; /* hits that were found in own wdl cache */
 	long unsigned int wdl_hard_prob  [2]; /* hard probes to the wdl cache: if fail, they will go to HD */
 	long unsigned int wdl_soft_prob  [2]; /* soft probes to the wdl cache: if fail, they won't go to HD */	
+	size_t			  wdl_cachesize     ; /* size allocated for wdl cache */
 	double			  wdl_occupancy     ; /* % of slots filled in wdl cache */
 
 	long unsigned int dtm_easy_hits  [2]; /* hits that were found in own dtm cache */
 	long unsigned int dtm_hard_prob  [2]; /* hard probes to the dtm cache: if fail, they will go to HD */
 	long unsigned int dtm_soft_prob  [2]; /* soft probes to the dtm cache: if fail, they won't go to HD */	
+	size_t			  dtm_cachesize     ; /* size allocated for dtm cache */
 	double			  dtm_occupancy     ; /* % of slots filled in dtm cache */
 
 	long unsigned int  total_hits    [2]; /* succesful probes */
