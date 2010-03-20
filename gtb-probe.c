@@ -204,8 +204,6 @@ enum SQUARES {
 #endif
 #include "assert.h"
 
-static bool_t TB_cache_on = TRUE;
-
 /*************************************************\
 |
 |				COMPRESSION SCHEMES 
@@ -2206,7 +2204,6 @@ fpark_entry_packed  (FILE *finp, int side, index_t max, index_t idx)
 #define WDL_entry_mask     3
 static size_t		WDL_units_per_block = 0;
 
-static bool_t		WDL_cache_on = TRUE;
 static bool_t		WDL_CACHE_INITIALIZED = FALSE;
 
 typedef unsigned char unit_t; /* block unit */
@@ -2441,12 +2438,12 @@ dtm_cache_init (size_t cache_mem)
 	dtm_cache.bot 				= NULL;
 	dtm_cache.n 				= 0;
 
-	if (NULL == (dtm_cache.buffer = (dtm_t *)  malloc (cache_mem))) {
+	if (0 == cache_mem || NULL == (dtm_cache.buffer = (dtm_t *)  malloc (cache_mem))) {
 		dtm_cache.cached = FALSE;
 		return FALSE;
 	}
 
-	if (NULL == (dtm_cache.entry  = (dtm_block_t *) malloc (max_blocks * sizeof(dtm_block_t)))) {
+	if (0 == max_blocks|| NULL == (dtm_cache.entry  = (dtm_block_t *) malloc (max_blocks * sizeof(dtm_block_t)))) {
 		dtm_cache.cached = FALSE;
 		free (dtm_cache.buffer);
 		return FALSE;
@@ -2722,7 +2719,7 @@ dtm_cache_pointblock (int key, int side, index_t idx)
 	dtm_block_t	*	p;
 	dtm_block_t	*	ret;
 
-	if (!TB_cache_on)
+	if (!dtm_cache_is_on())
 		return FALSE;
 
 	split_index (dtm_cache.entries_per_block, idx, &offset, &remainder); 
@@ -3227,7 +3224,7 @@ get_dtm_from_cache (int key, int side, index_t idx, dtm_t *out)
 	bool_t 		found;
 	dtm_block_t	*p;
 
-	if (!TB_cache_on)
+	if (!dtm_cache_is_on())
 		return FALSE;
 
 	split_index (dtm_cache.entries_per_block, idx, &offset, &remainder); 
@@ -7420,12 +7417,12 @@ wdl_cache_init (size_t cache_mem)
 	wdl_cache.bot 				= NULL;
 	wdl_cache.n 				= 0;
 
-	if (NULL == (wdl_cache.buffer = (unit_t *) malloc (cache_mem))) {
+	if (0 == cache_mem || NULL == (wdl_cache.buffer = (unit_t *) malloc (cache_mem))) {
 		wdl_cache.cached = FALSE;
 		return FALSE;
 	}
 
-	if (NULL == (wdl_cache.blocks = (wdl_block_t *) malloc (max_blocks * sizeof(wdl_block_t)))) {
+	if (0 == max_blocks|| NULL == (wdl_cache.blocks = (wdl_block_t *) malloc (max_blocks * sizeof(wdl_block_t)))) {
 		wdl_cache.cached = FALSE;
 		free (wdl_cache.buffer);
 		return FALSE;
@@ -7659,7 +7656,8 @@ get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_ha
 		if (found) {
 			*info_out = dtm2WDL(dtm);			
 			/* move cache info from dtm_cache to WDL_cache */
-			wdl_preload_cache (key, side, idx);
+			if (wdl_cache_is_on())
+				wdl_preload_cache (key, side, idx);
 		} 
 	}
 
@@ -7686,7 +7684,7 @@ get_WDL_from_cache (int key, int side, index_t idx, unsigned int *out)
 	wdl_block_t	*p;
 	wdl_block_t	*ret;
 
-	if (!WDL_cache_on)
+	if (!wdl_cache_is_on())
 		return FALSE;
 
 	split_index (wdl_cache.entries_per_block, idx, &offset, &remainder); 
@@ -8039,11 +8037,12 @@ egtb_get_wdl (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t pr
 			*-------------------------------*/
 			mythread_mutex_lock (&Egtb_lock);	
 
-			if (wdl_cache_is_on()) {
-				success = get_WDL (k, stm, index, wdl, probe_hard_flag);
-				FOLLOW_LU("get_wld (succ)",success)
-				FOLLOW_LU("get_wld (wdl )",*wdl)
-			} else {			
+			success = get_WDL (k, stm, index, wdl, probe_hard_flag);
+			FOLLOW_LU("get_wld (succ)",success)
+			FOLLOW_LU("get_wld (wdl )",*wdl)
+
+			/* this may not be needed */
+			if (!success) {		
 				dtm_t dtm;
 				unsigned res, ply;
 				if (probe_hard_flag) {
