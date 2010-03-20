@@ -2665,8 +2665,8 @@ tbcache_init (size_t cache_mem, int wdl_fraction)
 	assert (wdl_fraction <= WDL_FRACTION_MAX && wdl_fraction >= 0);
 
 	/* defensive against input */
-	if (wdl_fraction > WDL_FRACTION_MAX) wdl_fraction = WDL_FRACTION_MAX;
-	if (wdl_fraction <                0) wdl_fraction = 0;
+	if (wdl_fraction >= WDL_FRACTION_MAX) wdl_fraction = WDL_FRACTION_MAX-1;
+	if (wdl_fraction <=                0) wdl_fraction = 1;
 	WDL_FRACTION = wdl_fraction;
 
 	#ifdef WDL_PROBE
