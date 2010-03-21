@@ -2664,8 +2664,6 @@ tbstats_get (struct TB_STATS *x)
 extern bool_t
 tbcache_init (size_t cache_mem, int wdl_fraction)
 {
-	wdl_fraction = 96;
-
 	assert (wdl_fraction <= WDL_FRACTION_MAX && wdl_fraction >= 0);
 
 	/* defensive against input */
