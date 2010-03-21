@@ -947,7 +947,7 @@ path_system_done (void)
 
 
 #ifdef WDL_PROBE
-static bool_t 		wdl_cache_init (size_t cache_mem);
+static size_t 		wdl_cache_init (size_t cache_mem);
 static void 		wdl_cache_flush (void);
 
 static void			wdl_cache_reset_counters (void);
@@ -1580,6 +1580,7 @@ egtb_filepeek (int key, int side, index_t idx, dtm_t *out_dtm)
 	index_t maxindex  = egkey[key].maxindex;
 
 
+
 	assert (Uncompressed);
 	assert (side == WH || side == BL);
 	assert (out_dtm != NULL);
@@ -1684,8 +1685,9 @@ egtb_get_dtm (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t pr
 					}
 					#endif
 
-			} else {			
-				if (probe_hard_flag)
+			} else {	
+				assert(Uncompressed);		
+				if (probe_hard_flag && Uncompressed)
 					success = egtb_filepeek (k, stm, index, dtm);
 				else
 					success = FALSE;
@@ -2336,7 +2338,7 @@ static bool_t			dtm_cache_is_on (void);
 static void				dtm_cache_reset_counters (void);
 static void				dtm_cache_done (void);
 
-static bool_t			dtm_cache_init (size_t cache_mem);
+static size_t			dtm_cache_init (size_t cache_mem);
 static void				dtm_cache_flush (void);
 /*--------------------------------------------------------------------------*/
 
@@ -2411,7 +2413,7 @@ dtm_cache_init (size_t cache_mem)
 	return TRUE;
 }
 #else
-static bool_t
+static size_t
 dtm_cache_init (size_t cache_mem)
 {
 	unsigned int 	i;
@@ -2425,10 +2427,11 @@ dtm_cache_init (size_t cache_mem)
 
 	entries_per_block 	= 16 * 1024;  /* fixed, needed for the compression schemes */
 
-
 	block_mem 			= entries_per_block * sizeof(dtm_t);
 
 	max_blocks 			= cache_mem / block_mem;
+	if (!Uncompressed && 1 > max_blocks)
+		max_blocks = 1; 
 	cache_mem 			= max_blocks * block_mem;
 
 
@@ -2443,13 +2446,17 @@ dtm_cache_init (size_t cache_mem)
 
 	if (0 == cache_mem || NULL == (dtm_cache.buffer = (dtm_t *)  malloc (cache_mem))) {
 		dtm_cache.cached = FALSE;
-		return FALSE;
+		dtm_cache.buffer = NULL;
+		dtm_cache.entry = NULL;
+		return 0;
 	}
 
 	if (0 == max_blocks|| NULL == (dtm_cache.entry  = (dtm_block_t *) malloc (max_blocks * sizeof(dtm_block_t)))) {
 		dtm_cache.cached = FALSE;
+		dtm_cache.entry = NULL;
 		free (dtm_cache.buffer);
-		return FALSE;
+		dtm_cache.buffer = NULL;
+		return 0;
 	}
 	
 	for (i = 0; i < max_blocks; i++) {
@@ -2464,7 +2471,7 @@ dtm_cache_init (size_t cache_mem)
 
 	DTM_CACHE_INITIALIZED = TRUE;
 
-	return TRUE;
+	return cache_mem;
 }
 #endif
 
@@ -2675,10 +2682,12 @@ tbcache_init (size_t cache_mem, int wdl_fraction)
 	WDL_cache_size = (cache_mem/WDL_FRACTION_MAX)*     WDL_FRACTION ;
 
 	#ifdef WDL_PROBE
-	dtm_cache_init (DTM_cache_size);
-	wdl_cache_init (WDL_cache_size);
+	/* returns the actual memory allocated */
+	DTM_cache_size = dtm_cache_init (DTM_cache_size);
+	WDL_cache_size = wdl_cache_init (WDL_cache_size);
 	#else
-	dtm_cache_init (DTM_cache_size);
+	/* returns the actual memory allocated */
+	DTM_cache_size = dtm_cache_init (DTM_cache_size);
 	#endif
 	tbstats_reset ();
 	return TRUE;
@@ -3091,6 +3100,10 @@ preload_cache (int key, int side, index_t idx)
 	
 	/* find aged blocked in cache */
 	pblock = point_block_to_replace();
+
+	if (NULL == pblock)
+		return FALSE;
+
 	p = pblock->p_arr;
 
 	if (Uncompressed) {
@@ -3271,6 +3284,10 @@ point_block_to_replace (void)
 	assert (0 == dtm_cache.n || dtm_cache.bot->prev == NULL);
 	assert (0 == dtm_cache.n || dtm_cache.top->next == NULL);
 
+	/* no cache is being used */
+	if (dtm_cache.max_blocks == 0)
+		return NULL;
+
 	if (dtm_cache.n > 0 && -1 == dtm_cache.top->key) {
 
 		/* top entry is unusable, should be the one to replace*/
@@ -3279,37 +3296,53 @@ point_block_to_replace (void)
 	} else
 	if (dtm_cache.n == 0) {
 		
+		assert (NULL != dtm_cache.entry);
 		p = &dtm_cache.entry[dtm_cache.n++];
 		dtm_cache.top = p;
 		dtm_cache.bot = p;
 	
+		assert (NULL != p);
 		p->prev = NULL;
 		p->next = NULL;
 
 	} else
 	if (dtm_cache.n < dtm_cache.max_blocks) { /* add */
 
+		assert (NULL != dtm_cache.entry);
 		s = dtm_cache.top;
 		p = &dtm_cache.entry[dtm_cache.n++];
 		dtm_cache.top = p;
 	
+		assert (NULL != p && NULL != s);
 		s->next = p;
 		p->prev = s;
 		p->next = NULL;
 
-	} else {                       /* replace*/ 
+	} else if (1 < dtm_cache.max_blocks) { /* replace*/ 
 		
+		assert (NULL != dtm_cache.bot && NULL != dtm_cache.top);
 		t = dtm_cache.bot;
 		s = dtm_cache.top;
+
 		dtm_cache.bot = t->next;
 		dtm_cache.top = t;
-		
+
 		s->next = t;
 		t->prev = s;
+
+		assert (dtm_cache.top);
 		dtm_cache.top->next = NULL;
+
+		assert (dtm_cache.bot);
 		dtm_cache.bot->prev = NULL;
 
 		p = t;
+
+	} else {
+		
+		assert (1 == dtm_cache.max_blocks);
+		p =	dtm_cache.top;
+		assert (p == dtm_cache.bot && p == dtm_cache.entry);
 	}
 	
 	/* make the information content unusable, it will be replaced */
@@ -7395,7 +7428,7 @@ wdl_cache_init (size_t cache_mem)
 }
 
 #else
-static bool_t
+static size_t
 wdl_cache_init (size_t cache_mem)
 {
 	unsigned int 	i;
@@ -7427,13 +7460,13 @@ wdl_cache_init (size_t cache_mem)
 
 	if (0 == cache_mem || NULL == (wdl_cache.buffer = (unit_t *) malloc (cache_mem))) {
 		wdl_cache.cached = FALSE;
-		return FALSE;
+		return 0;
 	}
 
 	if (0 == max_blocks|| NULL == (wdl_cache.blocks = (wdl_block_t *) malloc (max_blocks * sizeof(wdl_block_t)))) {
 		wdl_cache.cached = FALSE;
 		free (wdl_cache.buffer);
-		return FALSE;
+		return 0;
 	}
 	
 	for (i = 0; i < max_blocks; i++) {
@@ -7448,7 +7481,7 @@ wdl_cache_init (size_t cache_mem)
 
 	WDL_CACHE_INITIALIZED = TRUE;
 
-	return TRUE;
+	return cache_mem;
 }
 
 #endif
@@ -8051,7 +8084,8 @@ egtb_get_wdl (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t pr
 			if (!success) {		
 				dtm_t dtm;
 				unsigned res, ply;
-				if (probe_hard_flag) {
+				if (probe_hard_flag && Uncompressed) {
+					assert(Uncompressed);
 					success = egtb_filepeek (k, stm, index, &dtm);
 					unpackdist (dtm, &res, &ply);			
 					*wdl = res;		
