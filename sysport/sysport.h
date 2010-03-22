@@ -9,19 +9,20 @@
 |
 */
 
-#ifdef _MSC_VER
-	#include <windows.h>
-#else
-	#include <unistd.h>
-#endif
-
-#ifdef _MSC_VER 
+#if defined(_MSC_VER) || defined(MINGW)
 	#if !defined(MVSC)
 		#define MVSC
 	#endif
 #endif
 
-#if defined(__linux__) || defined(__GNUC__)
+#ifdef MSVC
+	#include <windows.h>
+#else
+	#include <unistd.h>
+#endif
+
+
+#if defined(__linux__)
 	#if !defined(GCCLINUX)
 		#define GCCLINUX
 	#endif
@@ -81,7 +82,7 @@
 
 
 
-#if defined(GCCLINUX)
+#if defined(GCCLINUX) || defined(MINGW)
 
 	#define U64(x) (x##ull)
 
