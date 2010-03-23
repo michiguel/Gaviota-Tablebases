@@ -9,20 +9,19 @@
 |
 */
 
-#if defined(_MSC_VER) || defined(MINGW)
-	#if !defined(MVSC)
-		#define MVSC
-	#endif
-#endif
-
-#ifdef MSVC
+#ifdef _MSC_VER
 	#include <windows.h>
 #else
 	#include <unistd.h>
 #endif
 
+#ifdef _MSC_VER 
+	#if !defined(MVSC)
+		#define MVSC
+	#endif
+#endif
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__GNUC__)
 	#if !defined(GCCLINUX)
 		#define GCCLINUX
 	#endif
@@ -82,7 +81,7 @@
 
 
 
-#if defined(GCCLINUX) || defined(MINGW)
+#if defined(GCCLINUX)
 
 	#define U64(x) (x##ull)
 
@@ -229,6 +228,12 @@ extern int /*boolean*/	mysem_init		(mysem_t *sem, unsigned int value);
 extern int /*boolean*/	mysem_wait		(mysem_t *sem);
 extern int /*boolean*/	mysem_post		(mysem_t *sem);
 extern int /*boolean*/	mysem_destroy	(mysem_t *sem);
+#endif
+
+
+#if defined(MINGW)
+#undef GCCLINUX
+#define MSVC
 #endif
 
 
