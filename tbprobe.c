@@ -35,8 +35,9 @@ Copyright (c) 2010 Miguel A. Ballicora
 static void dtm_print (int stm, int tb_available, unsigned info, unsigned pliestomate);
 static void wdl_print (int stm, int tb_available, unsigned info);
 
-char *new_path1;
-char *new_path2;
+char *path1 = "gtb/gtb4";
+char *path2 = "gtb/gtb3";
+char *path3 = "gtb/gtb2";
 
 int main (int argc, char *argv[])
 {
@@ -68,7 +69,14 @@ int main (int argc, char *argv[])
 	int	scheme = tb_CP4;	/* compression scheme to be used */
 	const char ** paths;	/* paths where files will be searched */
 	size_t cache_size = 32*1024*1024; /* 32 MiB in this example */
-
+	
+	/* 	wdl_fraction:
+		fraction, over 128, that will be dedicated to wdl information. 
+		In other words, 96 means 3/4 of the cache will be dedicated to 
+		win-draw-loss info, and 1/4 dedicated to distance to mate 
+		information. 
+	*/
+	int wdl_fraction = 96; 
 
 	/*----------------------------------*\
 	|	Return version of this demo
@@ -87,21 +95,17 @@ int main (int argc, char *argv[])
 	|   the beginning of the program.   
 	\*--------------------------------------*/
 
+	/* the number of paths that can be added is only limited by memory */
 	paths = tbpaths_init();
-	paths = tbpaths_add (paths, "gtb/gtb4");
-	paths = tbpaths_add (paths, "gtb/gtb3");
-	paths = tbpaths_add (paths, "gtb/gtb2");
-	paths = tbpaths_add (paths, "gtb/gtb1");
+	paths = tbpaths_add (paths, path1);
+	paths = tbpaths_add (paths, path2);
+	paths = tbpaths_add (paths, path3); 
 
+	/* init probing code, indexes, paths, etc. */
 	tb_init (verbosity, scheme, paths);
 
-	/* 	
-		initialize tb cache. 96 is the fraction, over 128, that will be 
-		dedicated to wdl information. In other words, 3/4 of the cache
-		will be dedicated to win-draw-loss info, and 1/4 dedicated to
-		distance to mate information. 
-	*/
-	tbcache_init(cache_size, 96); 
+	/* init cache */
+	tbcache_init(cache_size, wdl_fraction); 
 
 	tbstats_reset();
 
@@ -276,9 +280,10 @@ int main (int argc, char *argv[])
 	|	NEW INFO BY THE USER, example
 	\*---------------------------------------------*/	
 	scheme = tb_CP2; /* compression scheme changes */
-	new_path1 = "gtb/gtb2"; 
-	new_path2 = "gtb/gtb1";
+	path1 = "gtb/gtb2"; 
+	path2 = "gtb/gtb1";
 	cache_size = 16*1024*1024; /* 16 MiB is the new cache size */
+	wdl_fraction = 104; /* more cache for wdl info than before */ 
 
 	/* 
 	|	RESTART PROCESS
@@ -289,12 +294,12 @@ int main (int argc, char *argv[])
 
 	/* init new paths */
 	paths = tbpaths_init(); 
-	paths = tbpaths_add (paths, new_path1);
-	paths = tbpaths_add (paths, new_path2);
+	paths = tbpaths_add (paths, path1);
+	paths = tbpaths_add (paths, path2);
 
 	/* restart */
 	tb_restart (verbosity, scheme, paths);
-	tbcache_restart(cache_size, 96); 
+	tbcache_restart(cache_size, wdl_fraction); 
 
 	/* 
 	|	Now that TBs have been restarted, we probe once again (HARD) 
