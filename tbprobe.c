@@ -35,6 +35,7 @@ Copyright (c) 2010 Miguel A. Ballicora
 static void dtm_print (int stm, int tb_available, unsigned info, unsigned pliestomate);
 static void wdl_print (int stm, int tb_available, unsigned info);
 
+/* paths to TBs, generally provided by the user */
 char *path1 = "gtb/gtb4";
 char *path2 = "gtb/gtb3";
 char *path3 = "gtb/gtb2";
