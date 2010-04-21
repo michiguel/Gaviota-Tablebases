@@ -11,3 +11,5 @@ attic
 tbprobe
 errors_comp.txt
 errors_link.txt
+*.rb
+
