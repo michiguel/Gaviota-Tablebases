@@ -9,8 +9,8 @@ This API (Application Programming Interface) is designed to be as portable
 as possible. Functions could be called from Linux or Windows. 
 Most likely it will work in other operating systems but that has not been 
 tested. This API is a beta version and as such, it is not guaranteed any 
-type of backward compatibility or to remain untouched, at least until 
-version 1.0 is released. 
+type of backward compatibility or to remain untouched, at least until 
+version 1.0 is released. 
 
 A very small set of tablebase files is included in this distribution 
 for testing purposes (only 3 pieces). They are compressed with four
