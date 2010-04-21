@@ -42,7 +42,7 @@ char *path3 = "gtb/gtb2";
 int main (int argc, char *argv[])
 {
 	/*--------------------------------------*\
-	|   Probing info to provide
+	|   Probing info to be provided
 	\*--------------------------------------*/
 
 	int	stm;				/* side to move */
@@ -54,7 +54,7 @@ int main (int argc, char *argv[])
 	unsigned char bp[17];	/* what black pieces are on those squares */
 
 	/*--------------------------------------*\
-	|   Probing info requested
+	|   Probing info to be requested
 	\*--------------------------------------*/
 
 	int tb_available;			/* 0 => FALSE, 1 => TRUE */
@@ -182,7 +182,7 @@ int main (int argc, char *argv[])
 
 	/*--------------------------------------*\
 	|
-	|      		PROBING TBs (HARD)
+	|      	PROBING TBs #1 (HARD)
 	|   
 	\*--------------------------------------*/
 
@@ -226,8 +226,11 @@ int main (int argc, char *argv[])
 
 	/*--------------------------------------*\
 	|
-	|      	PROBING TBs #3 
-	|		(SOFT after cache flush)
+	|      	PROBING TBs #3 (SOFT)
+	|		An example of what happens 
+	|		after tbcache_flush()
+	|		which may be used to clear it
+	|		for epd tests, etc.
 	|   
 	\*--------------------------------------*/
 
@@ -257,7 +260,7 @@ int main (int argc, char *argv[])
 		is a win, draw, or a loss.  
 		The Gaviota tablebase library will try to return this info
 		with the best performance possible. If the only info needed for
-		a position is WDL, these function should be used rather
+		a position is WDL, this function should be used rather
 		than the regular tb_probe_hard() function.
 		This function would be the "equivalent" of one that probes a bitbase.
 	*/
