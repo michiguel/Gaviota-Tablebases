@@ -31,6 +31,13 @@ Copyright (c) 2010 Miguel A. Ballicora
 #include <string.h>
 #include "gtb-probe.h"
 
+/* local prototypes */
+static void dtm_print (int stm, int tb_available, unsigned info, unsigned pliestomate);
+static void wdl_print (int stm, int tb_available, unsigned info);
+
+char *new_path1;
+char *new_path2;
+
 int main (int argc, char *argv[])
 {
 	/*--------------------------------------*\
@@ -64,7 +71,7 @@ int main (int argc, char *argv[])
 
 
 	/*----------------------------------*\
-	|	Return version
+	|	Return version of this demo
 	\*----------------------------------*/
 
 	#include "version.h"
@@ -84,11 +91,12 @@ int main (int argc, char *argv[])
 	paths = tbpaths_add (paths, "gtb/gtb4");
 	paths = tbpaths_add (paths, "gtb/gtb3");
 	paths = tbpaths_add (paths, "gtb/gtb2");
-	paths = tbpaths_add (paths, "/media/bigdisk/gtb--9");
+	paths = tbpaths_add (paths, "gtb/gtb1");
 
 	tb_init (verbosity, scheme, paths);
 
-	/* 	initialize tb cache. 96 is the fraction, over 128, that will be 
+	/* 	
+		initialize tb cache. 96 is the fraction, over 128, that will be 
 		dedicated to wdl information. In other words, 3/4 of the cache
 		will be dedicated to win-draw-loss info, and 1/4 dedicated to
 		distance to mate information. 
@@ -105,6 +113,7 @@ int main (int argc, char *argv[])
 	\*--------------------------------------*/
 
 #if 1
+
 	/* needs 3-pc installed */
 	/* FEN: 8/8/8/4k3/8/8/8/KR6 w - - 0 1 */
 
@@ -133,7 +142,6 @@ int main (int argc, char *argv[])
 	bp[0] = tb_KING;
 	bp[1] = tb_NOPIECE;			/* it marks the end of list */
 
-	/****************/
 #else
 
 	/* needs 4-pc installed */
@@ -165,6 +173,7 @@ int main (int argc, char *argv[])
 	bp[1] = tb_PAWN;
 	bp[2] = tb_KING;
 	bp[3] = tb_NOPIECE;			/* it marks the end of list */
+
 #endif
 
 	/*--------------------------------------*\
@@ -173,32 +182,15 @@ int main (int argc, char *argv[])
 	|   
 	\*--------------------------------------*/
 
-	/* probing soft will go to the cache, if the info is not found there, 
-		it will go to the Hard Drive to find it
-	 */		
+	/* 
+		probing hard will go to the cache first, if the info is not found there, 
+		it will finally go to the Hard Drive to find it
+	*/		
 
 	tb_available = tb_probe_hard (stm, epsquare, castling, ws, bs, wp, bp, &info, &pliestomate);
 
-	if (tb_available) {
-
-		if (info == tb_DRAW)
-			printf ("Draw\n");
-		else if (info == tb_WMATE && stm == tb_WHITE_TO_MOVE)
-			printf ("White mates, plies=%u\n", pliestomate);
-		else if (info == tb_BMATE && stm == tb_BLACK_TO_MOVE)
-			printf ("Black mates, plies=%u\n", pliestomate);
-		else if (info == tb_WMATE && stm == tb_BLACK_TO_MOVE)
-			printf ("Black is mated, plies=%u\n", pliestomate);
-		else if (info == tb_BMATE && stm == tb_WHITE_TO_MOVE)
-			printf ("White is mated, plies=%u\n", pliestomate);         
-		else {
-			printf ("FATAL ERROR, This should never be reached\n");
-			exit(EXIT_FAILURE);
-		}
-		printf ("\n");
-	} else {
-		printf ("Tablebase info not available\n\n");   
-	}
+	/* print info */
+	dtm_print (stm, tb_available, info, pliestomate);
 
 	/*--------------------------------------*\
 	|
@@ -212,81 +204,46 @@ int main (int argc, char *argv[])
 
 	/*--------------------------------------*\
 	|
-	|      		PROBING TBs #2 (SOFT)
+	|      	PROBING TBs #2 (SOFT)
 	|   
 	\*--------------------------------------*/
 
-	/* probing soft goes to cache, if info not found there, it returns FALSE
+	/* 
+		probing soft goes to cache, if info not found there, it returns FALSE
 		It will **NEVER** go to the Hard Drive
 		If info is found, it is because the previous probe #1 filled up 
 		the cache with the info needed for probe #2
-	 */	
+	*/	
 
 	tb_available = tb_probe_soft (stm, epsquare, castling, ws, bs, wp, bp, &info, &pliestomate);
 
-	if (tb_available) {
-
-		if (info == tb_DRAW)
-			printf ("Draw\n");
-		else if (info == tb_WMATE && stm == tb_WHITE_TO_MOVE)
-			printf ("White mates, plies=%u\n", pliestomate);
-		else if (info == tb_BMATE && stm == tb_BLACK_TO_MOVE)
-			printf ("Black mates, plies=%u\n", pliestomate);
-		else if (info == tb_WMATE && stm == tb_BLACK_TO_MOVE)
-			printf ("Black is mated, plies=%u\n", pliestomate);
-		else if (info == tb_BMATE && stm == tb_WHITE_TO_MOVE)
-			printf ("White is mated, plies=%u\n", pliestomate);         
-		else {
-			printf ("FATAL ERROR, This should never be reached\n");
-			exit(EXIT_FAILURE);
-		}
-		printf ("\n");
-	} else {
-		printf ("Tablebase info not available\n\n");   
-	}
+	/* print info */
+	dtm_print (stm, tb_available, info, pliestomate);
 
 	/*--------------------------------------*\
 	|
-	|      		PROBING TBs #3 
-	|			(SOFT after cache flush)
+	|      	PROBING TBs #3 
+	|		(SOFT after cache flush)
 	|   
 	\*--------------------------------------*/
 
-	/* cache is flushed, so probing soft with the same position as #2 
+	/* 
+		cache is flushed, so probing soft with the same position as #2 
 		will surely return FALSE 
 	*/
 
 	tbcache_flush();
 
 	/* same as #2 */
-
 	tb_available = tb_probe_soft (stm, epsquare, castling, ws, bs, wp, bp, &info, &pliestomate);
 
-	if (tb_available) {
-
-		if (info == tb_DRAW)
-			printf ("Draw\n");
-		else if (info == tb_WMATE && stm == tb_WHITE_TO_MOVE)
-			printf ("White mates, plies=%u\n", pliestomate);
-		else if (info == tb_BMATE && stm == tb_BLACK_TO_MOVE)
-			printf ("Black mates, plies=%u\n", pliestomate);
-		else if (info == tb_WMATE && stm == tb_BLACK_TO_MOVE)
-			printf ("Black is mated, plies=%u\n", pliestomate);
-		else if (info == tb_BMATE && stm == tb_WHITE_TO_MOVE)
-			printf ("White is mated, plies=%u\n", pliestomate);         
-		else {
-			printf ("FATAL ERROR, This should never be reached\n");
-			exit(EXIT_FAILURE);
-		}
-		printf ("\n");
-	} else {
-		printf ("Tablebase info not available\n\n");   
-	}
+	/* print info */
+	dtm_print (stm, tb_available, info, pliestomate);
 
 	/*--------------------------------------*\
 	|
-	|      		PROBING TBs #4 
-	|			(HARD, only win, draw, lose)
+	|      	PROBING TBs #4 
+	|		(HARD, only win, draw, lose)
 	|   
 	\*--------------------------------------*/
 
@@ -303,6 +260,108 @@ int main (int argc, char *argv[])
 
 	tb_available = tb_probe_WDL_hard (stm, epsquare, castling, ws, bs, wp, bp, &info);
 
+	/* print info */
+	wdl_print (stm, tb_available, info);
+
+
+	/*--------------------------------------*\
+	|
+	|      	RESTART?
+	|		What if the user changes 
+	|		the conditions during run?
+	|   
+	\*--------------------------------------*/
+
+	/* 
+	|	NEW INFO BY THE USER, example
+	\*---------------------------------------------*/	
+	scheme = tb_CP2; /* compression scheme changes */
+	new_path1 = "gtb/gtb2"; 
+	new_path2 = "gtb/gtb1";
+	cache_size = 16*1024*1024; /* 16 MiB is the new cache size */
+
+	/* 
+	|	RESTART PROCESS
+	\*---------------------------------------------*/	
+
+	/* cleanup old paths */
+	paths = tbpaths_done(paths); 
+
+	/* init new paths */
+	paths = tbpaths_init(); 
+	paths = tbpaths_add (paths, new_path1);
+	paths = tbpaths_add (paths, new_path2);
+
+	/* restart */
+	tb_restart (verbosity, scheme, paths);
+	tbcache_restart(cache_size, 96); 
+
+	/* 
+	|	Now that TBs have been restarted, we probe once again (HARD) 
+	\*----------------------------------------------------------------------------------------*/		
+	tb_available = tb_probe_hard (stm, epsquare, castling, ws, bs, wp, bp, &info, &pliestomate);
+
+	/* print info */
+	dtm_print (stm, tb_available, info, pliestomate);
+
+
+	/*--------------------------------------*\
+	|
+	|	Clean up at the end of the program
+	|
+	\*--------------------------------------*/
+
+	tbcache_done();
+
+	tb_done();
+
+	paths = tbpaths_done(paths);
+
+	/*--------------------------------------*\
+	|
+	|         		Return
+	|
+	\*--------------------------------------*/
+
+	if (tb_available)
+		return EXIT_SUCCESS;
+	else
+		return EXIT_FAILURE;
+} 
+
+
+/*----------------------------------------------------------------------*\
+|	These are local functions that just print the results after probing
+\*----------------------------------------------------------------------*/
+
+static void
+dtm_print (int stm, int tb_available, unsigned info, unsigned pliestomate)
+{
+	if (tb_available) {
+
+		if (info == tb_DRAW)
+			printf ("Draw\n");
+		else if (info == tb_WMATE && stm == tb_WHITE_TO_MOVE)
+			printf ("White mates, plies=%u\n", pliestomate);
+		else if (info == tb_BMATE && stm == tb_BLACK_TO_MOVE)
+			printf ("Black mates, plies=%u\n", pliestomate);
+		else if (info == tb_WMATE && stm == tb_BLACK_TO_MOVE)
+			printf ("Black is mated, plies=%u\n", pliestomate);
+		else if (info == tb_BMATE && stm == tb_WHITE_TO_MOVE)
+			printf ("White is mated, plies=%u\n", pliestomate);         
+		else {
+			printf ("FATAL ERROR, This should never be reached\n");
+			exit(EXIT_FAILURE);
+		}
+		printf ("\n");
+	} else {
+		printf ("Tablebase info not available\n\n");   
+	}
+}
+
+static void
+wdl_print (int stm, int tb_available, unsigned info)
+{
 	if (tb_available) {
 
 		if (info == tb_DRAW)
@@ -323,23 +382,7 @@ int main (int argc, char *argv[])
 	} else {
 		printf ("Tablebase info not available\n\n");   
 	}
+}
 
-	/*--------------------------------------*\
-	|	Clean up at the end of the program
-	\*--------------------------------------*/
 
-	tbcache_done();
 
-	tb_done();
-
-	paths = tbpaths_done(paths);
-
-	/*--------------------------------------*\
-	|         		Return
-	\*--------------------------------------*/
-
-	if (tb_available)
-		return EXIT_SUCCESS;
-	else
-		return EXIT_FAILURE;
-} 

@@ -2693,6 +2693,12 @@ tbcache_init (size_t cache_mem, int wdl_fraction)
 	return TRUE;
 }
 
+extern bool_t
+tbcache_restart (size_t cache_mem, int wdl_fraction)
+{
+	return tbcache_init (cache_mem, wdl_fraction);
+}
+
 extern void
 tbcache_done (void)
 {
