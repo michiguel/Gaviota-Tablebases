@@ -25,7 +25,7 @@ $benchfile = 'pgo-medium.txt'
 $sync_line = ''
 
 $windows_destiny	= '/home/miguel/Desktop/tbprobe-windows'
-$version_sensitive = 'main.o'
+$version_sensitive = 'tbprobe.o'
 #------------------------------------------------------------------------------------
 $errors_comp = 'errors_comp.txt'
 $errors_link = 'errors_link.txt'
