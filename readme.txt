@@ -7,29 +7,37 @@ It is released under then X11 ("MIT") license (see license.txt).
 
 This API (Application Programming Interface) is designed to be as portable 
 as possible. Functions could be called from Linux or Windows. 
-Most likely it will work in other operating systems but it has not been 
-tested. This API is a beta version and it is not guaranteed any type of
-backward compatibility or to remain untouched, at least until version 
-1.0 is released. 
+Most likely it will work in other operating systems but that has not been 
+tested. This API is a beta version and as such, it is not guaranteed any 
+type of backward compatibility or to remain untouched, at least until 
+version 1.0 is released. 
 
 A very small set of tablebase files is included in this distribution 
 for testing purposes (only 3 pieces). They are compressed with four
 different compression schemes. For a more complete set, please download 
 Gaviota from
-http://sites.google.com/site/gaviotachessengine/ 
+
+http://sites.google.com/site/gaviotachessengine/
+
 and generate the 4 and 5 piece tablebases. Instructions how to generate
-and compressed them are in the website.
+and compressed them are in the website. More information can always be found:
+
+http://sites.google.com/site/gaviotachessengine/Home/endgame-tablebases-1
+
+Alternatively, already compressed tablebase files (ready to go!) can be 
+downloaded from
+
+http://www.olympuschess.com/egtb/gaviota/ (Many thanks to Josh Shriver)
 
 "tbprobe" is distributed here as a tablebase probing example. The current API
-is relatively "low level" to opimize performance. We hope the small program 
-tbprobe is self explanatory. A more complete documentation may be 
+is relatively "low level" to optimize performance. We hope the small program 
+tbprobe is self explanatory. A more complete and detailed documentation may be 
 released later.
 
-In the future we planned to support an interface with a FEN notation and
-an interface to bitbases. Thus, it is expected that some other functions
-maybe added to this API.
+We plan to support an interface with a FEN notation; thus, it is expected 
+that some other functions maybe added to this API.
 
-Four different types of compression are provided. It is possible that in the
+Four different types of compression are included. It is possible that in the
 future some other compression schemes could be provided, but only if they
 represent a serious improvement in speed or memory size. To maximize
 backward compatibility between versions of programs and TBs, it is strongly
@@ -37,9 +45,9 @@ recommended that engine developers always support at least scheme 4 (tb_CP4),
 which is considered the default at this point. For that reason, it is 
 suggested that testers always have a set of TBs compressed with scheme 4.
 
-This API is designed to be multithreading friendly. Regions where the access 
-to data by this API from two different threads could cause a problem were 
-protected with a mutex.
+This API is designed to be multithreading friendly. Regions where different 
+threads could access data from this API were protected with a mutex to avoid
+problems.
 
 -------------------------- How to use this API ------------------------------
 
@@ -86,7 +94,6 @@ compression/liblzf/
 compression/zlib/
 compression/lzma/
 
-
 The following libraries should be linked in Linux
 -lpthread
 -lm
@@ -108,14 +115,14 @@ compiled in Linux using gcc.
 
 Rakefile.rb is the ruby version of Makefile. You have to install 'rake'
 to execute it. This is what I use but you don't have to. It is provided
-out of lazyness. I should probably remove it.
+out of laziness. I should probably remove it.
 
 ------------------ COMPILING A STATIC LIBRARY (optional) --------------------
 
 Aaron Becker wrote a Makefile to compile a static library --> libgtb.a
 I just applied this modification from his fork.
 For now, this for Linux only. Type 'make' to compile it.
-Some people may find this approach more convenient since the libray
+Some people may find this approach more convenient since the library
 has to be compiled only once. Of course, this library needs to be included
 at linking time, when you compile your own program
 
@@ -123,7 +130,5 @@ at linking time, when you compile your own program
 
 Good luck with the tablebases!
 
-Miguel
-
+Miguel
 *****************************************************************************
-
