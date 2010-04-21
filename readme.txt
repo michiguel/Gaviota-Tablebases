@@ -110,6 +110,17 @@ Rakefile.rb is the ruby version of Makefile. You have to install 'rake'
 to execute it. This is what I use but you don't have to. It is provided
 out of lazyness. I should probably remove it.
 
+------------------ COMPILING A STATIC LIBRARY (optional) --------------------
+
+Aaron Becker wrote a Makefile to compile a static library --> libgtb.a
+I just applied this modification from his fork.
+For now, this for Linux only. Type 'make' to compile it.
+Some people may find this approach more convenient since the libray
+has to be compiled only once. Of course, this library needs to be included
+at linking time, when you compile your own program
+
+-----------------------------------------------------------------------------
+
 Good luck with the tablebases!
 
 Miguel
