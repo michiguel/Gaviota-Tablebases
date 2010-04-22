@@ -861,12 +861,24 @@ tbpaths_add(const char **ps, const char *newpath)
 {
 	int counter;
 	const char **newps;
+	size_t i, psize;
+	char *ppath;
+
+	if (NULL == ps)
+		return NULL;
+
+	psize = strlen(newpath) + 1;
+	ppath = (char *) malloc (psize * sizeof (char));
+	if (NULL == ppath)
+		return ps; /* failed to incorporate a new path */
+	for (i = 0; i < psize; i++) ppath[i] = newpath[i];
+
 	for (counter = 0; ps[counter] != NULL; counter++)
 		; 
 
 	newps =	realloc (ps, sizeof(char *) * (counter+2));
 	if (newps != NULL) {
-		newps [counter] = newpath;
+		newps [counter] = ppath;
 		newps [counter+1] = NULL;
 	}
 	return newps;
@@ -875,7 +887,13 @@ tbpaths_add(const char **ps, const char *newpath)
 extern const char **
 tbpaths_done(const char **ps)
 {
+	int counter;
+
 	if (ps != NULL) {
+		for (counter = 0; ps[counter] != NULL; counter++) {
+			void *p = (void *) ps[counter];
+			free(p);		
+		} 	
 		free(ps);
 	}
 	return NULL;
@@ -893,8 +911,6 @@ path_system_init (const char **path)
 	const char *x;
 	bool_t ok = TRUE;
 	path_system_reset();
-
-	assert (path != NULL);
 
 	if (path == NULL) {
 		return FALSE;
@@ -983,13 +999,15 @@ extern void
 tb_init (int verbosity, int decoding_scheme, const char **paths)
 {
 	int zi;
+	int paths_ok;
 
 	assert(!TB_INITIALIZED);
 
-	path_system_init (paths);
+	paths_ok = path_system_init (paths);
 
-	if (verbosity) { 
+	if (paths_ok && verbosity) { 
 		int g;
+		assert(Gtbpath!=NULL);
 		printf ("\nGTB PATHS\n");
 		for (g = 0; Gtbpath[g] != NULL; g++) {
 			const char *p = Gtbpath[g];
@@ -999,6 +1017,11 @@ tb_init (int verbosity, int decoding_scheme, const char **paths)
 				printf ("    #%d: %s\n", g, p);
 			}
 		}
+		fflush(stdout);
+	}
+
+	if (!paths_ok && verbosity) { 
+		printf ("\nGTB PATHS not initialized\n");
 		fflush(stdout);
 	}
 
