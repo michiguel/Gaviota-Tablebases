@@ -306,6 +306,23 @@ int main (int argc, char *argv[])
 	tbcache_restart(cache_size, wdl_fraction); 
 
 	/* 
+	|	Just to show, I can know what TBs are installed, 
+	|	but I have to do it after tb_init or tb_restart
+	\*----------------------------------------------------------------------------------------*/	
+
+	{
+		int av = tb_availability();
+
+		if (0 != (av& 1)) printf ("Some 3-pc TBs available\n"); else printf ("No 3-pc TBs available\n");
+		if (0 != (av& 2)) printf ("3-pc TBs complete\n");  
+		if (0 != (av& 4)) printf ("Some 4-pc TBs available\n"); else printf ("No 4-pc TBs available\n");
+		if (0 != (av& 8)) printf ("4-pc TBs complete\n");  
+		if (0 != (av&16)) printf ("Some 5-pc TBs available\n"); else printf ("No 5-pc TBs available\n");
+		if (0 != (av&32)) printf ("5-pc TBs complete\n");  
+		printf ("\n");
+	}
+
+	/* 
 	|	Now that TBs have been restarted, we probe once again (HARD) 
 	\*----------------------------------------------------------------------------------------*/		
 	tb_available = tb_probe_hard (stm, epsquare, castling, ws, bs, wp, bp, &info, &pliestomate);

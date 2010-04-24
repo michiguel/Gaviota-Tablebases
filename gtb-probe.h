@@ -137,6 +137,21 @@ extern int /*bool*/	tb_probe_WDL_soft
 
 extern int /*bool*/	tb_is_initialized (void);
 
+/* 	tb_availability() returns
+	0: no TBs available 
+	and the following bits turned one if
+	0: al least one 3-pc TB is present
+	1: 3-pc TBs are complete
+	2: al least one 4-pc TB is present
+	3: 4-pc TBs are complete
+	4: al least one 5-pc TB is present
+	5: 5-pc TBs are complete
+	etc.
+	so, if 63 is returns, it means all 3-4-5-pc TBs are present
+*/
+
+extern unsigned int	tb_availability(void);
+
 /*----------------------------------*\
 |         	cache
 \*----------------------------------*/

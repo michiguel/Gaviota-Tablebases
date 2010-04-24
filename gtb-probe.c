@@ -314,6 +314,8 @@ static int		WDL_FRACTION_MAX = 128;
 static size_t	DTM_cache_size = 0;
 static size_t	WDL_cache_size = 0;
 
+static int		TB_AVAILABILITY = 0;
+
 /* LOCKS */
 static mythread_mutex_t	Egtb_lock;
 
@@ -1057,29 +1059,32 @@ tb_init (int verbosity, int decoding_scheme, const char **paths)
 
 	zi = zipinfo_init();
 
+	TB_AVAILABILITY = zi;
+
 	if (verbosity) {
-		if (!zi) {
+		if (0 == zi) {
 			printf ("  Compression Indexes = **FAILED**\n");
 		} else {
-			switch (zi) {
-				case 3: 
-					printf ("  Compression Indexes (3-pc) = PASSED\n");
-					printf ("  Compression Indexes (4-pc) = **FAILED**\n");
-					printf ("  Compression Indexes (5-pc) = **FAILED**\n");
-					break;
-				case 4: 
-					printf ("  Compression Indexes (3-pc) = PASSED\n");
-					printf ("  Compression Indexes (4-pc) = PASSED\n");
-					printf ("  Compression Indexes (5-pc) = **FAILED**\n");
-					break;
-				case 5: 
-					printf ("  Compression Indexes (3-pc) = PASSED\n");
-					printf ("  Compression Indexes (4-pc) = PASSED\n");
-					printf ("  Compression Indexes (5-pc) = PASSED\n");
-					break;
-				default:
-				break;
-			}
+			int n, bit;
+
+			n = 3; bit = 1;
+			if (zi&(1<<bit))
+					printf ("  Compression Indexes (%d-pc) = PASSED\n",n);
+			else
+					printf ("  Compression Indexes (%d-pc) = **FAILED**\n",n);
+
+			n = 4; bit = 3;
+			if (zi&(1<<bit))
+					printf ("  Compression Indexes (%d-pc) = PASSED\n",n);
+			else
+					printf ("  Compression Indexes (%d-pc) = **FAILED**\n",n);
+
+			n = 5; bit = 5;
+			if (zi&(1<<bit))
+					printf ("  Compression Indexes (%d-pc) = PASSED\n",n);
+			else
+					printf ("  Compression Indexes (%d-pc) = **FAILED**\n",n);
+
 		}
 		printf ("\n");
 	}
@@ -1094,6 +1099,11 @@ tb_init (int verbosity, int decoding_scheme, const char **paths)
 	return;
 }
 
+extern unsigned int
+tb_availability(void)
+{
+	return TB_AVAILABILITY;
+}
 
 extern bool_t
 tb_is_initialized (void)
@@ -2828,7 +2838,10 @@ static int
 zipinfo_init (void)
 {
 	int i, start, end, ret;
-	bool_t ok, ok3, ok4, ok5;
+	bool_t ok, complet[8] = {0,0,0,0,0,0,0,0};
+	bool_t pa, partial[8] = {0,0,0,0,0,0,0,0};
+	unsigned int z;
+	int x, j;
 
 	/* reset all values */
 	for (i = 0; i < MAX_EGKEYS; i++) {
@@ -2840,37 +2853,44 @@ zipinfo_init (void)
 	/* load all values */
 	start = 0;
 	end   = 5;
-	for (i = start, ok = TRUE; i < end; i++) {
+	x	  = 3;
+	for (i = start, ok = TRUE, pa = FALSE; i < end; i++) {
 		ok = NULL != fd_openit(i);
+		pa = pa || ok;
 		ok = ok && egtb_loadindexes (i);
 	}
-	ok3 = ok;
+	complet[x] = ok;
+	partial[x] = pa;
 
 	start = 5;
 	end   = 35;
-	for (i = start, ok = TRUE; i < end; i++) {
+	x	  = 4;
+	for (i = start, ok = TRUE, pa = FALSE; i < end; i++) {
 		ok = NULL != fd_openit(i);
+		pa = pa || ok;
 		ok = ok && egtb_loadindexes (i);
 	}
-	ok4 = ok;
+	complet[x] = ok;
+	partial[x] = pa;
 
 	start = 35;
 	end   = MAX_EGKEYS;
-	for (i = start, ok = TRUE; i < end; i++) {
+	x	  = 5;
+	for (i = start, ok = TRUE, pa = FALSE; i < end; i++) {
 		ok = NULL != fd_openit(i);
+		pa = pa || ok;
 		ok = ok && egtb_loadindexes (i);
 	}
-	ok5 = ok;
+	complet[x] = ok;
+	partial[x] = pa;
 
-	ret = 0;
-	if (ok3) {
-		ret = 3;	
-		if (ok4) {
-			ret = 4;
-			if (ok5) 
-				ret = 5;
-		}
+
+	for (j = 0, z = 0, x = 3; x < 8; x++) {
+		if (partial[x]) z |= 1 << j++;
+		if (complet[x]) z |= 1 << j++;
 	}
+
+	ret = z;
 
 	return ret;
 }
