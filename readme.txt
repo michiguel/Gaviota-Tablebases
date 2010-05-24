@@ -126,6 +126,16 @@ Some people may find this approach more convenient since the library
 has to be compiled only once. Of course, this library needs to be included
 at linking time, when you compile your own program
 
+---------------------------- For UCI Authors --------------------------------
+
+Generally, UCI (Universal Chess Interface) GUIs use standard labels for
+Tablebase paths and cache sizes. For instance, NalimovPath and NalimovCache
+are used for the Nalimov tablebases. Therefore, engine authors are strongly 
+encouraged (Please!) to follow a common standard to simplify the life of GUI 
+developers and users. For that reason, it is suggested to implement as 
+parameters: GaviotaTbPath and GaviotaTbCache in their communication with a
+UCI graphical user interface.
+
 -----------------------------------------------------------------------------
 
 Good luck with the tablebases!
