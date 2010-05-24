@@ -2776,7 +2776,7 @@ dtm_cache_pointblock (int key, int side, index_t idx)
 	dtm_block_t	*	ret;
 
 	if (!dtm_cache_is_on())
-		return FALSE;
+		return NULL;
 
 	split_index (dtm_cache.entries_per_block, idx, &offset, &remainder); 
 
