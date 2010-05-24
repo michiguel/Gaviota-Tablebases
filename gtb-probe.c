@@ -878,7 +878,8 @@ tbpaths_add(const char **ps, const char *newpath)
 	for (counter = 0; ps[counter] != NULL; counter++)
 		; 
 
-	newps =	realloc (ps, sizeof(char *) * (counter+2));
+	/* cast to deal with const poisoning */
+	newps =	(const char **) realloc (ps, sizeof(char *) * (counter+2));
 	if (newps != NULL) {
 		newps [counter] = ppath;
 		newps [counter+1] = NULL;
@@ -890,13 +891,17 @@ extern const char **
 tbpaths_done(const char **ps)
 {
 	int counter;
+	void *q;	
 
 	if (ps != NULL) {
 		for (counter = 0; ps[counter] != NULL; counter++) {
+			/* cast to deal with const poisoning */
 			void *p = (void *) ps[counter];
 			free(p);		
 		} 	
-		free(ps);
+		/* cast to deal with const poisoning */
+		q = (void *) ps;
+		free(q);
 	}
 	return NULL;
 }
@@ -948,9 +953,13 @@ path_system_init (const char **path)
 static void
 path_system_done (void)
 {
+	/* before we free Gtbpath, we have to deal with the
+	"const poisoning" and cast it. free() does not accept
+	const pointers */
+	char **	p = (char **) Gtbpath;	
 	/* clean up */
-	if (Gtbpath != NULL)
-		free(Gtbpath);
+	if (p != NULL)
+		free(p);
 	return;
 }
 
