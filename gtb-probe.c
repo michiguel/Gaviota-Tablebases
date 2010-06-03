@@ -899,17 +899,17 @@ tbpaths_add(const char **ps, const char *newpath)
 
 	psize = strlen(newpath) + 1;
 	mpath = (char *) malloc (psize * sizeof (char));
-	if (NULL == mpath)
+	if (NULL == mpath) {
 		return ps; /* failed to incorporate a new path */
+	}
 	for (i = 0; i < psize; i++) mpath[i] = newpath[i];	
-
 
 	for (i = 0; i < psize; i++) {
 		if(';' == mpath[i])
 			mpath[i] = '\0';	
 	}
 
-	for (;;) {
+	for (i = 0;;) {
 		while (i < psize && mpath[i] == '\0') i++;
 		if (i >= psize) break;
 		ps = tbpaths_add_single (ps, &mpath[i]);

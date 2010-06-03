@@ -42,11 +42,8 @@ static void wdl_print (int stm, int tb_available, unsigned info);
 |	The example in this file uses both styles simultaneoulsy
 */
 char *path1 = "gtb/gtb4";
-char *path2 = "gtb/gtb3";
-
-#if 0
-char *path1 = "gtb/gtb4;gtb/gtb2";
-#endif
+char *path2 = "gtb/gtb3;gtb/gtb2";
+char *path3 = "gtb/gtb1";
 
 int main (int argc, char *argv[])
 {
@@ -108,7 +105,7 @@ int main (int argc, char *argv[])
 	paths = tbpaths_init();
 	paths = tbpaths_add (paths, path1);
 	paths = tbpaths_add (paths, path2);
-
+	paths = tbpaths_add (paths, path3);
 
 	/* init probing code, indexes, paths, etc. */
 	tb_init (verbosity, scheme, paths);
