@@ -858,8 +858,8 @@ tbpaths_init(void)
 	return newps;
 }
 
-extern const char **
-tbpaths_add(const char **ps, const char *newpath)
+static const char **
+tbpaths_add_single(const char **ps, const char *newpath)
 {
 	int counter;
 	const char **newps;
@@ -886,6 +886,40 @@ tbpaths_add(const char **ps, const char *newpath)
 	}
 	return newps;
 }
+
+
+extern const char **
+tbpaths_add(const char **ps, const char *newpath)
+{
+	size_t i, psize;
+	char *mpath;
+
+	if (NULL == ps)
+		return NULL;
+
+	psize = strlen(newpath) + 1;
+	mpath = (char *) malloc (psize * sizeof (char));
+	if (NULL == mpath)
+		return ps; /* failed to incorporate a new path */
+	for (i = 0; i < psize; i++) mpath[i] = newpath[i];	
+
+
+	for (i = 0; i < psize; i++) {
+		if(';' == mpath[i])
+			mpath[i] = '\0';	
+	}
+
+	for (;;) {
+		while (i < psize && mpath[i] == '\0') i++;
+		if (i >= psize) break;
+		ps = tbpaths_add_single (ps, &mpath[i]);
+		while (i < psize && mpath[i] != '\0') i++;
+	}
+
+	free(mpath);
+	return ps;
+}
+
 
 extern const char **
 tbpaths_done(const char **ps)
@@ -1579,6 +1613,7 @@ tb_probe_	(unsigned int stm,
 						/* restore position */
 						list_pc_copy (tmp_wp, wp);
 						list_pc_copy (tmp_bp, bp);
+
 						list_sq_copy (tmp_ws, ws);
 						list_sq_copy (tmp_bs, bs);					
 					}
@@ -2244,7 +2279,8 @@ fpark_entry_packed  (FILE *finp, int side, index_t max, index_t idx)
 \*/
 
 
-/*---------------------------------------------------------------------*\|			WDL CACHE Implementation  ZONE
+/*---------------------------------------------------------------------*\
+|			WDL CACHE Implementation  ZONE
 \*---------------------------------------------------------------------*/
 
 #define WDL_entries_per_unit 4
@@ -3874,6 +3910,7 @@ static void
 kxk_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 {
 	enum  {BLOCK_A = 64}; 
+
 	index_t a = i / BLOCK_A;
 	index_t b = i - a * BLOCK_A;
 	
@@ -6637,6 +6674,7 @@ kaakp_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 
 	z = pidx24_to_wsq(a); 
 	z = flipNS(z);
+
 	
 	/* split d into x, y*/
 	x = aabase [d];
