@@ -311,8 +311,8 @@ int main (int argc, char *argv[])
 	tbcache_restart(cache_size, wdl_fraction); 
 
 	/* 
-	|	Just to show, I can know what TBs are installed, 
-	|	but I have to do it after tb_init or tb_restart
+	|	Just to show, It is possible to know what TBs are installed. 
+	|	But, I can only find out after tb_init or tb_restart
 	\*----------------------------------------------------------------------------------------*/	
 
 	{
