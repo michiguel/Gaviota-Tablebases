@@ -879,7 +879,7 @@ tbpaths_add_single(const char **ps, const char *newpath)
 		; 
 
 	/* cast to deal with const poisoning */
-	newps =	(const char **) realloc (ps, sizeof(char *) * (counter+2));
+	newps =	(const char **) realloc ((char **)ps, sizeof(char *) * (counter+2));
 	if (newps != NULL) {
 		newps [counter] = ppath;
 		newps [counter+1] = NULL;
