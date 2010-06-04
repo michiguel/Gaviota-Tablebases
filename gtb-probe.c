@@ -1039,156 +1039,10 @@ static int	eg_was_open_count(void)
 	return x;
 }
 
-#if 0
-extern void
-tb_init (int verbosity, int decoding_scheme, const char **paths)
-{
-	int zi;
-	int paths_ok;
 
-	assert(!TB_INITIALIZED);
-
-	paths_ok = path_system_init (paths);
-
-	if (paths_ok && verbosity) { 
-		int g;
-		assert(Gtbpath!=NULL);
-		printf ("\nGTB PATHS\n");
-		for (g = 0; Gtbpath[g] != NULL; g++) {
-			const char *p = Gtbpath[g];
-			if (0 == g) {
-				printf ("  main: %s\n", p);
-			} else {
-				printf ("    #%d: %s\n", g, p);
-			}
-		}
-		fflush(stdout);
-	}
-
-	if (!paths_ok && verbosity) { 
-		printf ("\nGTB PATHS not initialized\n");
-		fflush(stdout);
-	}
-
-	if (!reach_was_initialized())
-		reach_init();
-
-	attack_maps_init (); /* external initialization */
-
-	init_indexing(0 /* no verbosity */);	
-
-	#ifdef GTB_SHARE
-	init_bettarr();
-	#endif
-
-	if (!fd_init (&fd) && verbosity) {
-		printf ("  File Open Memory initialization = **FAILED**\n");
-		return;
-	}
-	
-	GTB_scheme = decoding_scheme;
-	Uncompressed = GTB_scheme == 0;
-
-	if (GTB_scheme == 0) {
-		Uncompressed = TRUE;
-	}
-
-	set_decoding_scheme(GTB_scheme);
-
-	if (verbosity) {
-		printf ("\nGTB initialization\n");
-		printf ("  Compression  Scheme = %d\n", GTB_scheme);
-	}
-
-	zi = zipinfo_init();
-
-	TB_AVAILABILITY = zi;
-
-	if (verbosity) {
-		if (0 == zi) {
-			printf ("  Compression Indexes = **FAILED**\n");
-		} else {
-			int n, bit;
-
-			n = 3; bit = 1;
-			if (zi&(1<<bit))
-					printf ("  Compression Indexes (%d-pc) = PASSED\n",n);
-			else
-					printf ("  Compression Indexes (%d-pc) = **FAILED**\n",n);
-
-			n = 4; bit = 3;
-			if (zi&(1<<bit))
-					printf ("  Compression Indexes (%d-pc) = PASSED\n",n);
-			else
-					printf ("  Compression Indexes (%d-pc) = **FAILED**\n",n);
-
-			n = 5; bit = 5;
-			if (zi&(1<<bit))
-					printf ("  Compression Indexes (%d-pc) = PASSED\n",n);
-			else
-					printf ("  Compression Indexes (%d-pc) = **FAILED**\n",n);
-
-		}
-		printf ("\n");
-	}
-
-	eg_was_open_reset();
-	Bytes_read = 0;
-
-	mythread_mutex_init (&Egtb_lock);
-
-	TB_INITIALIZED = TRUE;
-
-	return;
-}
-
-extern unsigned int
-tb_availability(void)
-{
-	return TB_AVAILABILITY;
-}
-
-extern bool_t
-tb_is_initialized (void)
-{
-	return TB_INITIALIZED;
-}
-
-
-extern void
-tb_done (void)
-{
-	assert(TB_INITIALIZED);
-	fd_done (&fd);
-	RAM_egtbfree();
-	zipinfo_done();
-	path_system_done();
-	mythread_mutex_destroy (&Egtb_lock);
-	TB_INITIALIZED = FALSE;
-	return;
-}
-
-
-extern void
-tb_restart(int verbosity, int decoding_scheme, const char **paths)
-{
-	if (tb_is_initialized()) {
-		tb_done();
-	}
-	tb_init(verbosity, decoding_scheme, paths);
-	return;
-}
-
-
-#else
 enum  Sizes {INISIZE = 4096};
 static char ini_str[INISIZE];
-
-static void
-sjoin(char *s, char *tail, int max)
-{
-	strncat(s, tail, max - strlen(s) - 1);
-}
+static void sjoin(char *s, char *tail, int max) {strncat(s, tail, max - strlen(s) - 1);}
 
 char *
 tb_init (int verbosity, int decoding_scheme, const char **paths)
@@ -1342,7 +1196,6 @@ tb_restart(int verbosity, int decoding_scheme, const char **paths)
 	}
 	return tb_init(verbosity, decoding_scheme, paths);
 }
-#endif
 
 /* whenever the program exits should release this memory */
 static void
