@@ -63,6 +63,7 @@ int main (int argc, char *argv[])
 	|   Probing info to be requested
 	\*--------------------------------------*/
 
+	char *initinfo;				/* NULL if verbosity=0, initialization info if verbosity=1*/
 	int tb_available;			/* 0 => FALSE, 1 => TRUE */
 	unsigned info = tb_UNKNOWN;	/* default, no tbvalue */
 	unsigned pliestomate;	
@@ -71,7 +72,7 @@ int main (int argc, char *argv[])
 	|   Initialization info to be provided
 	\*--------------------------------------*/
 
-	int verbosity = 0;		/* initialization 0 = non-verbose, 1 = verbose */
+	int verbosity = 1;		/* initialization 0 = non-verbose, 1 = verbose */
 	int	scheme = tb_CP4;	/* compression scheme to be used */
 	const char ** paths;	/* paths where files will be searched */
 	size_t cache_size = 32*1024*1024; /* 32 MiB in this example */
@@ -108,12 +109,16 @@ int main (int argc, char *argv[])
 	paths = tbpaths_add (paths, path3);
 
 	/* init probing code, indexes, paths, etc. */
-	tb_init (verbosity, scheme, paths);
+	initinfo = tb_init (verbosity, scheme, paths);
 
 	/* init cache */
 	tbcache_init(cache_size, wdl_fraction); 
 
 	tbstats_reset();
+
+	/* information to be output for the user, or to be saved in logs etc.*/
+	if (initinfo != NULL)
+		printf ("%s",initinfo);
 
 	/*--------------------------------------*\
 	|
@@ -307,8 +312,12 @@ int main (int argc, char *argv[])
 	paths = tbpaths_add (paths, path2);
 
 	/* restart */
-	tb_restart (verbosity, scheme, paths);
+	initinfo = tb_restart (verbosity, scheme, paths);
 	tbcache_restart(cache_size, wdl_fraction); 
+
+	/* information to be output for the user, or to be saved in logs etc.*/
+	if (initinfo != NULL)
+		printf ("%s",initinfo);
 
 	/* 
 	|	Just to show, It is possible to know what TBs are installed. 

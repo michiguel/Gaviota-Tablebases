@@ -1039,7 +1039,7 @@ static int	eg_was_open_count(void)
 	return x;
 }
 
-
+#if 0
 extern void
 tb_init (int verbosity, int decoding_scheme, const char **paths)
 {
@@ -1178,6 +1178,171 @@ tb_restart(int verbosity, int decoding_scheme, const char **paths)
 	tb_init(verbosity, decoding_scheme, paths);
 	return;
 }
+
+
+#else
+enum  Sizes {INISIZE = 4096};
+static char ini_str[INISIZE];
+
+static void
+sjoin(char *s, char *tail, int max)
+{
+	strncat(s, tail, max - strlen(s) - 1);
+}
+
+char *
+tb_init (int verbosity, int decoding_scheme, const char **paths)
+{
+	int zi;
+	int paths_ok;
+	char *ret_str;
+	char localstr[256];
+
+	assert(!TB_INITIALIZED);
+
+	if (verbosity) {
+		ini_str[0] = '\0';
+		ret_str = ini_str;
+	} else {
+		ret_str = NULL;
+	}
+
+	paths_ok = path_system_init (paths);
+
+	if (paths_ok && verbosity) { 
+		int g;
+		assert(Gtbpath!=NULL);
+		sjoin(ini_str,"\nGTB PATHS\n",INISIZE);
+		for (g = 0; Gtbpath[g] != NULL; g++) {
+			const char *p = Gtbpath[g];
+			if (0 == g) {
+				sprintf (localstr,"  main: %s\n", p);
+			} else {
+				sprintf (localstr,"    #%d: %s\n", g, p);
+			}
+			sjoin(ini_str,localstr,INISIZE);
+		}
+	}
+
+	if (!paths_ok && verbosity) { 
+		sjoin (ini_str,"\nGTB PATHS not initialized\n",INISIZE);
+	}
+
+	if (!reach_was_initialized())
+		reach_init();
+
+	attack_maps_init (); /* external initialization */
+
+	init_indexing(0 /* no verbosity */);	
+
+	#ifdef GTB_SHARE
+	init_bettarr();
+	#endif
+
+	if (!fd_init (&fd) && verbosity) {
+		sjoin (ini_str,"  File Open Memory initialization = **FAILED**\n",INISIZE);
+		return ret_str;
+	}
+	
+	GTB_scheme = decoding_scheme;
+	Uncompressed = GTB_scheme == 0;
+
+	if (GTB_scheme == 0) {
+		Uncompressed = TRUE;
+	}
+
+	set_decoding_scheme(GTB_scheme);
+
+	if (verbosity) {
+		sjoin (ini_str,"\nGTB initialization\n",INISIZE);
+		sprintf (localstr,"  Compression  Scheme = %d\n", GTB_scheme);
+		sjoin (ini_str,localstr,INISIZE);
+	}
+
+	zi = zipinfo_init();
+
+	TB_AVAILABILITY = zi;
+
+	if (verbosity) {
+		if (0 == zi) {
+			sjoin (ini_str,"  Compression Indexes = **FAILED**\n",INISIZE);
+		} else {
+			int n, bit;
+
+			n = 3; bit = 1;
+			if (zi&(1<<bit)) 
+				sprintf (localstr,"  Compression Indexes (%d-pc) = PASSED\n",n);
+			else
+				sprintf (localstr,"  Compression Indexes (%d-pc) = **FAILED**\n",n);
+			sjoin (ini_str,localstr,INISIZE);
+			
+			n = 4; bit = 3;
+			if (zi&(1<<bit))
+				sprintf (localstr,"  Compression Indexes (%d-pc) = PASSED\n",n);
+			else
+				sprintf (localstr,"  Compression Indexes (%d-pc) = **FAILED**\n",n);
+			sjoin (ini_str,localstr,INISIZE);
+
+			n = 5; bit = 5;
+			if (zi&(1<<bit))
+				sprintf (localstr,"  Compression Indexes (%d-pc) = PASSED\n",n);
+			else
+				sprintf (localstr,"  Compression Indexes (%d-pc) = **FAILED**\n",n);
+			sjoin (ini_str,localstr,INISIZE);
+		}
+		sjoin (ini_str,"\n",INISIZE);
+	}
+
+	eg_was_open_reset();
+	Bytes_read = 0;
+
+	mythread_mutex_init (&Egtb_lock);
+
+	TB_INITIALIZED = TRUE;
+
+	return ret_str;
+}
+
+extern unsigned int
+tb_availability(void)
+{
+	return TB_AVAILABILITY;
+}
+
+extern bool_t
+tb_is_initialized (void)
+{
+	return TB_INITIALIZED;
+}
+
+extern void
+tb_done (void)
+{
+	assert(TB_INITIALIZED);
+	fd_done (&fd);
+	RAM_egtbfree();
+	zipinfo_done();
+	path_system_done();
+	mythread_mutex_destroy (&Egtb_lock);
+	TB_INITIALIZED = FALSE;
+
+	/*
+		HERE, I should be free() the ini_str, but in
+		the current implementation, it is static
+		rather than dynamic.
+	*/
+	return;
+}
+
+char *
+tb_restart(int verbosity, int decoding_scheme, const char **paths)
+{
+	if (tb_is_initialized()) {
+		tb_done();
+	}
+	return tb_init(verbosity, decoding_scheme, paths);
+}
+#endif
 
 /* whenever the program exits should release this memory */
 static void

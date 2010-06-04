@@ -87,9 +87,9 @@ enum TB_compression_scheme {
 |         	FUNCTIONS
 \*----------------------------------*/
 
-extern void			tb_init   (int verbosity, int compression_scheme, const char **paths);
+extern char *		tb_init   (int verbosity, int compression_scheme, const char **paths);
 
-extern void			tb_restart(int verbosity, int compression_scheme, const char **paths);
+extern char *		tb_restart(int verbosity, int compression_scheme, const char **paths);
 
 extern void			tb_done (void);
 
