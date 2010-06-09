@@ -281,7 +281,6 @@ static int GTB_scheme = 4;
 \*************************************************/
 
 #define EGTB_MAXBLOCKSIZE 65536
-/*#define GTB_MAXOPEN 4*/
 
 static int GTB_MAXOPEN = 4;
 
@@ -296,25 +295,24 @@ enum Flip_flags {
 }; /* used in flipt */
 
 struct filesopen {
-	int n;
-	int *key;
-/*	int key [GTB_MAXOPEN];*/
+		int n;
+		int *key;
 };
 
 /* STATIC GLOBALS */
 
-static struct filesopen 	fd = {0, NULL};
+static struct filesopen	fd = {0, NULL};
 
-static bool_t 	TB_INITIALIZED = FALSE;
-static bool_t	DTM_CACHE_INITIALIZED = FALSE;
+static bool_t 			TB_INITIALIZED = FALSE;
+static bool_t			DTM_CACHE_INITIALIZED = FALSE;
 
-static int		WDL_FRACTION = 64;
-static int		WDL_FRACTION_MAX = 128;
+static int				WDL_FRACTION = 64;
+static int				WDL_FRACTION_MAX = 128;
+	
+static size_t			DTM_cache_size = 0;
+static size_t			WDL_cache_size = 0;
 
-static size_t	DTM_cache_size = 0;
-static size_t	WDL_cache_size = 0;
-
-static int		TB_AVAILABILITY = 0;
+static int				TB_AVAILABILITY = 0;
 
 /* LOCKS */
 static mythread_mutex_t	Egtb_lock;
@@ -836,16 +834,12 @@ static uint64_t Bytes_read = 0;
 #define MAXPATHLEN tb_MAXPATHLEN
 #define MAX_GTBPATHS 10
 
-static int  Gtbpath_end_index = 0;
-
+static int  			Gtbpath_end_index = 0;
 static const char **	Gtbpath = NULL;
 
 /*---------------- EXTERNAL PATH MANAGEMENT --------------------------------*/
 
-extern const char *tbpaths_getmain (void)
-{
-	return Gtbpath[0];
-}
+extern const char *tbpaths_getmain (void) {	return Gtbpath[0];}
 
 extern const char **
 tbpaths_init(void)
@@ -1333,31 +1327,31 @@ fd_done (struct filesopen *pfd)
 \****************************************************************************/
 
 #if !defined(SHARED_forbuilding)
+
 /* shared with building routines */
-mySHARED void 	list_sq_copy 	(const SQUARE *a, SQUARE *b);
-mySHARED void 	list_pc_copy 	(const SQ_CONTENT *a, SQ_CONTENT *b);
-mySHARED dtm_t 	inv_dtm 		(dtm_t x);
-mySHARED bool_t 	egtb_get_id  	(SQ_CONTENT *w, SQ_CONTENT *b, long int *id);
-mySHARED void 	list_sq_flipNS 	(SQUARE *s);
-mySHARED dtm_t 	adjust_up (dtm_t dist);
-mySHARED dtm_t 	bestx 			(unsigned int stm, dtm_t a, dtm_t b);
-mySHARED void		sortlists (SQUARE *ws, SQ_CONTENT *wp);
+mySHARED void 			list_sq_copy 	(const SQUARE *a, SQUARE *b);
+mySHARED void 			list_pc_copy 	(const SQ_CONTENT *a, SQ_CONTENT *b);
+mySHARED dtm_t 			inv_dtm 		(dtm_t x);
+mySHARED bool_t 		egtb_get_id  	(SQ_CONTENT *w, SQ_CONTENT *b, long int *id);
+mySHARED void 			list_sq_flipNS 	(SQUARE *s);
+mySHARED dtm_t 			adjust_up 		(dtm_t dist);
+mySHARED dtm_t 			bestx 			(unsigned int stm, dtm_t a, dtm_t b);
+mySHARED void			sortlists 		(SQUARE *ws, SQ_CONTENT *wp);
 
-mySHARED /*@NULL@*/ FILE * fd_openit (int key);
+mySHARED /*@NULL@*/ 	FILE * fd_openit(int key);
 
-mySHARED dtm_t 			dtm_unpack (unsigned int stm, unsigned char packed);
-mySHARED void  			unpackdist (dtm_t d, unsigned int *res, unsigned int *ply);
-mySHARED dtm_t 			packdist (unsigned int inf, unsigned int ply);
+mySHARED dtm_t 			dtm_unpack 	(unsigned int stm, unsigned char packed);
+mySHARED void  			unpackdist 	(dtm_t d, unsigned int *res, unsigned int *ply);
+mySHARED dtm_t 			packdist 	(unsigned int inf, unsigned int ply);
 
 mySHARED bool_t			fread_entry_packed 	(FILE *dest, unsigned int side, dtm_t *px);
 mySHARED bool_t			fpark_entry_packed  (FILE *finp, int side, index_t max, index_t idx);
 #endif
 
-
 /* use only with probe */
-static bool_t	egtb_get_dtm 	(int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard, dtm_t *dtm);
-static void		removepiece (SQUARE *ys, SQ_CONTENT *yp, int j);
-static bool_t 	egtb_filepeek (int key, int side, index_t idx, dtm_t *out_dtm);
+static bool_t			egtb_get_dtm 	(int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard, dtm_t *dtm);
+static void				removepiece (SQUARE *ys, SQ_CONTENT *yp, int j);
+static bool_t 			egtb_filepeek (int key, int side, index_t idx, dtm_t *out_dtm);
 
 
 /*prototype*/
@@ -1884,16 +1878,6 @@ fd_openit (int key)
 		extension = Extension[decoding_scheme()];
 	}
 
-	#if 0
-	/* for debugging */
-	/* Scan folders to find the File*/
-	printf ("N_end: %d\n", Gtbpath_end_index);
-	for (pth = 0; pth < Gtbpath_end_index && Gtbpath[pth] != NULL; pth++) {
-		const char *path = Gtbpath[pth];
-		printf ("path available: %s\n", path);
-	}
-	#endif
-
 	/* Scan folders to find the File*/
 	finp = NULL;
 
@@ -1902,9 +1886,7 @@ fd_openit (int key)
 	for (pth = start; NULL == finp && pth < end && Gtbpath[pth] != NULL; pth++) {
 		const char *path = Gtbpath[pth];
 		size_t pl = strlen(path);
-		#if 0
-		printf ("path available: %s\n", path);
-		#endif
+
 		if (pl == 0) {
 				sprintf (buf, "%s%s%s", path, egkey[key].str, extension);
 		} else {
@@ -1932,9 +1914,7 @@ fd_openit (int key)
 	for (pth = start; NULL == finp && pth < end && Gtbpath[pth] != NULL; pth++) {
 		const char *path = Gtbpath[pth];
 		size_t pl = strlen(path);
-		#if 0
-		printf ("path available: %s\n", path);
-		#endif
+
 		if (pl == 0) {
 				sprintf (buf, "%s%s%s", path, egkey[key].str, extension);
 		} else {
@@ -2456,59 +2436,7 @@ dtm_cache_reset_counters (void)
 	return;
 }
 
-#if 0
-static bool_t
-dtm_cache_init (size_t cache_mem)
-{
-	unsigned int 	i;
-	dtm_block_t 	*p;
-	size_t 			entries_per_block;
-	size_t 			max_blocks;
-	size_t 			block_mem = 32 * 1024; /* 32k fixed, needed for the compression schemes */
 
-	if (DTM_CACHE_INITIALIZED)
-		dtm_cache_done();
-
-	entries_per_block 	= block_mem / sizeof(dtm_t);
-	block_mem 			= entries_per_block * sizeof(dtm_t);
-	max_blocks 			= cache_mem / block_mem;
-	cache_mem 			= max_blocks * block_mem;
-
-	dtm_cache_reset_counters ();
-
-	dtm_cache.entries_per_block	= entries_per_block;
-	dtm_cache.max_blocks 		= max_blocks;
-	dtm_cache.cached 			= TRUE;
-	dtm_cache.top 				= NULL;
-	dtm_cache.bot 				= NULL;
-	dtm_cache.n 				= 0;
-
-	if (NULL == (dtm_cache.buffer = (dtm_t *) malloc (cache_mem))) {
-		dtm_cache.cached = FALSE;
-		return FALSE;
-	}
-
-	if (NULL == (dtm_cache.entry = (dtm_block_t *) malloc (max_blocks * sizeof(dtm_block_t)))) {
-		dtm_cache.cached = FALSE;
-		free (dtm_cache.buffer);
-		return FALSE;
-	}
-	
-	for (i = 0; i < max_blocks; i++) {
-		p = &dtm_cache.entry[i];
-		p->key  = -1;
-		p->side = -1;
-		p->offset = -1;
-		p->p_arr = dtm_cache.buffer + i * entries_per_block;
-		p->prev = NULL;
-		p->next = NULL;
-	}
-
-	DTM_CACHE_INITIALIZED = TRUE;
-
-	return TRUE;
-}
-#else
 static size_t
 dtm_cache_init (size_t cache_mem)
 {
@@ -2569,7 +2497,7 @@ dtm_cache_init (size_t cache_mem)
 
 	return cache_mem;
 }
-#endif
+
 
 static void
 dtm_cache_done (void)
@@ -2639,53 +2567,6 @@ tbcache_is_on (void)
 
 
 /* STATISTICS OUTPUT */
-#if 0
-extern void 
-tbstats_get (struct TB_STATS *x)
-{
-	uint64_t hh,hm,sh,sm,eh;
-	long unsigned mask = 0xfffffffflu;
-
-	hm = dtm_cache.hardmisses;
-	hh = dtm_cache.hard - dtm_cache.hardmisses;
-	sm = dtm_cache.softmisses;
-	sh = dtm_cache.soft - dtm_cache.softmisses;
-	eh = dtm_cache.hits;
-
-	x->probe_easy_hits[0] = (long unsigned)(eh & mask);
-	x->probe_easy_hits[1] = (long unsigned)(eh >> 32);
-
-	x->probe_hard_hits[0] = (long unsigned)(hh & mask);
-	x->probe_hard_hits[1] = (long unsigned)(hh >> 32);
-
-	x->probe_hard_miss[0] = (long unsigned)(hm & mask);
-	x->probe_hard_miss[1] = (long unsigned)(hm >> 32);
-
-	x->probe_soft_hits[0] = (long unsigned)(sh & mask);
-	x->probe_soft_hits[1] = (long unsigned)(sh >> 32);
-
-	x->probe_soft_miss[0] = (long unsigned)(sm & mask);
-	x->probe_soft_miss[1] = (long unsigned)(sm >> 32);
-
-
-	x->blocks_occupied = dtm_cache.n;
-	x->blocks_max      = dtm_cache.max_blocks;	
-	x->comparisons     = dtm_cache.comparisons;
-
-
-	/* hard drive */
-	x->drive_hits[0] = (long unsigned)(Drive.hits & mask);
-	x->drive_hits[1] = (long unsigned)(Drive.hits >> 32);
-
-	x->drive_miss[0] = (long unsigned)(Drive.miss & mask);
-	x->drive_miss[1] = (long unsigned)(Drive.miss >> 32);
-
-	x->bytes_read[0] = (long unsigned)(Bytes_read & mask);
-	x->bytes_read[1] = (long unsigned)(Bytes_read >> 32);
-
-	x->files_opened = eg_was_open_count();
-}
-#else
 
 extern void 
 tbstats_get (struct TB_STATS *x)
@@ -2762,7 +2643,6 @@ tbstats_get (struct TB_STATS *x)
 	}
 }
 
-#endif
 
 extern bool_t
 tbcache_init (size_t cache_mem, int wdl_fraction)
@@ -3081,6 +2961,7 @@ egtb_block_uncompressed_to_index (int key, index_t b)
 	return idx;
 }
 
+
 static index_t
 egtb_block_getnumber (int key, int side, index_t idx)
 {
@@ -3090,15 +2971,9 @@ egtb_block_getnumber (int key, int side, index_t idx)
 	blocks_per_side = 1 + (max-1) / dtm_cache.entries_per_block;
 	block_in_side   = idx / dtm_cache.entries_per_block;
 
-	#if 0
-	printf ("Inside egtb_block_getnumber\n");
-	printf ("key=%lu, side=%lu, idx=%lu, dtm_cache.entries_per_block=%lu, max=%lu, blocks_per_side=%lu, block_in_side=%lu\n", 
-			(unsigned long)key, (unsigned long)side, (unsigned 	long)idx, (unsigned long)dtm_cache.entries_per_block, 
-			(unsigned long)max, (unsigned long)blocks_per_side, (unsigned long)block_in_side);
-	#endif
-
 	return side * blocks_per_side + block_in_side; /* block */
 }
+
 
 static index_t 
 egtb_block_getsize (int key, index_t idx)
@@ -7412,54 +7287,6 @@ list_index (void)
 /*
 |			WDL CACHE Statics
 \*---------------------------------------------------------------------*/
-#if 0
-#define WDL_entries_per_unit 4
-#define WDL_entry_mask     3
-static size_t		WDL_units_per_block = 0;
-
-static bool_t		WDL_cache_on = TRUE;
-static bool_t		WDL_CACHE_INITIALIZED = FALSE;
-
-typedef unsigned char unit_t; /* block unit */
-
-typedef struct wdl_block 	wdl_block_t;
-
-struct wdl_block {
-	int 			key;
-	int				side;
-	index_t 		offset;
-	unit_t			*p_arr;
-	wdl_block_t		*prev;
-	wdl_block_t		*next;
-};
-
-struct WDL_CACHE {
-	/* defined at init */
-	bool_t			cached;
-	size_t			max_blocks;
-	size_t 			entries_per_block;
-	unit_t		 *	buffer;
-
-	/* flushables */
-	wdl_block_t	*	top;
-	wdl_block_t *	bot;
-	size_t			n;
-	wdl_block_t *	blocks; /* was entry */
-
-	/* counters */
-	uint64_t		hard;
-	uint64_t		soft;
-	uint64_t		hardmisses;
-	uint64_t		hits;
-	uint64_t		softmisses;
-	uint64_t 		comparisons;
-};
-
-struct WDL_CACHE 	wdl_cache = {FALSE,0,0,NULL,
-								 NULL,NULL,0,NULL,
-								 0,0,0,0,0,0};
-
-#endif
 
 /*--------------------------------------------------------------------------*/
 static unsigned int		wdl_extract (unit_t *uarr, unsigned int x);
@@ -7488,60 +7315,7 @@ static bool_t			wdl_preload_cache (int key, int side, index_t idx);
 |			WDL CACHE Maintainance
 \*---------------------------------------------------------------------*/
 
-#if 0
-static bool_t
-wdl_cache_init (size_t cache_mem)
-{
-	unsigned int 	i;
-	wdl_block_t 	*p;
-	size_t 			entries_per_block;
-	size_t 			block_mem;
-	size_t 			max_blocks;
 
-	if (WDL_CACHE_INITIALIZED)
-		wdl_cache_done();
-
-	entries_per_block 	= 16 * 1024;  /* fixed, needed for the compression schemes */
-	WDL_units_per_block	= entries_per_block / WDL_entries_per_unit;
-	block_mem			= WDL_units_per_block * sizeof(unit_t);
-	max_blocks 			= cache_mem / block_mem;
-	cache_mem 			= max_blocks * block_mem;
-
-	wdl_cache_reset_counters ();
-
-	wdl_cache.entries_per_block = entries_per_block;
-	wdl_cache.max_blocks 		= max_blocks;
-	wdl_cache.cached 			= TRUE;
-	wdl_cache.top 				= NULL;
-	wdl_cache.bot 				= NULL;
-	wdl_cache.n 				= 0;
-
-	if (NULL == (wdl_cache.buffer = malloc (cache_mem))) {
-		wdl_cache.cached = FALSE;
-		return FALSE;
-	}
-
-	if (NULL == (wdl_cache.blocks = malloc (max_blocks * sizeof(wdl_block_t)))) {
-		wdl_cache.cached = FALSE;
-		free (wdl_cache.buffer);
-		return FALSE;
-	}
-	
-	for (i = 0; i < max_blocks; i++) {
-		p = &wdl_cache.blocks[i];
-		p->key  = -1;
-		p->side = -1;
-		p->offset = -1;
-		p->p_arr = wdl_cache.buffer + i * WDL_units_per_block;
-		p->prev = NULL;
-		p->next = NULL;
-	}
-
-	WDL_CACHE_INITIALIZED = TRUE;
-	return TRUE;
-}
-
-#else
 static size_t
 wdl_cache_init (size_t cache_mem)
 {
@@ -7598,7 +7372,6 @@ wdl_cache_init (size_t cache_mem)
 	return cache_mem;
 }
 
-#endif
 
 static void
 wdl_cache_done (void)
@@ -7677,47 +7450,6 @@ wdl_cache_is_on (void)
 {
 	return wdl_cache.cached;
 }
-
-/* STATISTICS OUTPUT */
-#if 0
-extern void 
-wdl_stats_get (struct TB_STATS *x)
-{
-	uint64_t hh,hm,sh,sm,eh;
-	long unsigned mask = 0xfffffffflu;
-
-	hm = wdl_cache.hardmisses;
-	hh = wdl_cache.hard - wdl_cache.hardmisses;
-	sm = wdl_cache.softmisses;
-	sh = wdl_cache.soft - wdl_cache.softmisses;
-	eh = wdl_cache.hits;
-
-	x->probe_easy_hits[0] = (long unsigned)(eh & mask);
-	x->probe_easy_hits[1] = (long unsigned)(eh >> 32);
-
-	x->probe_hard_hits[0] = (long unsigned)(hh & mask);
-	x->probe_hard_hits[1] = (long unsigned)(hh >> 32);
-
-	x->probe_hard_miss[0] = (long unsigned)(hm & mask);
-	x->probe_hard_miss[1] = (long unsigned)(hm >> 32);
-
-	x->probe_soft_hits[0] = (long unsigned)(sh & mask);
-	x->probe_soft_hits[1] = (long unsigned)(sh >> 32);
-
-	x->probe_soft_miss[0] = (long unsigned)(sm & mask);
-	x->probe_soft_miss[1] = (long unsigned)(sm >> 32);
-
-	x->bytes_read[0]	  = (long unsigned)(Bytes_read & mask);
-	x->bytes_read[1] 	  = (long unsigned)(Bytes_read >> 32);
-
-	x->files_opened = eg_was_open_count();
-
-	x->blocks_occupied = wdl_cache.n;
-	x->blocks_max      = wdl_cache.max_blocks;	
-	x->comparisons     = wdl_cache.comparisons;
-
-}
-#endif
 
 /****************************************************************************\
 |						Replacement
@@ -8030,12 +7762,6 @@ tb_probe_wdl
 	SQUARE     *bs = storage_bs;
 	SQ_CONTENT *wp = storage_wp;
 	SQ_CONTENT *bp = storage_bp;
-/*
-	SQUARE     *xs;
-	SQUARE     *ys;
-	SQ_CONTENT *xp;
-	SQ_CONTENT *yp;
-*/
 	SQUARE 		tmp_ws [MAX_LISTSIZE], tmp_bs [MAX_LISTSIZE];
 	SQ_CONTENT  tmp_wp [MAX_LISTSIZE], tmp_bp [MAX_LISTSIZE];
 
