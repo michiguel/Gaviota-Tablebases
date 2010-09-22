@@ -1039,7 +1039,7 @@ static char ini_str[INISIZE];
 static void sjoin(char *s, const char *tail, int max) {strncat(s, tail, max - strlen(s) - 1);}
 
 char *
-tb_init (int verbosity, int decoding_scheme, const char **paths)
+tb_init (int verbosity, int decoding_sch, const char **paths)
 {
 	int zi;
 	int paths_ok;
@@ -1092,7 +1092,7 @@ tb_init (int verbosity, int decoding_scheme, const char **paths)
 		return ret_str;
 	}
 	
-	GTB_scheme = decoding_scheme;
+	GTB_scheme = decoding_sch;
 	Uncompressed = GTB_scheme == 0;
 
 	if (GTB_scheme == 0) {
@@ -1183,12 +1183,12 @@ tb_done (void)
 }
 
 char *
-tb_restart(int verbosity, int decoding_scheme, const char **paths)
+tb_restart(int verbosity, int decoding_sch, const char **paths)
 {
 	if (tb_is_initialized()) {
 		tb_done();
 	}
-	return tb_init(verbosity, decoding_scheme, paths);
+	return tb_init(verbosity, decoding_sch, paths);
 }
 
 /* whenever the program exits should release this memory */
@@ -1712,7 +1712,7 @@ static bool_t
 egtb_get_dtm (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard_flag, dtm_t *dtm)
 {
 	bool_t idxavail;
-	index_t index;
+	index_t idx;
 	dtm_t *tab[2];
 	bool_t (*pc2idx) (const SQUARE *, const SQUARE *, index_t *);
 
@@ -1724,12 +1724,12 @@ egtb_get_dtm (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t pr
 		tab[BL] = egkey[k].egt_b;
 		pc2idx  = egkey[k].pctoi;
 
-		idxavail = pc2idx (wS, bS, &index);
+		idxavail = pc2idx (wS, bS, &idx);
 
 		FOLLOW_LU("indexavail (RAM)",idxavail)
 
 		if (idxavail) {
-			*dtm = tab[stm][index];
+			*dtm = tab[stm][idx];
 		} else {
 			*dtm = iFORBID;
 		}
@@ -1739,7 +1739,7 @@ egtb_get_dtm (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t pr
 	} else if (egkey[k].status == STATUS_ABSENT) {
 
 		pc2idx   = egkey[k].pctoi;
-		idxavail = pc2idx (wS, bS, &index);
+		idxavail = pc2idx (wS, bS, &idx);
 
 		FOLLOW_LU("indexavail (HD)",idxavail)
 
@@ -1753,7 +1753,7 @@ egtb_get_dtm (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t pr
 
 			if (dtm_cache_is_on()) {
 
-				success = get_dtm       (k, stm, index, dtm, probe_hard_flag);
+				success = get_dtm       (k, stm, idx, dtm, probe_hard_flag);
 
 				FOLLOW_LU("get_dtm (succ)",success)
 				FOLLOW_LU("get_dtm (dtm )",*dtm)
@@ -1763,12 +1763,12 @@ egtb_get_dtm (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t pr
 						assert (decoding_scheme() == 0 && GTB_scheme == 0);
 						dtm_t dtm_temp;
 						bool_t ok;
-						bool_t success2 = egtb_filepeek (k, stm, index, &dtm_temp);
+						bool_t success2 = egtb_filepeek (k, stm, idx, &dtm_temp);
 						ok =  (success == success2) && (!success || *dtm == dtm_temp);
 						if (!ok) {
 							printf ("\nERROR\nsuccess1=%d sucess2=%d\n"
-									"k=%d stm=%u index=%d dtm_peek=%d dtm_cache=%d\n", 
-									success, success2, k, stm, index, dtm_temp, *dtm);
+									"k=%d stm=%u idx=%d dtm_peek=%d dtm_cache=%d\n", 
+									success, success2, k, stm, idx, dtm_temp, *dtm);
 							fatal_error();
 						}
 					}
@@ -1777,7 +1777,7 @@ egtb_get_dtm (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t pr
 			} else {	
 				assert(Uncompressed);		
 				if (probe_hard_flag && Uncompressed)
-					success = egtb_filepeek (k, stm, index, dtm);
+					success = egtb_filepeek (k, stm, idx, dtm);
 				else
 					success = FALSE;
 			}
@@ -3457,7 +3457,7 @@ static index_t
 init_kkidx (void)
 /* modifies kkidx[][], wksq[], bksq[] */
 {
-	int index;
+	int idx;
 	SQUARE x, y, i, j;
 	
 	/* default is noindex */
@@ -3467,7 +3467,7 @@ init_kkidx (void)
 		}
 	}
 
-	index = 0;
+	idx = 0;
 	for (x = 0; x < 64; x++) {
 		for (y = 0; y < 64; y++) {
 		
@@ -3480,18 +3480,18 @@ init_kkidx (void)
 			norm_kkindex (x, y, &i, &j);
 		
 			if (NO_KKINDEX == kkidx [i][j]) { /* still empty */
-				kkidx [i][j] = index;
-				kkidx [x][y] = index;
-				bksq [index] = i;
-				wksq [index] = j;			
-				index++;
+				kkidx [i][j] = idx;
+				kkidx [x][y] = idx;
+				bksq [idx] = i;
+				wksq [idx] = j;			
+				idx++;
 			}
 		}
 	}
 	
-	assert (index == MAX_KKINDEX);
+	assert (idx == MAX_KKINDEX);
 
-	return index;
+	return idx;
 }
 
 
@@ -3499,7 +3499,7 @@ static index_t
 init_aaidx (void)
 /* modifies aabase[], aaidx[][] */
 {
-	int index;
+	int idx;
 	SQUARE x, y;
 	
 	/* default is noindex */
@@ -3509,32 +3509,32 @@ init_aaidx (void)
 		}
 	}
 
-	for (index = 0; index < MAX_AAINDEX; index++)
-		aabase [index] = 0;
+	for (idx = 0; idx < MAX_AAINDEX; idx++)
+		aabase [idx] = 0;
 
-	index = 0;
+	idx = 0;
 	for (x = 0; x < 64; x++) {
 		for (y = x + 1; y < 64; y++) {
 
-			assert (index == (int)((y - x) + x * (127-x)/2 - 1) );
+			assert (idx == (int)((y - x) + x * (127-x)/2 - 1) );
 
 			if (NOINDEX == aaidx [x][y]) { /* still empty */
-				aaidx [x] [y] = index; 
-				aaidx [y] [x] = index;
-				aabase [index] = (unsigned char) x;
-				index++;
+				aaidx [x] [y] = idx; 
+				aaidx [y] [x] = idx;
+				aabase [idx] = (unsigned char) x;
+				idx++;
 			} else {
-				assert (aaidx [x] [y] == index);
-				assert (aabase [index] == x);
+				assert (aaidx [x] [y] == idx);
+				assert (aabase [idx] == x);
 			}
 
 
 		}
 	}
 	
-	assert (index == MAX_AAINDEX);
+	assert (idx == MAX_AAINDEX);
 
-	return index;
+	return idx;
 }
 
 
@@ -4667,7 +4667,7 @@ init_aaa (void)
 	index_t accum;
 	index_t a;
 	
-	int index;
+	int idx;
 	SQUARE x, y, z;
 
 	/* getting aaa_base */	
@@ -4688,32 +4688,32 @@ init_aaa (void)
 
 
 	/* initialize aaa_xyz [][] */
-	for (index = 0; index < MAX_AAAINDEX; index++) {
-		aaa_xyz[index][0] = (sq_t) NOINDEX;
-		aaa_xyz[index][1] = (sq_t) NOINDEX;				
-		aaa_xyz[index][2] = (sq_t) NOINDEX;
+	for (idx = 0; idx < MAX_AAAINDEX; idx++) {
+		aaa_xyz[idx][0] = (sq_t) NOINDEX;
+		aaa_xyz[idx][1] = (sq_t) NOINDEX;				
+		aaa_xyz[idx][2] = (sq_t) NOINDEX;
 
 	}
 
-	index = 0;
+	idx = 0;
 	for (z = 0; z < 64; z++) {
 		for (y = 0; y < z; y++) {
 			for (x = 0; x < y; x++) {
 			
-				assert (index == aaa_getsubi (x, y, z));
+				assert (idx == aaa_getsubi (x, y, z));
 	
-				aaa_xyz [index] [0] = x;
-				aaa_xyz [index] [1] = y;				
-				aaa_xyz [index] [2] = z;
+				aaa_xyz [idx] [0] = x;
+				aaa_xyz [idx] [1] = y;				
+				aaa_xyz [idx] [2] = z;
 				
-				index++;
+				idx++;
 			}	
 		}
 	}
 	
-	assert (index == MAX_AAAINDEX);
+	assert (idx == MAX_AAAINDEX);
 
-	return index;
+	return idx;
 }
 
 
@@ -7877,7 +7877,7 @@ static bool_t
 egtb_get_wdl (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard_flag, unsigned int *wdl)
 {
 	bool_t idxavail;
-	index_t index;
+	index_t idx;
 	dtm_t *tab[2];
 	bool_t (*pc2idx) (const SQUARE *, const SQUARE *, index_t *);
 
@@ -7889,12 +7889,12 @@ egtb_get_wdl (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t pr
 		tab[BL] = egkey[k].egt_b;
 		pc2idx  = egkey[k].pctoi;
 
-		idxavail = pc2idx (wS, bS, &index);
+		idxavail = pc2idx (wS, bS, &idx);
 
 		FOLLOW_LU("indexavail (RAM)",idxavail)
 
 		if (idxavail) {
-			*wdl = dtm2WDL(tab[stm][index]);
+			*wdl = dtm2WDL(tab[stm][idx]);
 		} else {
 			*wdl = dtm2WDL(iFORBID);
 		}
@@ -7904,7 +7904,7 @@ egtb_get_wdl (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t pr
 	} else if (egkey[k].status == STATUS_ABSENT) {
 
 		pc2idx   = egkey[k].pctoi;
-		idxavail = pc2idx (wS, bS, &index);
+		idxavail = pc2idx (wS, bS, &idx);
 
 		FOLLOW_LU("indexavail (HD)",idxavail)
 
@@ -7916,7 +7916,7 @@ egtb_get_wdl (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t pr
 			*-------------------------------*/
 			mythread_mutex_lock (&Egtb_lock);	
 
-			success = get_WDL (k, stm, index, wdl, probe_hard_flag);
+			success = get_WDL (k, stm, idx, wdl, probe_hard_flag);
 			FOLLOW_LU("get_wld (succ)",success)
 			FOLLOW_LU("get_wld (wdl )",*wdl)
 
@@ -7926,7 +7926,7 @@ egtb_get_wdl (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t pr
 				unsigned res, ply;
 				if (probe_hard_flag && Uncompressed) {
 					assert(Uncompressed);
-					success = egtb_filepeek (k, stm, index, &dtm);
+					success = egtb_filepeek (k, stm, idx, &dtm);
 					unpackdist (dtm, &res, &ply);			
 					*wdl = res;		
 				}
