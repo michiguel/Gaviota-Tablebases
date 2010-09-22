@@ -148,6 +148,10 @@ lzf_decompress (const void *const in_data,  unsigned int in_len,
     }
   while (ip < in_end);
 
+#if 0
   return op - (u8 *)out_data;
+#else 
+  return (unsigned int)(op - (u8 *)out_data); /*MAB: cast to silence warning */
+#endif
 }
 
