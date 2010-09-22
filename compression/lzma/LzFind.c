@@ -44,9 +44,9 @@ static int LzInWindow_Create(CMatchFinder *p, UInt32 keepSizeReserv, ISzAlloc *a
 
 Byte *MatchFinder_GetPointerToCurrentPos(CMatchFinder *p) { return p->buffer; }
 
-/*MAB: static added */
+/*MAB: static added, index replaced by idx to avoid shadowing a global variable */
 static 
-Byte MatchFinder_GetIndexByte(CMatchFinder *p, Int32 index) { return p->buffer[index]; }
+Byte MatchFinder_GetIndexByte(CMatchFinder *p, Int32 idx) { return p->buffer[idx]; }
 
 /*MAB: static added */
 static 
