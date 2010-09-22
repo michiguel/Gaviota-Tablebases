@@ -1036,7 +1036,7 @@ static int	eg_was_open_count(void)
 
 enum  Sizes {INISIZE = 4096};
 static char ini_str[INISIZE];
-static void sjoin(char *s, char *tail, int max) {strncat(s, tail, max - strlen(s) - 1);}
+static void sjoin(char *s, const char *tail, int max) {strncat(s, tail, max - strlen(s) - 1);}
 
 char *
 tb_init (int verbosity, int decoding_scheme, const char **paths)

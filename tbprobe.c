@@ -41,9 +41,9 @@ static void wdl_print (int stm, int tb_available, unsigned info);
 |	multiple paths separated by ';'
 |	The example in this file uses both styles simultaneoulsy
 */
-char *path1 = "gtb/gtb4";
-char *path2 = "gtb/gtb3;gtb/gtb2";
-char *path3 = "gtb/gtb1";
+const char *path1 = "gtb/gtb4";
+const char *path2 = "gtb/gtb3;gtb/gtb2";
+const char *path3 = "gtb/gtb1";
 
 int main (int argc, char *argv[])
 {
