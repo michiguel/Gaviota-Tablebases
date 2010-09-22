@@ -287,7 +287,7 @@ static int GTB_MAXOPEN = 4;
 static bool_t 			Uncompressed = TRUE;
 static unsigned char 	Buffer_zipped [EGTB_MAXBLOCKSIZE];
 static unsigned char 	Buffer_packed [EGTB_MAXBLOCKSIZE];
-static int				zipinfo_init (void);
+static unsigned int		zipinfo_init (void);
 static void 			zipinfo_done (void);
 
 enum Flip_flags {
@@ -312,7 +312,7 @@ static int				WDL_FRACTION_MAX = 128;
 static size_t			DTM_cache_size = 0;
 static size_t			WDL_cache_size = 0;
 
-static int				TB_AVAILABILITY = 0;
+static unsigned int		TB_AVAILABILITY = 0;
 
 /* LOCKS */
 static mythread_mutex_t	Egtb_lock;
@@ -620,10 +620,10 @@ biggest_memory_needed (void) {
 *---------------------------------*/
 
 #if !defined(SHARED_forbuilding)
-mySHARED bool_t		get_dtm (int key, int side, index_t idx, dtm_t *out, bool_t probe_hard);
+mySHARED bool_t		get_dtm (int key, unsigned int side, index_t idx, dtm_t *out, bool_t probe_hard);
 #endif
 
-static bool_t	 	get_dtm_from_cache (int key, int side, index_t idx, dtm_t *out);
+static bool_t	 	get_dtm_from_cache (int key, unsigned int side, index_t idx, dtm_t *out);
 
 
 /*--------------------------------*\
@@ -855,7 +855,7 @@ tbpaths_init(void)
 static const char **
 tbpaths_add_single(const char **ps, const char *newpath)
 {
-	int counter;
+	size_t counter;
 	const char **newps;
 	size_t i, psize;
 	char *ppath;
@@ -941,8 +941,8 @@ static void path_system_reset(void) {Gtbpath_end_index = 0;}
 static bool_t
 path_system_init (const char **path)
 {
-	int i;
-	int sz;
+	size_t i;
+	size_t sz;
 	const char *x;
 	bool_t ok = TRUE;
 	path_system_reset();
@@ -1024,24 +1024,24 @@ static void	eg_was_open_reset(void)
 	}
 }
 
-static int	eg_was_open_count(void)
+static long unsigned int eg_was_open_count(void)
 {
-	int i, x;
+	long int i, x;
 	for (i = 0, x = 0; i < MAX_EGKEYS; i++) {
 		x += eg_was_open[i];
 	}
-	return x;
+	return (long unsigned) x;
 }
 
 
 enum  Sizes {INISIZE = 4096};
 static char ini_str[INISIZE];
-static void sjoin(char *s, const char *tail, int max) {strncat(s, tail, max - strlen(s) - 1);}
+static void sjoin(char *s, const char *tail, size_t max) {strncat(s, tail, max - strlen(s) - 1);}
 
 char *
 tb_init (int verbosity, int decoding_sch, const char **paths)
 {
-	int zi;
+	unsigned int zi;
 	int paths_ok;
 	char *ret_str;
 	char localstr[256];
@@ -1118,21 +1118,21 @@ tb_init (int verbosity, int decoding_sch, const char **paths)
 			int n, bit;
 
 			n = 3; bit = 1;
-			if (zi&(1<<bit)) 
+			if (zi&(1u<<bit)) 
 				sprintf (localstr,"  Compression Indexes (%d-pc) = PASSED\n",n);
 			else
 				sprintf (localstr,"  Compression Indexes (%d-pc) = **FAILED**\n",n);
 			sjoin (ini_str,localstr,INISIZE);
 			
 			n = 4; bit = 3;
-			if (zi&(1<<bit))
+			if (zi&(1u<<bit))
 				sprintf (localstr,"  Compression Indexes (%d-pc) = PASSED\n",n);
 			else
 				sprintf (localstr,"  Compression Indexes (%d-pc) = **FAILED**\n",n);
 			sjoin (ini_str,localstr,INISIZE);
 
 			n = 5; bit = 5;
-			if (zi&(1<<bit))
+			if (zi&(1u<<bit))
 				sprintf (localstr,"  Compression Indexes (%d-pc) = PASSED\n",n);
 			else
 				sprintf (localstr,"  Compression Indexes (%d-pc) = **FAILED**\n",n);
@@ -1285,7 +1285,7 @@ fd_init (struct filesopen *pfd)
 	if (allowed > 32)
 		GTB_MAXOPEN = 32;		
 
-	p =	(int *) malloc(sizeof(int)*GTB_MAXOPEN);
+	p =	(int *) malloc(sizeof(int)*(size_t)GTB_MAXOPEN);
 
 	if (p != NULL) {
 		for (i = 0; i < GTB_MAXOPEN; i++) {
@@ -1345,13 +1345,13 @@ mySHARED void  			unpackdist 	(dtm_t d, unsigned int *res, unsigned int *ply);
 mySHARED dtm_t 			packdist 	(unsigned int inf, unsigned int ply);
 
 mySHARED bool_t			fread_entry_packed 	(FILE *dest, unsigned int side, dtm_t *px);
-mySHARED bool_t			fpark_entry_packed  (FILE *finp, int side, index_t max, index_t idx);
+mySHARED bool_t			fpark_entry_packed  (FILE *finp, unsigned int side, index_t max, index_t idx);
 #endif
 
 /* use only with probe */
 static bool_t			egtb_get_dtm 	(int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard, dtm_t *dtm);
 static void				removepiece (SQUARE *ys, SQ_CONTENT *yp, int j);
-static bool_t 			egtb_filepeek (int key, int side, index_t idx, dtm_t *out_dtm);
+static bool_t 			egtb_filepeek (int key, unsigned int side, index_t idx, dtm_t *out_dtm);
 
 
 /*prototype*/
@@ -1653,7 +1653,7 @@ tb_probe_	(unsigned int stm,
 #endif
 
 static bool_t
-egtb_filepeek (int key, int side, index_t idx, dtm_t *out_dtm)
+egtb_filepeek (int key, unsigned int side, index_t idx, dtm_t *out_dtm)
 {
 	FILE *finp;
 
@@ -1985,13 +1985,13 @@ inv_dtm (dtm_t x)
 	if (x == iDRAW || x == iFORBID)
 		return x;
 	
-	mat = x & 3;
+	mat = (unsigned)x & 3u;
 	if (mat == iWMATE)
 		mat = iBMATE;
 	else
 		mat = iWMATE;
 
-	x = (dtm_t) ((x & ~3) | mat);
+	x = (dtm_t) (((unsigned)x & ~3u) | mat);
 
 	return x;
 }
@@ -2071,18 +2071,19 @@ adjust_up (dtm_t dist)
 	};
 	dist += adding [dist&INFOMASK];
 	return dist;
-	#else							
-	switch (dist & INFOMASK) {
+	#else			
+	unsigned udist = (unsigned) dist;				
+	switch (udist & INFOMASK) {
 		case iWMATE:
 		case iWMATEt:
 		case iBMATE:
 		case iBMATEt:
-			dist += 1 << PLYSHIFT;
+			udist += (1u << PLYSHIFT);
 			break;
 		default:			
 			break;
 	}
-	return dist;	
+	return (dtm_t) udist;	
 	#endif
 }
 
@@ -2256,7 +2257,7 @@ fread_entry_packed (FILE *finp, unsigned int side, dtm_t *px)
 }
 
 mySHARED bool_t
-fpark_entry_packed  (FILE *finp, int side, index_t max, index_t idx)
+fpark_entry_packed  (FILE *finp, unsigned int side, index_t max, index_t idx)
 {
 	bool_t ok;
 	size_t sz = sizeof(unsigned char);	
@@ -2654,8 +2655,8 @@ tbcache_init (size_t cache_mem, int wdl_fraction)
 	if (wdl_fraction <                0) wdl_fraction = 0;
 	WDL_FRACTION = wdl_fraction;
 	
-	DTM_cache_size = (cache_mem/WDL_FRACTION_MAX)*(128-WDL_FRACTION);
-	WDL_cache_size = (cache_mem/WDL_FRACTION_MAX)*     WDL_FRACTION ;
+	DTM_cache_size = (cache_mem/(size_t)WDL_FRACTION_MAX)*(size_t)(WDL_FRACTION_MAX-WDL_FRACTION);
+	WDL_cache_size = (cache_mem/(size_t)WDL_FRACTION_MAX)*(size_t)     				WDL_FRACTION ;
 
 	#ifdef WDL_PROBE
 	/* returns the actual memory allocated */
@@ -2777,10 +2778,11 @@ static index_t 	egtb_block_uncompressed_to_index (int key, index_t b);
 static  bool_t 	fread32 					(FILE *f, unsigned long int *y);
 
 
-static int
+static unsigned int
 zipinfo_init (void)
 {
-	int i, start, end, ret;
+	int i, start, end;
+	unsigned ret;
 	bool_t ok, complet[8] = {0,0,0,0,0,0,0,0};
 	bool_t pa, partial[8] = {0,0,0,0,0,0,0,0};
 	unsigned int z;
@@ -2829,8 +2831,8 @@ zipinfo_init (void)
 
 
 	for (j = 0, z = 0, x = 3; x < 8; x++) {
-		if (partial[x]) z |= 1 << j++;
-		if (complet[x]) z |= 1 << j++;
+		if (partial[x]) z |= 1u << j++;
+		if (complet[x]) z |= 1u << j++;
 	}
 
 	ret = z;
@@ -3191,7 +3193,7 @@ egtb_freemem (int i)
 /***************************************************************************/
 
 mySHARED bool_t
-get_dtm (int key, int side, index_t idx, dtm_t *out, bool_t probe_hard_flag)
+get_dtm (int key, unsigned int side, index_t idx, dtm_t *out, bool_t probe_hard_flag)
 {
 	bool_t found;
 
@@ -3225,7 +3227,7 @@ get_dtm (int key, int side, index_t idx, dtm_t *out, bool_t probe_hard_flag)
 
 
 static bool_t
-get_dtm_from_cache (int key, int side, index_t idx, dtm_t *out)
+get_dtm_from_cache (int key, unsigned int side, index_t idx, dtm_t *out)
 {
 	index_t 	offset;
 	index_t		remainder;
