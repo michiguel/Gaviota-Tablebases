@@ -77,6 +77,7 @@ struct posit {
 };
 typedef struct 	posit posit_t;
 
+typedef long int		tbkey_t;
 
 /*---------------------------------------------------------------------------------------------------------*/
 /*#include "bool_t.h"*/
@@ -296,7 +297,7 @@ enum Flip_flags {
 
 struct filesopen {
 		int n;
-		int *key;
+		tbkey_t *key;
 };
 
 /* STATIC GLOBALS */
@@ -620,10 +621,10 @@ biggest_memory_needed (void) {
 *---------------------------------*/
 
 #if !defined(SHARED_forbuilding)
-mySHARED bool_t		get_dtm (int key, unsigned int side, index_t idx, dtm_t *out, bool_t probe_hard);
+mySHARED bool_t		get_dtm (tbkey_t key, unsigned int side, index_t idx, dtm_t *out, bool_t probe_hard);
 #endif
 
-static bool_t	 	get_dtm_from_cache (int key, unsigned int side, index_t idx, dtm_t *out);
+static bool_t	 	get_dtm_from_cache (tbkey_t key, unsigned int side, index_t idx, dtm_t *out);
 
 
 /*--------------------------------*\
@@ -1008,8 +1009,8 @@ static void 		wdl_cache_flush (void);
 static void			wdl_cache_reset_counters (void);
 static void			wdl_cache_done (void);
 
-static bool_t		get_WDL_from_cache (int key, int side, index_t idx, unsigned int *out);
-static bool_t		wdl_preload_cache (int key, int side, index_t idx);
+static bool_t		get_WDL_from_cache (tbkey_t key, int side, index_t idx, unsigned int *out);
+static bool_t		wdl_preload_cache (tbkey_t key, int side, index_t idx);
 #endif
 
 #ifdef GTB_SHARE
@@ -1274,7 +1275,7 @@ init_bettarr (void)
 static bool_t
 fd_init (struct filesopen *pfd)
 {
-	int *p;
+	tbkey_t *p;
     int i, allowed;
 
 	pfd->n = 0;
@@ -1285,7 +1286,7 @@ fd_init (struct filesopen *pfd)
 	if (allowed > 32)
 		GTB_MAXOPEN = 32;		
 
-	p =	(int *) malloc(sizeof(int)*(size_t)GTB_MAXOPEN);
+	p =	(tbkey_t *) malloc(sizeof(tbkey_t)*(size_t)GTB_MAXOPEN);
 
 	if (p != NULL) {
 		for (i = 0; i < GTB_MAXOPEN; i++) {
@@ -1302,7 +1303,7 @@ static void
 fd_done (struct filesopen *pfd)
 {
     int i;
-	int closingkey;
+	tbkey_t closingkey;
 	FILE *finp;
 
 	assert(pfd != NULL);
@@ -1332,13 +1333,13 @@ fd_done (struct filesopen *pfd)
 mySHARED void 			list_sq_copy 	(const SQUARE *a, SQUARE *b);
 mySHARED void 			list_pc_copy 	(const SQ_CONTENT *a, SQ_CONTENT *b);
 mySHARED dtm_t 			inv_dtm 		(dtm_t x);
-mySHARED bool_t 		egtb_get_id  	(SQ_CONTENT *w, SQ_CONTENT *b, long int *id);
+mySHARED bool_t 		egtb_get_id  	(SQ_CONTENT *w, SQ_CONTENT *b, tbkey_t *id);
 mySHARED void 			list_sq_flipNS 	(SQUARE *s);
 mySHARED dtm_t 			adjust_up 		(dtm_t dist);
 mySHARED dtm_t 			bestx 			(unsigned int stm, dtm_t a, dtm_t b);
 mySHARED void			sortlists 		(SQUARE *ws, SQ_CONTENT *wp);
 
-mySHARED /*@NULL@*/ 	FILE * fd_openit(int key);
+mySHARED /*@NULL@*/ 	FILE * fd_openit(tbkey_t key);
 
 mySHARED dtm_t 			dtm_unpack 	(unsigned int stm, unsigned char packed);
 mySHARED void  			unpackdist 	(dtm_t d, unsigned int *res, unsigned int *ply);
@@ -1349,9 +1350,9 @@ mySHARED bool_t			fpark_entry_packed  (FILE *finp, unsigned int side, index_t ma
 #endif
 
 /* use only with probe */
-static bool_t			egtb_get_dtm 	(int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard, dtm_t *dtm);
+static bool_t			egtb_get_dtm 	(tbkey_t k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard, dtm_t *dtm);
 static void				removepiece (SQUARE *ys, SQ_CONTENT *yp, int j);
-static bool_t 			egtb_filepeek (int key, unsigned int side, index_t idx, dtm_t *out_dtm);
+static bool_t 			egtb_filepeek (tbkey_t key, unsigned int side, index_t idx, dtm_t *out_dtm);
 
 
 /*prototype*/
@@ -1478,7 +1479,7 @@ tb_probe_	(unsigned int stm,
 			 /*@out@*/ unsigned *ply)
 {
 	int i = 0, j = 0;
-	long int id = -1;
+	tbkey_t id = -1;
 	dtm_t dtm;
 
 	SQUARE 		storage_ws [MAX_LISTSIZE], storage_bs [MAX_LISTSIZE];
@@ -1653,7 +1654,7 @@ tb_probe_	(unsigned int stm,
 #endif
 
 static bool_t
-egtb_filepeek (int key, unsigned int side, index_t idx, dtm_t *out_dtm)
+egtb_filepeek (tbkey_t key, unsigned int side, index_t idx, dtm_t *out_dtm)
 {
 	FILE *finp;
 
@@ -1709,7 +1710,7 @@ egtb_filepeek (int key, unsigned int side, index_t idx, dtm_t *out_dtm)
 static bool_t			dtm_cache_is_on (void);
 
 static bool_t
-egtb_get_dtm (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard_flag, dtm_t *dtm)
+egtb_get_dtm (tbkey_t k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard_flag, dtm_t *dtm)
 {
 	bool_t idxavail;
 	index_t idx;
@@ -1836,10 +1837,10 @@ removepiece (SQUARE *ys, SQ_CONTENT *yp, int j)
 \*----------------------------------------------------*/
 
 mySHARED /*@NULL@*/ FILE *
-fd_openit (int key)
+fd_openit (tbkey_t key)
 {	
 	int 			i;
-	int 			closingkey;
+	tbkey_t			closingkey;
 	FILE *			finp = NULL;
 	char	 		buf[4096];
 	char *			filename = buf;
@@ -1999,7 +2000,7 @@ inv_dtm (dtm_t x)
 static const char pctoch[] = {'-','p','n','b','r','q','k'};
 
 mySHARED bool_t
-egtb_get_id (SQ_CONTENT *w, SQ_CONTENT *b, long int *id)
+egtb_get_id (SQ_CONTENT *w, SQ_CONTENT *b, tbkey_t *id)
 {
 
 	char pcstr[2*MAX_LISTSIZE];
@@ -2293,7 +2294,7 @@ typedef unsigned char unit_t; /* block unit */
 typedef struct wdl_block 	wdl_block_t;
 
 struct wdl_block {
-	int 			key;
+	tbkey_t			key;
 	int				side;
 	index_t 		offset;
 	unit_t			*p_arr;
@@ -2337,7 +2338,7 @@ struct dtm_block;
 typedef struct dtm_block dtm_block_t;
 
 struct dtm_block {
-	int 			key;
+	tbkey_t			key;
 	int				side;
 	index_t 		offset;
 	dtm_t			*p_arr;
@@ -2382,7 +2383,7 @@ static struct general_counters Drive = {0,0};
 
 static void 		split_index (size_t entries_per_block, index_t i, index_t *o, index_t *r);
 static dtm_block_t *point_block_to_replace (void);
-static bool_t 		preload_cache (int key, int side, index_t idx);
+static bool_t 		preload_cache (tbkey_t key, int side, index_t idx);
 static void			movetotop (dtm_block_t *t);
 
 /*--cache prototypes--------------------------------------------------------*/
@@ -2404,10 +2405,10 @@ static void				wdl_cache_reset_counters (void);
 static void				wdl_cache_done (void);
 
 static wdl_block_t *	wdl_point_block_to_replace (void);
-static bool_t			get_WDL_from_cache (int key, int side, index_t idx, unsigned int *out);
+static bool_t			get_WDL_from_cache (tbkey_t key, int side, index_t idx, unsigned int *out);
 static unsigned int		wdl_extract (unit_t *uarr, unsigned int x);
 static void				wdl_movetotop (wdl_block_t *t);
-static bool_t			wdl_preload_cache (int key, int side, index_t idx);
+static bool_t			wdl_preload_cache (tbkey_t key, int side, index_t idx);
 #endif
 /*--------------------------------------------------------------------------*/
 /*- DTM --------------------------------------------------------------------*/
@@ -2712,7 +2713,7 @@ tbstats_reset (void)
 }
 
 static dtm_block_t	*
-dtm_cache_pointblock (int key, int side, index_t idx)
+dtm_cache_pointblock (tbkey_t key, int side, index_t idx)
 {
 	index_t 		offset;
 	index_t			remainder;
@@ -2765,16 +2766,16 @@ struct ZIPINFO {
 
 struct ZIPINFO Zipinfo[MAX_EGKEYS];
 
-static index_t 	egtb_block_getnumber 		(int key, int side, index_t idx);
-static index_t 	egtb_block_getsize 			(int key, index_t idx);
-static index_t 	egtb_block_getsize_zipped 	(int key, index_t block );
-static  bool_t 	egtb_block_park  			(int key, index_t block);
-static  bool_t 	egtb_block_read 			(int key, index_t len, unsigned char *buffer); 
-static  bool_t 	egtb_block_decode 			(int key, int z, unsigned char *bz, int n, unsigned char *bp);
-static  bool_t 	egtb_block_unpack 			(int side, index_t n, const unsigned char *bp, dtm_t *out);
-static  bool_t 	egtb_file_beready 			(int key);
-static  bool_t 	egtb_loadindexes 			(int key);
-static index_t 	egtb_block_uncompressed_to_index (int key, index_t b);
+static index_t 	egtb_block_getnumber 		(tbkey_t key, int side, index_t idx);
+static index_t 	egtb_block_getsize 			(tbkey_t key, index_t idx);
+static index_t 	egtb_block_getsize_zipped 	(tbkey_t key, index_t block );
+static  bool_t 	egtb_block_park  			(tbkey_t key, index_t block);
+static  bool_t 	egtb_block_read 			(tbkey_t key, index_t len, unsigned char *buffer); 
+static  bool_t 	egtb_block_decode 			(tbkey_t key, int z, unsigned char *bz, int n, unsigned char *bp);
+static  bool_t 	egtb_block_unpack 			(unsigned side, index_t n, const unsigned char *bp, dtm_t *out);
+static  bool_t 	egtb_file_beready 			(tbkey_t key);
+static  bool_t 	egtb_loadindexes 			(tbkey_t key);
+static index_t 	egtb_block_uncompressed_to_index (tbkey_t key, index_t b);
 static  bool_t 	fread32 					(FILE *f, unsigned long int *y);
 
 
@@ -2877,7 +2878,7 @@ fread32 (FILE *f, unsigned long int *y)
 }
 
 static bool_t
-egtb_loadindexes (int key)
+egtb_loadindexes (tbkey_t key)
 {
 	unsigned long int blocksize = 1;
 	unsigned long int tailblocksize1 = 0;
@@ -2944,7 +2945,7 @@ egtb_loadindexes (int key)
 }
 
 static index_t
-egtb_block_uncompressed_to_index (int key, index_t b)
+egtb_block_uncompressed_to_index (tbkey_t key, index_t b)
 {
 	index_t max;
 	index_t blocks_per_side;
@@ -2965,7 +2966,7 @@ egtb_block_uncompressed_to_index (int key, index_t b)
 
 
 static index_t
-egtb_block_getnumber (int key, int side, index_t idx)
+egtb_block_getnumber (tbkey_t key, int side, index_t idx)
 {
 	index_t blocks_per_side, block_in_side;
 	index_t max = egkey[key].maxindex;
@@ -2978,7 +2979,7 @@ egtb_block_getnumber (int key, int side, index_t idx)
 
 
 static index_t 
-egtb_block_getsize (int key, index_t idx)
+egtb_block_getsize (tbkey_t key, index_t idx)
 {
 	index_t blocksz = dtm_cache.entries_per_block;
 	index_t maxindex  = egkey[key].maxindex;
@@ -3003,7 +3004,7 @@ egtb_block_getsize (int key, index_t idx)
 }
 
 static index_t 
-egtb_block_getsize_zipped (int key, index_t block )
+egtb_block_getsize_zipped (tbkey_t key, index_t block )
 {
 	index_t i, j;
 	assert (Zipinfo[key].blockindex != NULL);
@@ -3014,7 +3015,7 @@ egtb_block_getsize_zipped (int key, index_t block )
 
 
 static bool_t
-egtb_file_beready (int key)
+egtb_file_beready (tbkey_t key)
 {
 	bool_t success;
 	assert (key < MAX_EGKEYS);
@@ -3025,7 +3026,7 @@ egtb_file_beready (int key)
 
 
 static bool_t
-egtb_block_park  (int key, index_t block)
+egtb_block_park  (tbkey_t key, index_t block)
 {
 	long int i;
 	assert (egkey[key].fd != NULL);
@@ -3044,16 +3045,16 @@ egtb_block_park  (int key, index_t block)
 
 
 static bool_t
-egtb_block_read (int key, index_t len, unsigned char *buffer) 
+egtb_block_read (tbkey_t key, index_t len, unsigned char *buffer) 
 {
 	assert (egkey[key].fd != NULL);
 	return ((size_t)len == fread (buffer, sizeof (unsigned char), len, egkey[key].fd));	
 }
 
-int TB_PROBE_indexing_dummy;
+tbkey_t TB_PROBE_indexing_dummy;
 
 static bool_t
-egtb_block_decode (int key, int z, unsigned char *bz, int n, unsigned char *bp)
+egtb_block_decode (tbkey_t key, int z, unsigned char *bz, int n, unsigned char *bp)
 /* bz:buffer zipped to bp:buffer packed */
 {
 	TB_PROBE_indexing_dummy = key; /* to silence compiler */	
@@ -3062,7 +3063,7 @@ egtb_block_decode (int key, int z, unsigned char *bz, int n, unsigned char *bp)
 }
 
 static bool_t
-egtb_block_unpack (int side, index_t n, const unsigned char *bp, dtm_t *out)
+egtb_block_unpack (unsigned side, index_t n, const unsigned char *bp, dtm_t *out)
 /* bp:buffer packed to out:distance to mate buffer */
 {
 	int i;
@@ -3073,7 +3074,7 @@ egtb_block_unpack (int side, index_t n, const unsigned char *bp, dtm_t *out)
 }
 
 static bool_t
-preload_cache (int key, int side, index_t idx)
+preload_cache (tbkey_t key, int side, index_t idx)
 /* output to the least used block of the cache */
 {
 	dtm_block_t 	*pblock;
@@ -3193,7 +3194,7 @@ egtb_freemem (int i)
 /***************************************************************************/
 
 mySHARED bool_t
-get_dtm (int key, unsigned int side, index_t idx, dtm_t *out, bool_t probe_hard_flag)
+get_dtm (tbkey_t key, unsigned int side, index_t idx, dtm_t *out, bool_t probe_hard_flag)
 {
 	bool_t found;
 
@@ -3227,7 +3228,7 @@ get_dtm (int key, unsigned int side, index_t idx, dtm_t *out, bool_t probe_hard_
 
 
 static bool_t
-get_dtm_from_cache (int key, unsigned int side, index_t idx, dtm_t *out)
+get_dtm_from_cache (tbkey_t key, unsigned int side, index_t idx, dtm_t *out)
 {
 	index_t 	offset;
 	index_t		remainder;
@@ -7306,10 +7307,10 @@ static void				wdl_cache_reset_counters (void);
 static void				wdl_cache_done (void);
 
 static wdl_block_t *	wdl_point_block_to_replace (void);
-static bool_t			get_WDL_from_cache (int key, int side, index_t idx, unsigned int *out);
+static bool_t			get_WDL_from_cache (tbkey_t key, int side, index_t idx, unsigned int *out);
 static unsigned int		wdl_extract (unit_t *uarr, unsigned int x);
 static void				wdl_movetotop (wdl_block_t *t);
-static bool_t			wdl_preload_cache (int key, int side, index_t idx);
+static bool_t			wdl_preload_cache (tbkey_t key, int side, index_t idx);
 
 /*--------------------------------------------------------------------------*/
 
@@ -7523,10 +7524,10 @@ wdl_point_block_to_replace (void)
 \****************************************************************************/
 
 static unsigned int	wdl_extract (unit_t *uarr, unsigned int x);
-static bool_t		get_WDL_from_cache (int key, int side, index_t idx, unsigned int *info_out);
+static bool_t		get_WDL_from_cache (tbkey_tkey, int side, index_t idx, unsigned int *info_out);
 static unsigned 	dtm2WDL(dtm_t dtm);	
 static void			wdl_movetotop (wdl_block_t *t);
-static bool_t		wdl_preload_cache (int key, int side, index_t idx);
+static bool_t		wdl_preload_cache (tbkey_t key, int side, index_t idx);
 static void			dtm_block_2_wdl_block(dtm_block_t *g, wdl_block_t *w, size_t n);	
 
 static bool_t
@@ -7566,7 +7567,7 @@ get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_ha
 }
 
 static bool_t
-get_WDL_from_cache (int key, int side, index_t idx, unsigned int *out)
+get_WDL_from_cache (tbkey_t key, int side, index_t idx, unsigned int *out)
 {
 	index_t 	offset;
 	index_t		remainder;
@@ -7650,7 +7651,7 @@ wdl_movetotop (wdl_block_t *t)
 /****************************************************************************************************/
 
 static bool_t
-wdl_preload_cache (int key, int side, index_t idx)
+wdl_preload_cache (tbkey_t key, int side, index_t idx)
 /* output to the least used block of the cache */
 {
 	dtm_block_t		*dtm_block;
