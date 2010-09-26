@@ -7524,7 +7524,7 @@ wdl_point_block_to_replace (void)
 \****************************************************************************/
 
 static unsigned int	wdl_extract (unit_t *uarr, unsigned int x);
-static bool_t		get_WDL_from_cache (tbkey_tkey, int side, index_t idx, unsigned int *info_out);
+static bool_t		get_WDL_from_cache (tbkey_t key, int side, index_t idx, unsigned int *info_out);
 static unsigned 	dtm2WDL(dtm_t dtm);	
 static void			wdl_movetotop (wdl_block_t *t);
 static bool_t		wdl_preload_cache (tbkey_t key, int side, index_t idx);
