@@ -341,7 +341,7 @@ static void 	print_pos (const sq_t *ws, const sq_t *bs, const pc_t *wp, const pc
 #endif
 
 #if defined(DEBUG) || defined(FOLLOW_EGTB)
-static void 	output_state (unsigned int stm, const SQUARE *wSQ, const SQUARE *bSQ, 
+static void 	output_state (unsigned stm, const SQUARE *wSQ, const SQUARE *bSQ, 
 								const SQ_CONTENT *wPC, const SQ_CONTENT *bPC);
 static const char *Square_str[64] = {
  	"a1","b1","c1","d1","e1","f1","g1","h1",
@@ -621,10 +621,10 @@ biggest_memory_needed (void) {
 *---------------------------------*/
 
 #if !defined(SHARED_forbuilding)
-mySHARED bool_t		get_dtm (tbkey_t key, unsigned int side, index_t idx, dtm_t *out, bool_t probe_hard);
+mySHARED bool_t		get_dtm (tbkey_t key, unsigned side, index_t idx, dtm_t *out, bool_t probe_hard);
 #endif
 
-static bool_t	 	get_dtm_from_cache (tbkey_t key, unsigned int side, index_t idx, dtm_t *out);
+static bool_t	 	get_dtm_from_cache (tbkey_t key, unsigned side, index_t idx, dtm_t *out);
 
 
 /*--------------------------------*\
@@ -1009,8 +1009,8 @@ static void 		wdl_cache_flush (void);
 static void			wdl_cache_reset_counters (void);
 static void			wdl_cache_done (void);
 
-static bool_t		get_WDL_from_cache (tbkey_t key, int side, index_t idx, unsigned int *out);
-static bool_t		wdl_preload_cache (tbkey_t key, int side, index_t idx);
+static bool_t		get_WDL_from_cache (tbkey_t key, unsigned side, index_t idx, unsigned int *out);
+static bool_t		wdl_preload_cache (tbkey_t key, unsigned side, index_t idx);
 #endif
 
 #ifdef GTB_SHARE
@@ -1336,30 +1336,30 @@ mySHARED dtm_t 			inv_dtm 		(dtm_t x);
 mySHARED bool_t 		egtb_get_id  	(SQ_CONTENT *w, SQ_CONTENT *b, tbkey_t *id);
 mySHARED void 			list_sq_flipNS 	(SQUARE *s);
 mySHARED dtm_t 			adjust_up 		(dtm_t dist);
-mySHARED dtm_t 			bestx 			(unsigned int stm, dtm_t a, dtm_t b);
+mySHARED dtm_t 			bestx 			(unsigned stm, dtm_t a, dtm_t b);
 mySHARED void			sortlists 		(SQUARE *ws, SQ_CONTENT *wp);
 
 mySHARED /*@NULL@*/ 	FILE * fd_openit(tbkey_t key);
 
-mySHARED dtm_t 			dtm_unpack 	(unsigned int stm, unsigned char packed);
+mySHARED dtm_t 			dtm_unpack 	(unsigned stm, unsigned char packed);
 mySHARED void  			unpackdist 	(dtm_t d, unsigned int *res, unsigned int *ply);
 mySHARED dtm_t 			packdist 	(unsigned int inf, unsigned int ply);
 
-mySHARED bool_t			fread_entry_packed 	(FILE *dest, unsigned int side, dtm_t *px);
-mySHARED bool_t			fpark_entry_packed  (FILE *finp, unsigned int side, index_t max, index_t idx);
+mySHARED bool_t			fread_entry_packed 	(FILE *dest, unsigned side, dtm_t *px);
+mySHARED bool_t			fpark_entry_packed  (FILE *finp, unsigned side, index_t max, index_t idx);
 #endif
 
 /* use only with probe */
 static bool_t			egtb_get_dtm 	(tbkey_t k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard, dtm_t *dtm);
 static void				removepiece (SQUARE *ys, SQ_CONTENT *yp, int j);
-static bool_t 			egtb_filepeek (tbkey_t key, unsigned int side, index_t idx, dtm_t *out_dtm);
+static bool_t 			egtb_filepeek (tbkey_t key, unsigned side, index_t idx, dtm_t *out_dtm);
 
 
 /*prototype*/
 #ifdef WDL_PROBE
 static bool_t
 tb_probe_wdl
-			(unsigned int stm, 
+			(unsigned stm, 
 			 const SQUARE *inp_wSQ, 
 			 const SQUARE *inp_bSQ,
 			 const SQ_CONTENT *inp_wPC, 
@@ -1369,7 +1369,7 @@ tb_probe_wdl
 #endif
 
 static bool_t
-tb_probe_	(unsigned int stm, 
+tb_probe_	(unsigned stm, 
 			 SQUARE epsq,
 			 const SQUARE *inp_wSQ, 
 			 const SQUARE *inp_bSQ,
@@ -1382,7 +1382,7 @@ tb_probe_	(unsigned int stm,
 
 extern bool_t
 tb_probe_soft
-			(unsigned int stm, 
+			(unsigned stm, 
 			 SQUARE epsq,
 			 unsigned castles,
 			 const SQUARE *inp_wSQ, 
@@ -1399,7 +1399,7 @@ tb_probe_soft
 
 extern bool_t
 tb_probe_hard
-			(unsigned int stm, 
+			(unsigned stm, 
 			 SQUARE epsq,
 			 unsigned castles,
 			 const SQUARE *inp_wSQ, 
@@ -1416,7 +1416,7 @@ tb_probe_hard
 
 extern bool_t
 tb_probe_WDL_soft
-			(unsigned int stm, 
+			(unsigned stm, 
 			 SQUARE epsq,
 			 unsigned castles,
 			 const SQUARE *inp_wSQ, 
@@ -1442,7 +1442,7 @@ tb_probe_WDL_soft
 
 extern bool_t
 tb_probe_WDL_hard
-			(unsigned int stm, 
+			(unsigned stm, 
 			 SQUARE epsq,
 			 unsigned castles,
 			 const SQUARE *inp_wSQ, 
@@ -1468,7 +1468,7 @@ tb_probe_WDL_hard
 
 
 static bool_t
-tb_probe_	(unsigned int stm, 
+tb_probe_	(unsigned stm, 
 			 SQUARE epsq,
 			 const SQUARE *inp_wSQ, 
 			 const SQUARE *inp_bSQ,
@@ -1654,7 +1654,7 @@ tb_probe_	(unsigned int stm,
 #endif
 
 static bool_t
-egtb_filepeek (tbkey_t key, unsigned int side, index_t idx, dtm_t *out_dtm)
+egtb_filepeek (tbkey_t key, unsigned side, index_t idx, dtm_t *out_dtm)
 {
 	FILE *finp;
 
@@ -2090,7 +2090,7 @@ adjust_up (dtm_t dist)
 
 
 mySHARED dtm_t
-bestx (unsigned int stm, dtm_t a, dtm_t b)
+bestx (unsigned stm, dtm_t a, dtm_t b)
 {
 	unsigned int key;	
 	static const unsigned int
@@ -2140,7 +2140,7 @@ bestx (unsigned int stm, dtm_t a, dtm_t b)
  *--------------------------------------------------------------------------*/
 
 mySHARED dtm_t
-dtm_unpack (unsigned int stm, unsigned char packed)
+dtm_unpack (unsigned stm, unsigned char packed)
 {
 	unsigned int info, plies, prefx, store, moves;
 	dtm_t ret;
@@ -2242,12 +2242,12 @@ dtm_unpack (unsigned int stm, unsigned char packed)
 
 
 /*
-static bool_t fwrite_entry_packed (FILE *dest, unsigned int side, dtm_t x);
+static bool_t fwrite_entry_packed (FILE *dest, unsigned side, dtm_t x);
 */
 
 
 mySHARED bool_t
-fread_entry_packed (FILE *finp, unsigned int side, dtm_t *px)
+fread_entry_packed (FILE *finp, unsigned side, dtm_t *px)
 {
 	unsigned char p[SLOTSIZE];
 	bool_t ok = (SLOTSIZE == fread (p, sizeof(unsigned char), SLOTSIZE, finp));
@@ -2258,7 +2258,7 @@ fread_entry_packed (FILE *finp, unsigned int side, dtm_t *px)
 }
 
 mySHARED bool_t
-fpark_entry_packed  (FILE *finp, unsigned int side, index_t max, index_t idx)
+fpark_entry_packed  (FILE *finp, unsigned side, index_t max, index_t idx)
 {
 	bool_t ok;
 	size_t sz = sizeof(unsigned char);	
@@ -2295,7 +2295,7 @@ typedef struct wdl_block 	wdl_block_t;
 
 struct wdl_block {
 	tbkey_t			key;
-	int				side;
+	unsigned		side;
 	index_t 		offset;
 	unit_t			*p_arr;
 	wdl_block_t		*prev;
@@ -2339,7 +2339,7 @@ typedef struct dtm_block dtm_block_t;
 
 struct dtm_block {
 	tbkey_t			key;
-	int				side;
+	unsigned		side;
 	index_t 		offset;
 	dtm_t			*p_arr;
 	dtm_block_t		*prev;
@@ -2383,7 +2383,7 @@ static struct general_counters Drive = {0,0};
 
 static void 		split_index (size_t entries_per_block, index_t i, index_t *o, index_t *r);
 static dtm_block_t *point_block_to_replace (void);
-static bool_t 		preload_cache (tbkey_t key, int side, index_t idx);
+static bool_t 		preload_cache (tbkey_t key, unsigned side, index_t idx);
 static void			movetotop (dtm_block_t *t);
 
 /*--cache prototypes--------------------------------------------------------*/
@@ -2397,7 +2397,7 @@ static void				wdl_movetotop (wdl_block_t *t);
 #if 0
 static bool_t			wdl_cache_init (size_t cache_mem);
 static void				wdl_cache_flush (void);
-static bool_t			get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag);
+static bool_t			get_WDL (tbkey_t key, unsigned side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag);
 #endif
 
 static bool_t			wdl_cache_is_on (void);
@@ -2405,10 +2405,10 @@ static void				wdl_cache_reset_counters (void);
 static void				wdl_cache_done (void);
 
 static wdl_block_t *	wdl_point_block_to_replace (void);
-static bool_t			get_WDL_from_cache (tbkey_t key, int side, index_t idx, unsigned int *out);
+static bool_t			get_WDL_from_cache (tbkey_t key, unsigned side, index_t idx, unsigned int *out);
 static unsigned int		wdl_extract (unit_t *uarr, unsigned int x);
 static void				wdl_movetotop (wdl_block_t *t);
-static bool_t			wdl_preload_cache (tbkey_t key, int side, index_t idx);
+static bool_t			wdl_preload_cache (tbkey_t key, unsigned side, index_t idx);
 #endif
 /*--------------------------------------------------------------------------*/
 /*- DTM --------------------------------------------------------------------*/
@@ -2488,7 +2488,7 @@ dtm_cache_init (size_t cache_mem)
 	for (i = 0; i < max_blocks; i++) {
 		p = &dtm_cache.entry[i];
 		p->key  = -1;
-		p->side = -1;
+		p->side = (unsigned)-1;
 		p->offset = -1;
 		p->p_arr = dtm_cache.buffer + i * entries_per_block;
 		p->prev = NULL;
@@ -2548,7 +2548,7 @@ dtm_cache_flush (void)
 	for (i = 0; i < max_blocks; i++) {
 		p = &dtm_cache.entry[i];
 		p->key  = -1;
-		p->side = -1;
+		p->side = (unsigned)-1;
 		p->offset = -1;
 		p->p_arr = dtm_cache.buffer + i * entries_per_block;
 		p->prev = NULL;
@@ -2713,7 +2713,7 @@ tbstats_reset (void)
 }
 
 static dtm_block_t	*
-dtm_cache_pointblock (tbkey_t key, int side, index_t idx)
+dtm_cache_pointblock (tbkey_t key, unsigned side, index_t idx)
 {
 	index_t 		offset;
 	index_t			remainder;
@@ -2766,7 +2766,7 @@ struct ZIPINFO {
 
 struct ZIPINFO Zipinfo[MAX_EGKEYS];
 
-static index_t 	egtb_block_getnumber 		(tbkey_t key, int side, index_t idx);
+static index_t 	egtb_block_getnumber 		(tbkey_t key, unsigned side, index_t idx);
 static index_t 	egtb_block_getsize 			(tbkey_t key, index_t idx);
 static index_t 	egtb_block_getsize_zipped 	(tbkey_t key, index_t block );
 static  bool_t 	egtb_block_park  			(tbkey_t key, index_t block);
@@ -2966,7 +2966,7 @@ egtb_block_uncompressed_to_index (tbkey_t key, index_t b)
 
 
 static index_t
-egtb_block_getnumber (tbkey_t key, int side, index_t idx)
+egtb_block_getnumber (tbkey_t key, unsigned side, index_t idx)
 {
 	index_t blocks_per_side, block_in_side;
 	index_t max = egkey[key].maxindex;
@@ -3074,7 +3074,7 @@ egtb_block_unpack (unsigned side, index_t n, const unsigned char *bp, dtm_t *out
 }
 
 static bool_t
-preload_cache (tbkey_t key, int side, index_t idx)
+preload_cache (tbkey_t key, unsigned side, index_t idx)
 /* output to the least used block of the cache */
 {
 	dtm_block_t 	*pblock;
@@ -3159,7 +3159,7 @@ preload_cache (tbkey_t key, int side, index_t idx)
 	} else {
 		/* make it unusable */
 		pblock->key    = -1;
-		pblock->side   = -1;
+		pblock->side   = (unsigned)-1;
 		pblock->offset = -1;
 	}
 
@@ -3194,7 +3194,7 @@ egtb_freemem (int i)
 /***************************************************************************/
 
 mySHARED bool_t
-get_dtm (tbkey_t key, unsigned int side, index_t idx, dtm_t *out, bool_t probe_hard_flag)
+get_dtm (tbkey_t key, unsigned side, index_t idx, dtm_t *out, bool_t probe_hard_flag)
 {
 	bool_t found;
 
@@ -3228,7 +3228,7 @@ get_dtm (tbkey_t key, unsigned int side, index_t idx, dtm_t *out, bool_t probe_h
 
 
 static bool_t
-get_dtm_from_cache (tbkey_t key, unsigned int side, index_t idx, dtm_t *out)
+get_dtm_from_cache (tbkey_t key, unsigned side, index_t idx, dtm_t *out)
 {
 	index_t 	offset;
 	index_t		remainder;
@@ -3337,7 +3337,7 @@ point_block_to_replace (void)
 	
 	/* make the information content unusable, it will be replaced */
 	p->key    = -1;
-	p->side   = -1;
+	p->side   = (unsigned)-1;
 	p->offset = -1;
 
 	return p;
@@ -7240,7 +7240,7 @@ print_pos (const sq_t *ws, const sq_t *bs, const pc_t *wp, const pc_t *bp)
 
 #if defined(DEBUG) || defined(FOLLOW_EGTB)
 static void
-output_state (unsigned int stm, const SQUARE *wSQ, const SQUARE *bSQ, 
+output_state (unsigned stm, const SQUARE *wSQ, const SQUARE *bSQ, 
 								const SQ_CONTENT *wPC, const SQ_CONTENT *bPC)
 {
 	int i;
@@ -7299,7 +7299,7 @@ static void				wdl_movetotop (wdl_block_t *t);
 #if 0
 static bool_t			wdl_cache_init (size_t cache_mem);
 static void				wdl_cache_flush (void);
-static bool_t			get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag);
+static bool_t			get_WDL (tbkey_t key, unsigned side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag);
 #endif
 
 static bool_t			wdl_cache_is_on (void);
@@ -7307,10 +7307,10 @@ static void				wdl_cache_reset_counters (void);
 static void				wdl_cache_done (void);
 
 static wdl_block_t *	wdl_point_block_to_replace (void);
-static bool_t			get_WDL_from_cache (tbkey_t key, int side, index_t idx, unsigned int *out);
+static bool_t			get_WDL_from_cache (tbkey_t key, unsigned side, index_t idx, unsigned int *out);
 static unsigned int		wdl_extract (unit_t *uarr, unsigned int x);
 static void				wdl_movetotop (wdl_block_t *t);
-static bool_t			wdl_preload_cache (tbkey_t key, int side, index_t idx);
+static bool_t			wdl_preload_cache (tbkey_t key, unsigned side, index_t idx);
 
 /*--------------------------------------------------------------------------*/
 
@@ -7362,12 +7362,12 @@ wdl_cache_init (size_t cache_mem)
 	
 	for (i = 0; i < max_blocks; i++) {
 		p = &wdl_cache.blocks[i];
-		p->key  = -1;
-		p->side = -1;
-		p->offset = -1;
-		p->p_arr = wdl_cache.buffer + i * WDL_units_per_block;
-		p->prev = NULL;
-		p->next = NULL;
+		p->key  	= -1;
+		p->side 	= (unsigned)-1;
+		p->offset 	= -1;
+		p->p_arr 	= wdl_cache.buffer + i * WDL_units_per_block;
+		p->prev 	= NULL;
+		p->next 	= NULL;
 	}
 
 	WDL_CACHE_INITIALIZED = TRUE;
@@ -7421,12 +7421,12 @@ wdl_cache_flush (void)
 	
 	for (i = 0; i < max_blocks; i++) {
 		p = &wdl_cache.blocks[i];
-		p->key  = -1;
-		p->side = -1;
-		p->offset = -1;
-		p->p_arr = wdl_cache.buffer + i * WDL_units_per_block;
-		p->prev = NULL;
-		p->next = NULL;
+		p->key  	= -1;
+		p->side 	= (unsigned)-1;
+		p->offset 	= -1;
+		p->p_arr 	= wdl_cache.buffer + i * WDL_units_per_block;
+		p->prev 	= NULL;
+		p->next 	= NULL;
 	}
 
 	wdl_cache_reset_counters  ();
@@ -7511,7 +7511,7 @@ wdl_point_block_to_replace (void)
 	
 	/* make the information content unusable, it will be replaced */
 	p->key    = -1;
-	p->side   = -1;
+	p->side   = (unsigned)-1;
 	p->offset = -1;
 
 	return p;
@@ -7524,14 +7524,14 @@ wdl_point_block_to_replace (void)
 \****************************************************************************/
 
 static unsigned int	wdl_extract (unit_t *uarr, unsigned int x);
-static bool_t		get_WDL_from_cache (tbkey_t key, int side, index_t idx, unsigned int *info_out);
+static bool_t		get_WDL_from_cache (tbkey_t key, unsigned side, index_t idx, unsigned int *info_out);
 static unsigned 	dtm2WDL(dtm_t dtm);	
 static void			wdl_movetotop (wdl_block_t *t);
-static bool_t		wdl_preload_cache (tbkey_t key, int side, index_t idx);
+static bool_t		wdl_preload_cache (tbkey_t key, unsigned side, index_t idx);
 static void			dtm_block_2_wdl_block(dtm_block_t *g, wdl_block_t *w, size_t n);	
 
 static bool_t
-get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag)
+get_WDL (tbkey_t key, unsigned side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag)
 {
 	dtm_t dtm;
 	bool_t found;
@@ -7567,7 +7567,7 @@ get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_ha
 }
 
 static bool_t
-get_WDL_from_cache (tbkey_t key, int side, index_t idx, unsigned int *out)
+get_WDL_from_cache (tbkey_t key, unsigned side, index_t idx, unsigned int *out)
 {
 	index_t 	offset;
 	index_t		remainder;
@@ -7651,7 +7651,7 @@ wdl_movetotop (wdl_block_t *t)
 /****************************************************************************************************/
 
 static bool_t
-wdl_preload_cache (tbkey_t key, int side, index_t idx)
+wdl_preload_cache (tbkey_t key, unsigned side, index_t idx)
 /* output to the least used block of the cache */
 {
 	dtm_block_t		*dtm_block;
@@ -7690,7 +7690,7 @@ wdl_preload_cache (tbkey_t key, int side, index_t idx)
 	} else {
 		/* make it unusable */
 		to_modify->key    = -1;
-		to_modify->side   = -1;
+		to_modify->side   = (unsigned)-1;
 		to_modify->offset = -1;
 	}
 
@@ -7743,11 +7743,11 @@ dtm2WDL(dtm_t dtm)
 #ifdef WDL_PROBE
 
 static unsigned int	inv_wdl(unsigned w);
-static bool_t	egtb_get_wdl (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard_flag, unsigned int *wdl);
+static bool_t	egtb_get_wdl (tbkey_t k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard_flag, unsigned int *wdl);
 
 static bool_t
 tb_probe_wdl
-			(unsigned int stm, 
+			(unsigned stm, 
 			 const SQUARE *inp_wSQ, 
 			 const SQUARE *inp_bSQ,
 			 const SQ_CONTENT *inp_wPC, 
@@ -7755,7 +7755,7 @@ tb_probe_wdl
 			 bool_t probingtype,
 			 /*@out@*/ unsigned *res)
 {
-	long int id = -1;
+	tbkey_t id = -1;
 	unsigned int wdl = iUNKNOWN;
 
 	SQUARE 		storage_ws [MAX_LISTSIZE], storage_bs [MAX_LISTSIZE];
@@ -7877,7 +7877,7 @@ inv_wdl(unsigned w)
 }
 
 static bool_t
-egtb_get_wdl (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard_flag, unsigned int *wdl)
+egtb_get_wdl (tbkey_t k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard_flag, unsigned int *wdl)
 {
 	bool_t idxavail;
 	index_t idx;
