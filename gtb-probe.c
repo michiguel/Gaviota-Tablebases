@@ -26,6 +26,7 @@ Copyright (c) 2010 Miguel A. Ballicora
  OTHER DEALINGS IN THE SOFTWARE.
 */
 
+
 /* NBBOTF will remove the internal bitbase on the fly */
 #ifdef NBBOTF
 	#ifdef WDL_PROBE
@@ -103,7 +104,8 @@ typedef int						bool_t;
 #define NOINDEX ((index_t)(-1))
 
 typedef unsigned short int 	dtm_t;
-typedef int 				index_t;
+typedef size_t 				index_t;
+/*typedef int 				index_t;*/
 
 enum Loading_status {	
 				STATUS_ABSENT 		= 0, 
@@ -204,6 +206,11 @@ enum SQUARES {
 #undef NDEBUG
 #endif
 #include "assert.h"
+
+/*------------------- general DEFINES--------------------------- -----------*/
+
+#define gtbNOSIDE	((unsigned)-1)
+#define gtbNOINDEX	((index_t)-1)
 
 /*************************************************\
 |
@@ -425,8 +432,8 @@ static void 	fatal_error(void) {
 /* VARIABLES */
 
 static int 				kkidx [64] [64];
-static int 				wksq [MAX_KKINDEX];
-static int 				bksq [MAX_KKINDEX];
+static sq_t				wksq [MAX_KKINDEX];
+static sq_t				bksq [MAX_KKINDEX];
 static int 				ppidx [24] [48];
 static unsigned int 	pp_hi24 [MAX_PPINDEX];
 static unsigned int 	pp_lo48 [MAX_PPINDEX];
@@ -2262,11 +2269,11 @@ fpark_entry_packed  (FILE *finp, unsigned side, index_t max, index_t idx)
 {
 	bool_t ok;
 	size_t sz = sizeof(unsigned char);	
-	long int i;
+	index_t i;
 	assert (side == WH || side == BL);
 	assert (finp != NULL);
 	assert (idx >= 0);
-	i = ((long int)side * max + idx) * (long int)(sz);
+	i = (side * max + idx) * (index_t)(sz);
 	ok = (0 == fseek (finp, i, SEEK_SET));
 	return ok;
 }
@@ -2487,12 +2494,12 @@ dtm_cache_init (size_t cache_mem)
 	
 	for (i = 0; i < max_blocks; i++) {
 		p = &dtm_cache.entry[i];
-		p->key  = -1;
-		p->side = (unsigned)-1;
-		p->offset = -1;
-		p->p_arr = dtm_cache.buffer + i * entries_per_block;
-		p->prev = NULL;
-		p->next = NULL;
+		p->key  	= -1;
+		p->side 	= gtbNOSIDE;
+		p->offset 	= gtbNOINDEX;
+		p->p_arr 	= dtm_cache.buffer + i * entries_per_block;
+		p->prev 	= NULL;
+		p->next 	= NULL;
 	}
 
 	DTM_CACHE_INITIALIZED = TRUE;
@@ -2547,12 +2554,12 @@ dtm_cache_flush (void)
 	
 	for (i = 0; i < max_blocks; i++) {
 		p = &dtm_cache.entry[i];
-		p->key  = -1;
-		p->side = (unsigned)-1;
-		p->offset = -1;
-		p->p_arr = dtm_cache.buffer + i * entries_per_block;
-		p->prev = NULL;
-		p->next = NULL;
+		p->key  	= -1;
+		p->side 	= gtbNOSIDE;
+		p->offset 	= gtbNOINDEX;
+		p->p_arr 	= dtm_cache.buffer + i * entries_per_block;
+		p->prev 	= NULL;
+		p->next 	= NULL;
 	}
 	dtm_cache_reset_counters ();
 	return;
@@ -2593,7 +2600,7 @@ tbstats_get (struct TB_STATS *x)
 	x->wdl_cachesize    = WDL_cache_size;
 
 	/* occupancy */
-	x->wdl_occupancy = wdl_cache.max_blocks==0? 0:(double)100.0*wdl_cache.n/(double)wdl_cache.max_blocks;
+	x->wdl_occupancy = wdl_cache.max_blocks==0? 0:(double)100.0*(double)wdl_cache.n/(double)wdl_cache.max_blocks;
 
 	/*
 	|	DTM CACHE
@@ -2611,7 +2618,7 @@ tbstats_get (struct TB_STATS *x)
 	x->dtm_cachesize    = DTM_cache_size;
 
 	/* occupancy */
-	x->dtm_occupancy = dtm_cache.max_blocks==0? 0:(double)100.0*dtm_cache.n/(double)dtm_cache.max_blocks;
+	x->dtm_occupancy = dtm_cache.max_blocks==0? 0:(double)100.0*(double)dtm_cache.n/(double)dtm_cache.max_blocks;
 
 	/*
 	|	GENERAL
@@ -2759,8 +2766,8 @@ dtm_cache_pointblock (tbkey_t key, unsigned side, index_t idx)
 \*--------------------------------------------------------------------------*/
 
 struct ZIPINFO {
-	int 		extraoffset;
-	int 		totalblocks;
+	index_t 	extraoffset;
+	index_t 	totalblocks;
 	index_t *	blockindex;
 };
 
@@ -2887,8 +2894,8 @@ egtb_loadindexes (tbkey_t key)
 	unsigned long int dummy;
 	unsigned long int i;
 	unsigned long int blocks;
-	unsigned long int idx;
 	unsigned long int n_idx;
+	unsigned long int idx;
 	index_t	*p;
 
 	bool_t ok;
@@ -2928,7 +2935,7 @@ egtb_loadindexes (tbkey_t key)
 	/* Input of Indexes */
 	for (i = 0; ok && i < n_idx; i++) {
 		ok = fread32 (f, &idx);
-		p[i] = idx;
+		p[i] = (index_t)idx; /* reads a 32 bit int, and converts it to index_t */ assert (sizeof(index_t) >= 4);
 	}
 
 	if (ok) {
@@ -3028,7 +3035,7 @@ egtb_file_beready (tbkey_t key)
 static bool_t
 egtb_block_park  (tbkey_t key, index_t block)
 {
-	long int i;
+	index_t i;
 	assert (egkey[key].fd != NULL);
 
 	if (Uncompressed) {
@@ -3159,8 +3166,8 @@ preload_cache (tbkey_t key, unsigned side, index_t idx)
 	} else {
 		/* make it unusable */
 		pblock->key    = -1;
-		pblock->side   = (unsigned)-1;
-		pblock->offset = -1;
+		pblock->side   = gtbNOSIDE;
+		pblock->offset = gtbNOINDEX;
 	}
 
 	FOLLOW_LU("preload_cache?", ok)
@@ -3337,8 +3344,8 @@ point_block_to_replace (void)
 	
 	/* make the information content unusable, it will be replaced */
 	p->key    = -1;
-	p->side   = (unsigned)-1;
-	p->offset = -1;
+	p->side   = gtbNOSIDE;
+	p->offset = gtbNOINDEX;
 
 	return p;
 }
@@ -3393,7 +3400,7 @@ movetotop (dtm_block_t *t)
 static void
 init_indexing (int verbosity)
 {
-	int a,b,c,d,e,f;
+	index_t a,b,c,d,e,f;
 
 	init_flipt ();
 
@@ -3406,12 +3413,12 @@ init_indexing (int verbosity)
 
 	if (verbosity) {
 		printf ("\nGTB supporting tables, Initialization\n");
-		printf ("  Max    kk idx: %8d\n", a );	
-		printf ("  Max    pp idx: %8d\n", b );	
-		printf ("  Max    aa idx: %8d\n", c );
-		printf ("  Max   aaa idx: %8d\n", d );
-		printf ("  Max  pp48 idx: %8d\n", e );
-		printf ("  Max ppp48 idx: %8d\n", f );
+		printf ("  Max    kk idx: %8d\n", (int)a );	
+		printf ("  Max    pp idx: %8d\n", (int)b );	
+		printf ("  Max    aa idx: %8d\n", (int)c );
+		printf ("  Max   aaa idx: %8d\n", (int)d );
+		printf ("  Max  pp48 idx: %8d\n", (int)e );
+		printf ("  Max ppp48 idx: %8d\n", (int)f );
 	}
 
 	if (!reach_was_initialized())
@@ -4219,7 +4226,7 @@ test_kaakb (void)
 
 	enum  {MAXPC = 16+1};
 	char 		str[] = "kaakb";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -4368,7 +4375,7 @@ test_kaabk (void)
 
 	enum  {MAXPC = 16+1};
 	char 		str[] = "kaabk";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -4517,7 +4524,7 @@ test_kabbk (void)
 
 	enum  {MAXPC = 16+1};
 	char 		str[] = "kabbk";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -4747,7 +4754,7 @@ test_kaaak (void)
 
 	enum  {MAXPC = 16+1};
 	char 		str[] = "kaaak";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -4917,7 +4924,7 @@ test_kapkb (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kapkb";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -5063,7 +5070,7 @@ test_kabkp (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kabkp";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -5291,7 +5298,7 @@ test_kppk (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kppk";
-	int 		a, b, c, d;
+	SQUARE 		a, b, c, d;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -5659,7 +5666,7 @@ kaak_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, index_t *out)
 	SQUARE ws[MAX_LISTSIZE], bs[MAX_LISTSIZE];
 	index_t ki, ai;
 	unsigned int ft;
-	int i;
+	SQUARE i, j;
 
 	ft = flipt [inp_pb[0]] [inp_pw[0]];
 
@@ -5708,7 +5715,7 @@ test_kppka (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kppka";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -5820,7 +5827,7 @@ kppka_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 	SQUARE pawn_b = pw[2];
 	SQUARE bk     = pb[0];
 	SQUARE ba	  = pb[1];	
-	int i, j;
+	SQUARE i, j;
 
 	assert (A2 <= pawn_a && pawn_a < A8);
 	assert (A2 <= pawn_b && pawn_b < A8);
@@ -5866,7 +5873,7 @@ test_kappk (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kappk";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -5979,7 +5986,7 @@ kappk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 	SQUARE pawn_b = pw[3];
 	SQUARE bk     = pb[0];
 
-	int i, j;
+	SQUARE i, j;
 
 	assert (A2 <= pawn_a && pawn_a < A8);
 	assert (A2 <= pawn_b && pawn_b < A8);
@@ -6025,7 +6032,7 @@ test_kapkp (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kapkp";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -6190,7 +6197,7 @@ test_kabpk (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kabpk";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -6328,7 +6335,7 @@ test_kaapk (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kaapk";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -6488,7 +6495,7 @@ test_kaakp (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kaakp";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -6703,7 +6710,7 @@ test_kppkp (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kppkp";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -6816,7 +6823,7 @@ kppkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 	SQUARE pawn_b = pw[2];
 	SQUARE bk     = pb[0];
 	SQUARE pawn_c = pb[1];	
-	int i, j, k;
+	SQUARE i, j, k;
 
 	assert (A2 <= pawn_a && pawn_a < A8);
 	assert (A2 <= pawn_b && pawn_b < A8);
@@ -6952,7 +6959,7 @@ test_kpppk (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kpppk";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -7067,7 +7074,7 @@ kpppk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	SQUARE bk     = pb[0];
 
-	int i, j, k;
+	SQUARE i, j, k;
 
 	assert (A2 <= pawn_a && pawn_a < A8);
 	assert (A2 <= pawn_b && pawn_b < A8);
@@ -7363,8 +7370,8 @@ wdl_cache_init (size_t cache_mem)
 	for (i = 0; i < max_blocks; i++) {
 		p = &wdl_cache.blocks[i];
 		p->key  	= -1;
-		p->side 	= (unsigned)-1;
-		p->offset 	= -1;
+		p->side 	= gtbNOSIDE;
+		p->offset 	= gtbNOINDEX;
 		p->p_arr 	= wdl_cache.buffer + i * WDL_units_per_block;
 		p->prev 	= NULL;
 		p->next 	= NULL;
@@ -7422,8 +7429,8 @@ wdl_cache_flush (void)
 	for (i = 0; i < max_blocks; i++) {
 		p = &wdl_cache.blocks[i];
 		p->key  	= -1;
-		p->side 	= (unsigned)-1;
-		p->offset 	= -1;
+		p->side 	= gtbNOSIDE;
+		p->offset 	= gtbNOINDEX;
 		p->p_arr 	= wdl_cache.buffer + i * WDL_units_per_block;
 		p->prev 	= NULL;
 		p->next 	= NULL;
@@ -7511,8 +7518,8 @@ wdl_point_block_to_replace (void)
 	
 	/* make the information content unusable, it will be replaced */
 	p->key    = -1;
-	p->side   = (unsigned)-1;
-	p->offset = -1;
+	p->side   = gtbNOSIDE;
+	p->offset = gtbNOINDEX;
 
 	return p;
 }
@@ -7603,7 +7610,7 @@ get_WDL_from_cache (tbkey_t key, unsigned side, index_t idx, unsigned int *out)
 static unsigned int
 wdl_extract (unit_t *uarr, unsigned int x)
 {
-	int width = 2;
+	unsigned int width = 2;
 	unsigned int nu = x/WDL_entries_per_unit;
 	unsigned int y  = x - (nu * WDL_entries_per_unit);
 	return (uarr[nu] >> (y*width)) & WDL_entry_mask;
@@ -7690,8 +7697,8 @@ wdl_preload_cache (tbkey_t key, unsigned side, index_t idx)
 	} else {
 		/* make it unusable */
 		to_modify->key    = -1;
-		to_modify->side   = (unsigned)-1;
-		to_modify->offset = -1;
+		to_modify->side   = gtbNOSIDE;
+		to_modify->offset = gtbNOINDEX;
 	}
 
 	FOLLOW_LU("wdl preload_cache?", ok)
