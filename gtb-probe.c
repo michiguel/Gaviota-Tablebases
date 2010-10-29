@@ -5666,7 +5666,7 @@ kaak_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, index_t *out)
 	SQUARE ws[MAX_LISTSIZE], bs[MAX_LISTSIZE];
 	index_t ki, ai;
 	unsigned int ft;
-	SQUARE i, j;
+	SQUARE i;
 
 	ft = flipt [inp_pb[0]] [inp_pw[0]];
 

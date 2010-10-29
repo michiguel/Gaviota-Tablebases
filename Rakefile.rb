@@ -4,7 +4,8 @@ $target   = 'tbprobe'
 $sources  = 'sources.txt'
 
 #switches_gcc = '-lpthread -lm -Wwrite-strings -Wcast-qual -Wshadow -Wconversion -W -Wall -Wextra -ansi -pedantic -O2 '
-$switches_gcc = '-lpthread -lm -Wwrite-strings -Wshadow -Wconversion -W -Wall -Wextra -O2 '
+#$switches_gcc = '-lpthread -lm -Wwrite-strings -Wshadow -Wconversion -W -Wall -Wextra -O2 '
+$switches_gcc = '-lpthread -lm -Wshadow -W -Wall -Wextra -O2 '
 #$switches_gcc = '-lpthread -lm -Wall -Wextra -O2 '
 $switches_icc = '-lpthread -Wall -O2 '
 #-wd981,593,2259
