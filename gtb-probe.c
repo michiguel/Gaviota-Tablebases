@@ -431,14 +431,14 @@ static void 	fatal_error(void) {
 
 /* VARIABLES */
 
-static int 				kkidx [64] [64];
+static unsigned int		kkidx [64] [64];
 static sq_t				wksq [MAX_KKINDEX];
 static sq_t				bksq [MAX_KKINDEX];
-static int 				ppidx [24] [48];
+static unsigned int		ppidx [24] [48];
 static unsigned int 	pp_hi24 [MAX_PPINDEX];
 static unsigned int 	pp_lo48 [MAX_PPINDEX];
 static unsigned int 	flipt [64] [64];
-static int 				aaidx [64] [64];
+static unsigned int 	aaidx [64] [64];
 static unsigned char 	aabase [MAX_AAINDEX];
 static index_t 			pp48_idx[48][48];
 static sq_t				pp48_sq_x[MAX_PP48_INDEX];
@@ -3073,7 +3073,7 @@ static bool_t
 egtb_block_unpack (unsigned side, index_t n, const unsigned char *bp, dtm_t *out)
 /* bp:buffer packed to out:distance to mate buffer */
 {
-	int i;
+	index_t i;
 	for (i = 0; i < n; i++) {
 		*out++ = dtm_unpack (side, bp[i]);		
 	}	
@@ -3588,7 +3588,7 @@ init_ppidx (void)
 			i = wsq_to_pidx24 (anchor);
 			j = wsq_to_pidx48 (loosen);
 			
-			if (ppidx [i] [j] == NOINDEX) {
+			if (NOINDEX == ppidx [i] [j]) {
 
                 ppidx [i] [j] = idx;
                 assert (idx < MAX_PPINDEX);
