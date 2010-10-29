@@ -46,6 +46,7 @@ Copyright (c) 2010 Miguel A. Ballicora
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "gtb-probe.h"
 
 #if defined(SHARED_forbuilding)
@@ -58,14 +59,17 @@ Copyright (c) 2010 Miguel A. Ballicora
 
 #include "sysport.h"
 #include "gtb-att.h"
+#include "gtb-types.h"
 
 /*---------------------------------------------------------------------------------------------------------*/
 /*#include "posit_t.h"*/
 
 #define MAX_LISTSIZE 17
+#if 0
 typedef unsigned 		sq_t;
 typedef unsigned char 	pc_t;
 typedef uint32_t		mv_t;
+#endif
 
 struct posit {
 	sq_t 			ws[MAX_LISTSIZE];
@@ -78,7 +82,9 @@ struct posit {
 };
 typedef struct 	posit posit_t;
 
+#if 0
 typedef long int		tbkey_t;
+#endif
 
 /*---------------------------------------------------------------------------------------------------------*/
 /*#include "bool_t.h"*/
@@ -103,9 +109,11 @@ typedef int						bool_t;
 #define SLOTSIZE 1
 #define NOINDEX ((index_t)(-1))
 
+#if 0
 typedef unsigned short int 	dtm_t;
 typedef size_t 				index_t;
 /*typedef int 				index_t;*/
+#endif
 
 enum Loading_status {	
 				STATUS_ABSENT 		= 0, 
