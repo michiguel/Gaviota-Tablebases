@@ -26,6 +26,7 @@ Copyright (c) 2010 Miguel A. Ballicora
  OTHER DEALINGS IN THE SOFTWARE.
 */
 
+
 /* NBBOTF will remove the internal bitbase on the fly */
 #ifdef NBBOTF
 	#ifdef WDL_PROBE
@@ -77,6 +78,7 @@ struct posit {
 };
 typedef struct 	posit posit_t;
 
+typedef long int		tbkey_t;
 
 /*---------------------------------------------------------------------------------------------------------*/
 /*#include "bool_t.h"*/
@@ -102,7 +104,8 @@ typedef int						bool_t;
 #define NOINDEX ((index_t)(-1))
 
 typedef unsigned short int 	dtm_t;
-typedef int 				index_t;
+typedef size_t 				index_t;
+/*typedef int 				index_t;*/
 
 enum Loading_status {	
 				STATUS_ABSENT 		= 0, 
@@ -204,6 +207,11 @@ enum SQUARES {
 #endif
 #include "assert.h"
 
+/*------------------- general DEFINES--------------------------- -----------*/
+
+#define gtbNOSIDE	((unsigned)-1)
+#define gtbNOINDEX	((index_t)-1)
+
 /*************************************************\
 |
 |				COMPRESSION SCHEMES 
@@ -296,7 +304,7 @@ enum Flip_flags {
 
 struct filesopen {
 		int n;
-		int *key;
+		tbkey_t *key;
 };
 
 /* STATIC GLOBALS */
@@ -340,7 +348,7 @@ static void 	print_pos (const sq_t *ws, const sq_t *bs, const pc_t *wp, const pc
 #endif
 
 #if defined(DEBUG) || defined(FOLLOW_EGTB)
-static void 	output_state (unsigned int stm, const SQUARE *wSQ, const SQUARE *bSQ, 
+static void 	output_state (unsigned stm, const SQUARE *wSQ, const SQUARE *bSQ, 
 								const SQ_CONTENT *wPC, const SQ_CONTENT *bPC);
 static const char *Square_str[64] = {
  	"a1","b1","c1","d1","e1","f1","g1","h1",
@@ -423,14 +431,14 @@ static void 	fatal_error(void) {
 
 /* VARIABLES */
 
-static int 				kkidx [64] [64];
-static int 				wksq [MAX_KKINDEX];
-static int 				bksq [MAX_KKINDEX];
-static int 				ppidx [24] [48];
+static unsigned int		kkidx [64] [64];
+static sq_t				wksq [MAX_KKINDEX];
+static sq_t				bksq [MAX_KKINDEX];
+static unsigned int		ppidx [24] [48];
 static unsigned int 	pp_hi24 [MAX_PPINDEX];
 static unsigned int 	pp_lo48 [MAX_PPINDEX];
 static unsigned int 	flipt [64] [64];
-static int 				aaidx [64] [64];
+static unsigned int 	aaidx [64] [64];
 static unsigned char 	aabase [MAX_AAINDEX];
 static index_t 			pp48_idx[48][48];
 static sq_t				pp48_sq_x[MAX_PP48_INDEX];
@@ -620,10 +628,10 @@ biggest_memory_needed (void) {
 *---------------------------------*/
 
 #if !defined(SHARED_forbuilding)
-mySHARED bool_t		get_dtm (int key, unsigned int side, index_t idx, dtm_t *out, bool_t probe_hard);
+mySHARED bool_t		get_dtm (tbkey_t key, unsigned side, index_t idx, dtm_t *out, bool_t probe_hard);
 #endif
 
-static bool_t	 	get_dtm_from_cache (int key, unsigned int side, index_t idx, dtm_t *out);
+static bool_t	 	get_dtm_from_cache (tbkey_t key, unsigned side, index_t idx, dtm_t *out);
 
 
 /*--------------------------------*\
@@ -1008,8 +1016,8 @@ static void 		wdl_cache_flush (void);
 static void			wdl_cache_reset_counters (void);
 static void			wdl_cache_done (void);
 
-static bool_t		get_WDL_from_cache (int key, int side, index_t idx, unsigned int *out);
-static bool_t		wdl_preload_cache (int key, int side, index_t idx);
+static bool_t		get_WDL_from_cache (tbkey_t key, unsigned side, index_t idx, unsigned int *out);
+static bool_t		wdl_preload_cache (tbkey_t key, unsigned side, index_t idx);
 #endif
 
 #ifdef GTB_SHARE
@@ -1274,7 +1282,7 @@ init_bettarr (void)
 static bool_t
 fd_init (struct filesopen *pfd)
 {
-	int *p;
+	tbkey_t *p;
     int i, allowed;
 
 	pfd->n = 0;
@@ -1285,7 +1293,7 @@ fd_init (struct filesopen *pfd)
 	if (allowed > 32)
 		GTB_MAXOPEN = 32;		
 
-	p =	(int *) malloc(sizeof(int)*(size_t)GTB_MAXOPEN);
+	p =	(tbkey_t *) malloc(sizeof(tbkey_t)*(size_t)GTB_MAXOPEN);
 
 	if (p != NULL) {
 		for (i = 0; i < GTB_MAXOPEN; i++) {
@@ -1302,7 +1310,7 @@ static void
 fd_done (struct filesopen *pfd)
 {
     int i;
-	int closingkey;
+	tbkey_t closingkey;
 	FILE *finp;
 
 	assert(pfd != NULL);
@@ -1332,33 +1340,33 @@ fd_done (struct filesopen *pfd)
 mySHARED void 			list_sq_copy 	(const SQUARE *a, SQUARE *b);
 mySHARED void 			list_pc_copy 	(const SQ_CONTENT *a, SQ_CONTENT *b);
 mySHARED dtm_t 			inv_dtm 		(dtm_t x);
-mySHARED bool_t 		egtb_get_id  	(SQ_CONTENT *w, SQ_CONTENT *b, long int *id);
+mySHARED bool_t 		egtb_get_id  	(SQ_CONTENT *w, SQ_CONTENT *b, tbkey_t *id);
 mySHARED void 			list_sq_flipNS 	(SQUARE *s);
 mySHARED dtm_t 			adjust_up 		(dtm_t dist);
-mySHARED dtm_t 			bestx 			(unsigned int stm, dtm_t a, dtm_t b);
+mySHARED dtm_t 			bestx 			(unsigned stm, dtm_t a, dtm_t b);
 mySHARED void			sortlists 		(SQUARE *ws, SQ_CONTENT *wp);
 
-mySHARED /*@NULL@*/ 	FILE * fd_openit(int key);
+mySHARED /*@NULL@*/ 	FILE * fd_openit(tbkey_t key);
 
-mySHARED dtm_t 			dtm_unpack 	(unsigned int stm, unsigned char packed);
+mySHARED dtm_t 			dtm_unpack 	(unsigned stm, unsigned char packed);
 mySHARED void  			unpackdist 	(dtm_t d, unsigned int *res, unsigned int *ply);
 mySHARED dtm_t 			packdist 	(unsigned int inf, unsigned int ply);
 
-mySHARED bool_t			fread_entry_packed 	(FILE *dest, unsigned int side, dtm_t *px);
-mySHARED bool_t			fpark_entry_packed  (FILE *finp, unsigned int side, index_t max, index_t idx);
+mySHARED bool_t			fread_entry_packed 	(FILE *dest, unsigned side, dtm_t *px);
+mySHARED bool_t			fpark_entry_packed  (FILE *finp, unsigned side, index_t max, index_t idx);
 #endif
 
 /* use only with probe */
-static bool_t			egtb_get_dtm 	(int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard, dtm_t *dtm);
+static bool_t			egtb_get_dtm 	(tbkey_t k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard, dtm_t *dtm);
 static void				removepiece (SQUARE *ys, SQ_CONTENT *yp, int j);
-static bool_t 			egtb_filepeek (int key, unsigned int side, index_t idx, dtm_t *out_dtm);
+static bool_t 			egtb_filepeek (tbkey_t key, unsigned side, index_t idx, dtm_t *out_dtm);
 
 
 /*prototype*/
 #ifdef WDL_PROBE
 static bool_t
 tb_probe_wdl
-			(unsigned int stm, 
+			(unsigned stm, 
 			 const SQUARE *inp_wSQ, 
 			 const SQUARE *inp_bSQ,
 			 const SQ_CONTENT *inp_wPC, 
@@ -1368,7 +1376,7 @@ tb_probe_wdl
 #endif
 
 static bool_t
-tb_probe_	(unsigned int stm, 
+tb_probe_	(unsigned stm, 
 			 SQUARE epsq,
 			 const SQUARE *inp_wSQ, 
 			 const SQUARE *inp_bSQ,
@@ -1381,7 +1389,7 @@ tb_probe_	(unsigned int stm,
 
 extern bool_t
 tb_probe_soft
-			(unsigned int stm, 
+			(unsigned stm, 
 			 SQUARE epsq,
 			 unsigned castles,
 			 const SQUARE *inp_wSQ, 
@@ -1398,7 +1406,7 @@ tb_probe_soft
 
 extern bool_t
 tb_probe_hard
-			(unsigned int stm, 
+			(unsigned stm, 
 			 SQUARE epsq,
 			 unsigned castles,
 			 const SQUARE *inp_wSQ, 
@@ -1415,7 +1423,7 @@ tb_probe_hard
 
 extern bool_t
 tb_probe_WDL_soft
-			(unsigned int stm, 
+			(unsigned stm, 
 			 SQUARE epsq,
 			 unsigned castles,
 			 const SQUARE *inp_wSQ, 
@@ -1441,7 +1449,7 @@ tb_probe_WDL_soft
 
 extern bool_t
 tb_probe_WDL_hard
-			(unsigned int stm, 
+			(unsigned stm, 
 			 SQUARE epsq,
 			 unsigned castles,
 			 const SQUARE *inp_wSQ, 
@@ -1467,7 +1475,7 @@ tb_probe_WDL_hard
 
 
 static bool_t
-tb_probe_	(unsigned int stm, 
+tb_probe_	(unsigned stm, 
 			 SQUARE epsq,
 			 const SQUARE *inp_wSQ, 
 			 const SQUARE *inp_bSQ,
@@ -1478,7 +1486,7 @@ tb_probe_	(unsigned int stm,
 			 /*@out@*/ unsigned *ply)
 {
 	int i = 0, j = 0;
-	long int id = -1;
+	tbkey_t id = -1;
 	dtm_t dtm;
 
 	SQUARE 		storage_ws [MAX_LISTSIZE], storage_bs [MAX_LISTSIZE];
@@ -1653,7 +1661,7 @@ tb_probe_	(unsigned int stm,
 #endif
 
 static bool_t
-egtb_filepeek (int key, unsigned int side, index_t idx, dtm_t *out_dtm)
+egtb_filepeek (tbkey_t key, unsigned side, index_t idx, dtm_t *out_dtm)
 {
 	FILE *finp;
 
@@ -1709,7 +1717,7 @@ egtb_filepeek (int key, unsigned int side, index_t idx, dtm_t *out_dtm)
 static bool_t			dtm_cache_is_on (void);
 
 static bool_t
-egtb_get_dtm (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard_flag, dtm_t *dtm)
+egtb_get_dtm (tbkey_t k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard_flag, dtm_t *dtm)
 {
 	bool_t idxavail;
 	index_t idx;
@@ -1836,10 +1844,10 @@ removepiece (SQUARE *ys, SQ_CONTENT *yp, int j)
 \*----------------------------------------------------*/
 
 mySHARED /*@NULL@*/ FILE *
-fd_openit (int key)
+fd_openit (tbkey_t key)
 {	
 	int 			i;
-	int 			closingkey;
+	tbkey_t			closingkey;
 	FILE *			finp = NULL;
 	char	 		buf[4096];
 	char *			filename = buf;
@@ -1999,7 +2007,7 @@ inv_dtm (dtm_t x)
 static const char pctoch[] = {'-','p','n','b','r','q','k'};
 
 mySHARED bool_t
-egtb_get_id (SQ_CONTENT *w, SQ_CONTENT *b, long int *id)
+egtb_get_id (SQ_CONTENT *w, SQ_CONTENT *b, tbkey_t *id)
 {
 
 	char pcstr[2*MAX_LISTSIZE];
@@ -2089,7 +2097,7 @@ adjust_up (dtm_t dist)
 
 
 mySHARED dtm_t
-bestx (unsigned int stm, dtm_t a, dtm_t b)
+bestx (unsigned stm, dtm_t a, dtm_t b)
 {
 	unsigned int key;	
 	static const unsigned int
@@ -2139,7 +2147,7 @@ bestx (unsigned int stm, dtm_t a, dtm_t b)
  *--------------------------------------------------------------------------*/
 
 mySHARED dtm_t
-dtm_unpack (unsigned int stm, unsigned char packed)
+dtm_unpack (unsigned stm, unsigned char packed)
 {
 	unsigned int info, plies, prefx, store, moves;
 	dtm_t ret;
@@ -2241,12 +2249,12 @@ dtm_unpack (unsigned int stm, unsigned char packed)
 
 
 /*
-static bool_t fwrite_entry_packed (FILE *dest, unsigned int side, dtm_t x);
+static bool_t fwrite_entry_packed (FILE *dest, unsigned side, dtm_t x);
 */
 
 
 mySHARED bool_t
-fread_entry_packed (FILE *finp, unsigned int side, dtm_t *px)
+fread_entry_packed (FILE *finp, unsigned side, dtm_t *px)
 {
 	unsigned char p[SLOTSIZE];
 	bool_t ok = (SLOTSIZE == fread (p, sizeof(unsigned char), SLOTSIZE, finp));
@@ -2257,15 +2265,15 @@ fread_entry_packed (FILE *finp, unsigned int side, dtm_t *px)
 }
 
 mySHARED bool_t
-fpark_entry_packed  (FILE *finp, unsigned int side, index_t max, index_t idx)
+fpark_entry_packed  (FILE *finp, unsigned side, index_t max, index_t idx)
 {
 	bool_t ok;
 	size_t sz = sizeof(unsigned char);	
-	long int i;
+	index_t i;
 	assert (side == WH || side == BL);
 	assert (finp != NULL);
 	assert (idx >= 0);
-	i = ((long int)side * max + idx) * (long int)(sz);
+	i = (side * max + idx) * (index_t)(sz);
 	ok = (0 == fseek (finp, i, SEEK_SET));
 	return ok;
 }
@@ -2293,8 +2301,8 @@ typedef unsigned char unit_t; /* block unit */
 typedef struct wdl_block 	wdl_block_t;
 
 struct wdl_block {
-	int 			key;
-	int				side;
+	tbkey_t			key;
+	unsigned		side;
 	index_t 		offset;
 	unit_t			*p_arr;
 	wdl_block_t		*prev;
@@ -2337,8 +2345,8 @@ struct dtm_block;
 typedef struct dtm_block dtm_block_t;
 
 struct dtm_block {
-	int 			key;
-	int				side;
+	tbkey_t			key;
+	unsigned		side;
 	index_t 		offset;
 	dtm_t			*p_arr;
 	dtm_block_t		*prev;
@@ -2382,7 +2390,7 @@ static struct general_counters Drive = {0,0};
 
 static void 		split_index (size_t entries_per_block, index_t i, index_t *o, index_t *r);
 static dtm_block_t *point_block_to_replace (void);
-static bool_t 		preload_cache (int key, int side, index_t idx);
+static bool_t 		preload_cache (tbkey_t key, unsigned side, index_t idx);
 static void			movetotop (dtm_block_t *t);
 
 /*--cache prototypes--------------------------------------------------------*/
@@ -2396,7 +2404,7 @@ static void				wdl_movetotop (wdl_block_t *t);
 #if 0
 static bool_t			wdl_cache_init (size_t cache_mem);
 static void				wdl_cache_flush (void);
-static bool_t			get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag);
+static bool_t			get_WDL (tbkey_t key, unsigned side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag);
 #endif
 
 static bool_t			wdl_cache_is_on (void);
@@ -2404,10 +2412,10 @@ static void				wdl_cache_reset_counters (void);
 static void				wdl_cache_done (void);
 
 static wdl_block_t *	wdl_point_block_to_replace (void);
-static bool_t			get_WDL_from_cache (int key, int side, index_t idx, unsigned int *out);
+static bool_t			get_WDL_from_cache (tbkey_t key, unsigned side, index_t idx, unsigned int *out);
 static unsigned int		wdl_extract (unit_t *uarr, unsigned int x);
 static void				wdl_movetotop (wdl_block_t *t);
-static bool_t			wdl_preload_cache (int key, int side, index_t idx);
+static bool_t			wdl_preload_cache (tbkey_t key, unsigned side, index_t idx);
 #endif
 /*--------------------------------------------------------------------------*/
 /*- DTM --------------------------------------------------------------------*/
@@ -2486,12 +2494,12 @@ dtm_cache_init (size_t cache_mem)
 	
 	for (i = 0; i < max_blocks; i++) {
 		p = &dtm_cache.entry[i];
-		p->key  = -1;
-		p->side = -1;
-		p->offset = -1;
-		p->p_arr = dtm_cache.buffer + i * entries_per_block;
-		p->prev = NULL;
-		p->next = NULL;
+		p->key  	= -1;
+		p->side 	= gtbNOSIDE;
+		p->offset 	= gtbNOINDEX;
+		p->p_arr 	= dtm_cache.buffer + i * entries_per_block;
+		p->prev 	= NULL;
+		p->next 	= NULL;
 	}
 
 	DTM_CACHE_INITIALIZED = TRUE;
@@ -2546,12 +2554,12 @@ dtm_cache_flush (void)
 	
 	for (i = 0; i < max_blocks; i++) {
 		p = &dtm_cache.entry[i];
-		p->key  = -1;
-		p->side = -1;
-		p->offset = -1;
-		p->p_arr = dtm_cache.buffer + i * entries_per_block;
-		p->prev = NULL;
-		p->next = NULL;
+		p->key  	= -1;
+		p->side 	= gtbNOSIDE;
+		p->offset 	= gtbNOINDEX;
+		p->p_arr 	= dtm_cache.buffer + i * entries_per_block;
+		p->prev 	= NULL;
+		p->next 	= NULL;
 	}
 	dtm_cache_reset_counters ();
 	return;
@@ -2592,7 +2600,7 @@ tbstats_get (struct TB_STATS *x)
 	x->wdl_cachesize    = WDL_cache_size;
 
 	/* occupancy */
-	x->wdl_occupancy = wdl_cache.max_blocks==0? 0:(double)100.0*wdl_cache.n/(double)wdl_cache.max_blocks;
+	x->wdl_occupancy = wdl_cache.max_blocks==0? 0:(double)100.0*(double)wdl_cache.n/(double)wdl_cache.max_blocks;
 
 	/*
 	|	DTM CACHE
@@ -2610,7 +2618,7 @@ tbstats_get (struct TB_STATS *x)
 	x->dtm_cachesize    = DTM_cache_size;
 
 	/* occupancy */
-	x->dtm_occupancy = dtm_cache.max_blocks==0? 0:(double)100.0*dtm_cache.n/(double)dtm_cache.max_blocks;
+	x->dtm_occupancy = dtm_cache.max_blocks==0? 0:(double)100.0*(double)dtm_cache.n/(double)dtm_cache.max_blocks;
 
 	/*
 	|	GENERAL
@@ -2712,7 +2720,7 @@ tbstats_reset (void)
 }
 
 static dtm_block_t	*
-dtm_cache_pointblock (int key, int side, index_t idx)
+dtm_cache_pointblock (tbkey_t key, unsigned side, index_t idx)
 {
 	index_t 		offset;
 	index_t			remainder;
@@ -2758,23 +2766,23 @@ dtm_cache_pointblock (int key, int side, index_t idx)
 \*--------------------------------------------------------------------------*/
 
 struct ZIPINFO {
-	int 		extraoffset;
-	int 		totalblocks;
+	index_t 	extraoffset;
+	index_t 	totalblocks;
 	index_t *	blockindex;
 };
 
 struct ZIPINFO Zipinfo[MAX_EGKEYS];
 
-static index_t 	egtb_block_getnumber 		(int key, int side, index_t idx);
-static index_t 	egtb_block_getsize 			(int key, index_t idx);
-static index_t 	egtb_block_getsize_zipped 	(int key, index_t block );
-static  bool_t 	egtb_block_park  			(int key, index_t block);
-static  bool_t 	egtb_block_read 			(int key, index_t len, unsigned char *buffer); 
-static  bool_t 	egtb_block_decode 			(int key, int z, unsigned char *bz, int n, unsigned char *bp);
-static  bool_t 	egtb_block_unpack 			(int side, index_t n, const unsigned char *bp, dtm_t *out);
-static  bool_t 	egtb_file_beready 			(int key);
-static  bool_t 	egtb_loadindexes 			(int key);
-static index_t 	egtb_block_uncompressed_to_index (int key, index_t b);
+static index_t 	egtb_block_getnumber 		(tbkey_t key, unsigned side, index_t idx);
+static index_t 	egtb_block_getsize 			(tbkey_t key, index_t idx);
+static index_t 	egtb_block_getsize_zipped 	(tbkey_t key, index_t block );
+static  bool_t 	egtb_block_park  			(tbkey_t key, index_t block);
+static  bool_t 	egtb_block_read 			(tbkey_t key, index_t len, unsigned char *buffer); 
+static  bool_t 	egtb_block_decode 			(tbkey_t key, int z, unsigned char *bz, int n, unsigned char *bp);
+static  bool_t 	egtb_block_unpack 			(unsigned side, index_t n, const unsigned char *bp, dtm_t *out);
+static  bool_t 	egtb_file_beready 			(tbkey_t key);
+static  bool_t 	egtb_loadindexes 			(tbkey_t key);
+static index_t 	egtb_block_uncompressed_to_index (tbkey_t key, index_t b);
 static  bool_t 	fread32 					(FILE *f, unsigned long int *y);
 
 
@@ -2877,7 +2885,7 @@ fread32 (FILE *f, unsigned long int *y)
 }
 
 static bool_t
-egtb_loadindexes (int key)
+egtb_loadindexes (tbkey_t key)
 {
 	unsigned long int blocksize = 1;
 	unsigned long int tailblocksize1 = 0;
@@ -2886,8 +2894,8 @@ egtb_loadindexes (int key)
 	unsigned long int dummy;
 	unsigned long int i;
 	unsigned long int blocks;
-	unsigned long int idx;
 	unsigned long int n_idx;
+	unsigned long int idx;
 	index_t	*p;
 
 	bool_t ok;
@@ -2927,7 +2935,7 @@ egtb_loadindexes (int key)
 	/* Input of Indexes */
 	for (i = 0; ok && i < n_idx; i++) {
 		ok = fread32 (f, &idx);
-		p[i] = idx;
+		p[i] = (index_t)idx; /* reads a 32 bit int, and converts it to index_t */ assert (sizeof(index_t) >= 4);
 	}
 
 	if (ok) {
@@ -2944,7 +2952,7 @@ egtb_loadindexes (int key)
 }
 
 static index_t
-egtb_block_uncompressed_to_index (int key, index_t b)
+egtb_block_uncompressed_to_index (tbkey_t key, index_t b)
 {
 	index_t max;
 	index_t blocks_per_side;
@@ -2965,7 +2973,7 @@ egtb_block_uncompressed_to_index (int key, index_t b)
 
 
 static index_t
-egtb_block_getnumber (int key, int side, index_t idx)
+egtb_block_getnumber (tbkey_t key, unsigned side, index_t idx)
 {
 	index_t blocks_per_side, block_in_side;
 	index_t max = egkey[key].maxindex;
@@ -2978,7 +2986,7 @@ egtb_block_getnumber (int key, int side, index_t idx)
 
 
 static index_t 
-egtb_block_getsize (int key, index_t idx)
+egtb_block_getsize (tbkey_t key, index_t idx)
 {
 	index_t blocksz = dtm_cache.entries_per_block;
 	index_t maxindex  = egkey[key].maxindex;
@@ -3003,7 +3011,7 @@ egtb_block_getsize (int key, index_t idx)
 }
 
 static index_t 
-egtb_block_getsize_zipped (int key, index_t block )
+egtb_block_getsize_zipped (tbkey_t key, index_t block )
 {
 	index_t i, j;
 	assert (Zipinfo[key].blockindex != NULL);
@@ -3014,7 +3022,7 @@ egtb_block_getsize_zipped (int key, index_t block )
 
 
 static bool_t
-egtb_file_beready (int key)
+egtb_file_beready (tbkey_t key)
 {
 	bool_t success;
 	assert (key < MAX_EGKEYS);
@@ -3025,9 +3033,9 @@ egtb_file_beready (int key)
 
 
 static bool_t
-egtb_block_park  (int key, index_t block)
+egtb_block_park  (tbkey_t key, index_t block)
 {
-	long int i;
+	index_t i;
 	assert (egkey[key].fd != NULL);
 
 	if (Uncompressed) {
@@ -3044,16 +3052,16 @@ egtb_block_park  (int key, index_t block)
 
 
 static bool_t
-egtb_block_read (int key, index_t len, unsigned char *buffer) 
+egtb_block_read (tbkey_t key, index_t len, unsigned char *buffer) 
 {
 	assert (egkey[key].fd != NULL);
 	return ((size_t)len == fread (buffer, sizeof (unsigned char), len, egkey[key].fd));	
 }
 
-int TB_PROBE_indexing_dummy;
+tbkey_t TB_PROBE_indexing_dummy;
 
 static bool_t
-egtb_block_decode (int key, int z, unsigned char *bz, int n, unsigned char *bp)
+egtb_block_decode (tbkey_t key, int z, unsigned char *bz, int n, unsigned char *bp)
 /* bz:buffer zipped to bp:buffer packed */
 {
 	TB_PROBE_indexing_dummy = key; /* to silence compiler */	
@@ -3062,10 +3070,10 @@ egtb_block_decode (int key, int z, unsigned char *bz, int n, unsigned char *bp)
 }
 
 static bool_t
-egtb_block_unpack (int side, index_t n, const unsigned char *bp, dtm_t *out)
+egtb_block_unpack (unsigned side, index_t n, const unsigned char *bp, dtm_t *out)
 /* bp:buffer packed to out:distance to mate buffer */
 {
-	int i;
+	index_t i;
 	for (i = 0; i < n; i++) {
 		*out++ = dtm_unpack (side, bp[i]);		
 	}	
@@ -3073,7 +3081,7 @@ egtb_block_unpack (int side, index_t n, const unsigned char *bp, dtm_t *out)
 }
 
 static bool_t
-preload_cache (int key, int side, index_t idx)
+preload_cache (tbkey_t key, unsigned side, index_t idx)
 /* output to the least used block of the cache */
 {
 	dtm_block_t 	*pblock;
@@ -3158,8 +3166,8 @@ preload_cache (int key, int side, index_t idx)
 	} else {
 		/* make it unusable */
 		pblock->key    = -1;
-		pblock->side   = -1;
-		pblock->offset = -1;
+		pblock->side   = gtbNOSIDE;
+		pblock->offset = gtbNOINDEX;
 	}
 
 	FOLLOW_LU("preload_cache?", ok)
@@ -3193,7 +3201,7 @@ egtb_freemem (int i)
 /***************************************************************************/
 
 mySHARED bool_t
-get_dtm (int key, unsigned int side, index_t idx, dtm_t *out, bool_t probe_hard_flag)
+get_dtm (tbkey_t key, unsigned side, index_t idx, dtm_t *out, bool_t probe_hard_flag)
 {
 	bool_t found;
 
@@ -3227,7 +3235,7 @@ get_dtm (int key, unsigned int side, index_t idx, dtm_t *out, bool_t probe_hard_
 
 
 static bool_t
-get_dtm_from_cache (int key, unsigned int side, index_t idx, dtm_t *out)
+get_dtm_from_cache (tbkey_t key, unsigned side, index_t idx, dtm_t *out)
 {
 	index_t 	offset;
 	index_t		remainder;
@@ -3336,8 +3344,8 @@ point_block_to_replace (void)
 	
 	/* make the information content unusable, it will be replaced */
 	p->key    = -1;
-	p->side   = -1;
-	p->offset = -1;
+	p->side   = gtbNOSIDE;
+	p->offset = gtbNOINDEX;
 
 	return p;
 }
@@ -3392,7 +3400,7 @@ movetotop (dtm_block_t *t)
 static void
 init_indexing (int verbosity)
 {
-	int a,b,c,d,e,f;
+	index_t a,b,c,d,e,f;
 
 	init_flipt ();
 
@@ -3405,12 +3413,12 @@ init_indexing (int verbosity)
 
 	if (verbosity) {
 		printf ("\nGTB supporting tables, Initialization\n");
-		printf ("  Max    kk idx: %8d\n", a );	
-		printf ("  Max    pp idx: %8d\n", b );	
-		printf ("  Max    aa idx: %8d\n", c );
-		printf ("  Max   aaa idx: %8d\n", d );
-		printf ("  Max  pp48 idx: %8d\n", e );
-		printf ("  Max ppp48 idx: %8d\n", f );
+		printf ("  Max    kk idx: %8d\n", (int)a );	
+		printf ("  Max    pp idx: %8d\n", (int)b );	
+		printf ("  Max    aa idx: %8d\n", (int)c );
+		printf ("  Max   aaa idx: %8d\n", (int)d );
+		printf ("  Max  pp48 idx: %8d\n", (int)e );
+		printf ("  Max ppp48 idx: %8d\n", (int)f );
 	}
 
 	if (!reach_was_initialized())
@@ -3580,7 +3588,7 @@ init_ppidx (void)
 			i = wsq_to_pidx24 (anchor);
 			j = wsq_to_pidx48 (loosen);
 			
-			if (ppidx [i] [j] == NOINDEX) {
+			if (NOINDEX == ppidx [i] [j]) {
 
                 ppidx [i] [j] = idx;
                 assert (idx < MAX_PPINDEX);
@@ -4218,7 +4226,7 @@ test_kaakb (void)
 
 	enum  {MAXPC = 16+1};
 	char 		str[] = "kaakb";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -4367,7 +4375,7 @@ test_kaabk (void)
 
 	enum  {MAXPC = 16+1};
 	char 		str[] = "kaabk";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -4516,7 +4524,7 @@ test_kabbk (void)
 
 	enum  {MAXPC = 16+1};
 	char 		str[] = "kabbk";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -4746,7 +4754,7 @@ test_kaaak (void)
 
 	enum  {MAXPC = 16+1};
 	char 		str[] = "kaaak";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -4916,7 +4924,7 @@ test_kapkb (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kapkb";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -5062,7 +5070,7 @@ test_kabkp (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kabkp";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -5290,7 +5298,7 @@ test_kppk (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kppk";
-	int 		a, b, c, d;
+	SQUARE 		a, b, c, d;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -5418,7 +5426,7 @@ static bool_t
 kppk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = 64*64, BLOCK_B = 64}; 	
-	int pp_slice;	
+	SQUARE pp_slice;
 	SQUARE anchor, loosen;
 	
 	SQUARE wk     = pw[0];
@@ -5658,7 +5666,7 @@ kaak_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, index_t *out)
 	SQUARE ws[MAX_LISTSIZE], bs[MAX_LISTSIZE];
 	index_t ki, ai;
 	unsigned int ft;
-	int i;
+	SQUARE i;
 
 	ft = flipt [inp_pb[0]] [inp_pw[0]];
 
@@ -5707,7 +5715,7 @@ test_kppka (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kppka";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -5811,7 +5819,7 @@ static bool_t
 kppka_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = 64*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 
-	int pp_slice;	
+	SQUARE pp_slice;
 	SQUARE anchor, loosen;
 	
 	SQUARE wk     = pw[0];
@@ -5819,7 +5827,7 @@ kppka_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 	SQUARE pawn_b = pw[2];
 	SQUARE bk     = pb[0];
 	SQUARE ba	  = pb[1];	
-	int i, j;
+	SQUARE i, j;
 
 	assert (A2 <= pawn_a && pawn_a < A8);
 	assert (A2 <= pawn_b && pawn_b < A8);
@@ -5865,7 +5873,7 @@ test_kappk (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kappk";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -5969,7 +5977,7 @@ static bool_t
 kappk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = 64*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 
-	int pp_slice;	
+	SQUARE pp_slice;
 	SQUARE anchor, loosen;
 	
 	SQUARE wk     = pw[0];
@@ -5978,7 +5986,7 @@ kappk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 	SQUARE pawn_b = pw[3];
 	SQUARE bk     = pb[0];
 
-	int i, j;
+	SQUARE i, j;
 
 	assert (A2 <= pawn_a && pawn_a < A8);
 	assert (A2 <= pawn_b && pawn_b < A8);
@@ -6024,7 +6032,7 @@ test_kapkp (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kapkp";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -6086,7 +6094,7 @@ static bool_t
 kapkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = 64*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 	
-	int pp_slice;
+	SQUARE pp_slice;
 	SQUARE anchor, loosen;
 	
 	SQUARE wk     = pw[0];
@@ -6189,7 +6197,7 @@ test_kabpk (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kabpk";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -6327,7 +6335,7 @@ test_kaapk (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kaapk";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -6487,7 +6495,7 @@ test_kaakp (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kaakp";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -6648,16 +6656,16 @@ static bool_t 	test_kppkp (void);
 static bool_t 	kppkp_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, index_t *out);
 static void		kppkp_indextopc (index_t i, SQUARE *pw, SQUARE *pb);
 
-static int map24_b (sq_t s);
-static sq_t unmap24_b (int i);
+static sq_t map24_b   (sq_t s);
+static sq_t unmap24_b (unsigned int i);
 
 static index_t
 init_pp48_idx (void)
 /* modifies pp48_idx[][], pp48_sq_x[], pp48_sq_y[] */
 {
 	enum  {MAX_I = 48, MAX_J = 48};
-	int i, j;
-	int idx = 0;
+	SQUARE i, j;
+	index_t idx = 0;
 	SQUARE a, b;
 
 	/* default is noindex */
@@ -6702,7 +6710,7 @@ test_kppkp (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kppkp";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -6771,7 +6779,7 @@ kppkp_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 
 	enum  {BLOCK_A = MAX_PP48_INDEX*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 
 	index_t a, b, c, d, r;
-	int m, n;
+	SQUARE m, n;
 	
 	r = i;
 	a  = r / BLOCK_A;
@@ -6808,14 +6816,14 @@ static bool_t
 kppkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = MAX_PP48_INDEX*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 
-	int pp48_slice;	
+	SQUARE pp48_slice;	
 	
 	SQUARE wk     = pw[0];
 	SQUARE pawn_a = pw[1];
 	SQUARE pawn_b = pw[2];
 	SQUARE bk     = pb[0];
 	SQUARE pawn_c = pb[1];	
-	int i, j, k;
+	SQUARE i, j, k;
 
 	assert (A2 <= pawn_a && pawn_a < A8);
 	assert (A2 <= pawn_b && pawn_b < A8);
@@ -6847,7 +6855,7 @@ kppkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 	return TRUE;
 }
 
-static int
+static sq_t
 map24_b (sq_t s)
 {
 	s -= 8;
@@ -6855,7 +6863,7 @@ map24_b (sq_t s)
 }
 
 static sq_t
-unmap24_b (int i)
+unmap24_b (unsigned int i)
 {
 	return (i&(4+8+16)) + i + 8;
 }
@@ -6888,8 +6896,8 @@ init_ppp48_idx (void)
 /* modifies ppp48_idx[][], ppp48_sq_x[], ppp48_sq_y[], ppp48_sq_z[] */
 {
 	enum  {MAX_I = 48, MAX_J = 48, MAX_K = 48};
-	int i, j, k;
-	int idx = 0;
+	SQUARE i, j, k;
+	index_t idx = 0;
 	SQUARE a, b, c;
 	int x, y, z;
 
@@ -6951,7 +6959,7 @@ test_kpppk (void)
 
 	enum 		{MAXPC = 16+1};
 	char 		str[] = "kpppk";
-	int 		a, b, c, d, e;
+	SQUARE 		a, b, c, d, e;
 	SQUARE 		pw[MAXPC], pb[MAXPC];
 	SQUARE 		px[MAXPC], py[MAXPC];	
 
@@ -7020,7 +7028,7 @@ kpppk_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 
 	enum  {BLOCK_A = 64*64, BLOCK_B = 64}; 
 	index_t a, b, c, r;
-	int m, n, o;
+	SQUARE m, n, o;
 	
 	r  = i;
 	a  = r / BLOCK_A;
@@ -7057,7 +7065,7 @@ static bool_t
 kpppk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = 64*64, BLOCK_B = 64}; 
-	int ppp48_slice;	
+	SQUARE ppp48_slice;	
 	
 	SQUARE wk     = pw[0];
 	SQUARE pawn_a = pw[1];
@@ -7066,7 +7074,7 @@ kpppk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	SQUARE bk     = pb[0];
 
-	int i, j, k;
+	SQUARE i, j, k;
 
 	assert (A2 <= pawn_a && pawn_a < A8);
 	assert (A2 <= pawn_b && pawn_b < A8);
@@ -7112,7 +7120,7 @@ static bool_t
 kpkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = 64*64, BLOCK_B = 64}; 	
-	int pp_slice;	
+	SQUARE pp_slice;	
 	SQUARE anchor, loosen;
 	
 	SQUARE wk     = pw[0];
@@ -7120,7 +7128,7 @@ kpkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 	SQUARE pawn_a = pw[1];
 	SQUARE pawn_b = pb[1];
 
-	int m, n;
+	SQUARE m, n;
 
 	#ifdef DEBUG
 	if (!(A2 <= pawn_a && pawn_a < A8)) {
@@ -7178,7 +7186,7 @@ kpkp_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	enum  {BLOCK_A = 64*64, BLOCK_B = 64}; 
 	enum  {block_m = 48};
 	index_t a, b, c, r;
-	int m, n;
+	index_t m, n;
 	SQUARE sq_m, sq_n;
 	
 	r = i;
@@ -7239,7 +7247,7 @@ print_pos (const sq_t *ws, const sq_t *bs, const pc_t *wp, const pc_t *bp)
 
 #if defined(DEBUG) || defined(FOLLOW_EGTB)
 static void
-output_state (unsigned int stm, const SQUARE *wSQ, const SQUARE *bSQ, 
+output_state (unsigned stm, const SQUARE *wSQ, const SQUARE *bSQ, 
 								const SQ_CONTENT *wPC, const SQ_CONTENT *bPC)
 {
 	int i;
@@ -7298,7 +7306,7 @@ static void				wdl_movetotop (wdl_block_t *t);
 #if 0
 static bool_t			wdl_cache_init (size_t cache_mem);
 static void				wdl_cache_flush (void);
-static bool_t			get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag);
+static bool_t			get_WDL (tbkey_t key, unsigned side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag);
 #endif
 
 static bool_t			wdl_cache_is_on (void);
@@ -7306,10 +7314,10 @@ static void				wdl_cache_reset_counters (void);
 static void				wdl_cache_done (void);
 
 static wdl_block_t *	wdl_point_block_to_replace (void);
-static bool_t			get_WDL_from_cache (int key, int side, index_t idx, unsigned int *out);
+static bool_t			get_WDL_from_cache (tbkey_t key, unsigned side, index_t idx, unsigned int *out);
 static unsigned int		wdl_extract (unit_t *uarr, unsigned int x);
 static void				wdl_movetotop (wdl_block_t *t);
-static bool_t			wdl_preload_cache (int key, int side, index_t idx);
+static bool_t			wdl_preload_cache (tbkey_t key, unsigned side, index_t idx);
 
 /*--------------------------------------------------------------------------*/
 
@@ -7361,12 +7369,12 @@ wdl_cache_init (size_t cache_mem)
 	
 	for (i = 0; i < max_blocks; i++) {
 		p = &wdl_cache.blocks[i];
-		p->key  = -1;
-		p->side = -1;
-		p->offset = -1;
-		p->p_arr = wdl_cache.buffer + i * WDL_units_per_block;
-		p->prev = NULL;
-		p->next = NULL;
+		p->key  	= -1;
+		p->side 	= gtbNOSIDE;
+		p->offset 	= gtbNOINDEX;
+		p->p_arr 	= wdl_cache.buffer + i * WDL_units_per_block;
+		p->prev 	= NULL;
+		p->next 	= NULL;
 	}
 
 	WDL_CACHE_INITIALIZED = TRUE;
@@ -7420,12 +7428,12 @@ wdl_cache_flush (void)
 	
 	for (i = 0; i < max_blocks; i++) {
 		p = &wdl_cache.blocks[i];
-		p->key  = -1;
-		p->side = -1;
-		p->offset = -1;
-		p->p_arr = wdl_cache.buffer + i * WDL_units_per_block;
-		p->prev = NULL;
-		p->next = NULL;
+		p->key  	= -1;
+		p->side 	= gtbNOSIDE;
+		p->offset 	= gtbNOINDEX;
+		p->p_arr 	= wdl_cache.buffer + i * WDL_units_per_block;
+		p->prev 	= NULL;
+		p->next 	= NULL;
 	}
 
 	wdl_cache_reset_counters  ();
@@ -7510,8 +7518,8 @@ wdl_point_block_to_replace (void)
 	
 	/* make the information content unusable, it will be replaced */
 	p->key    = -1;
-	p->side   = -1;
-	p->offset = -1;
+	p->side   = gtbNOSIDE;
+	p->offset = gtbNOINDEX;
 
 	return p;
 }
@@ -7523,14 +7531,14 @@ wdl_point_block_to_replace (void)
 \****************************************************************************/
 
 static unsigned int	wdl_extract (unit_t *uarr, unsigned int x);
-static bool_t		get_WDL_from_cache (int key, int side, index_t idx, unsigned int *info_out);
+static bool_t		get_WDL_from_cache (tbkey_t key, unsigned side, index_t idx, unsigned int *info_out);
 static unsigned 	dtm2WDL(dtm_t dtm);	
 static void			wdl_movetotop (wdl_block_t *t);
-static bool_t		wdl_preload_cache (int key, int side, index_t idx);
+static bool_t		wdl_preload_cache (tbkey_t key, unsigned side, index_t idx);
 static void			dtm_block_2_wdl_block(dtm_block_t *g, wdl_block_t *w, size_t n);	
 
 static bool_t
-get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag)
+get_WDL (tbkey_t key, unsigned side, index_t idx, unsigned int *info_out, bool_t probe_hard_flag)
 {
 	dtm_t dtm;
 	bool_t found;
@@ -7566,7 +7574,7 @@ get_WDL (int key, int side, index_t idx, unsigned int *info_out, bool_t probe_ha
 }
 
 static bool_t
-get_WDL_from_cache (int key, int side, index_t idx, unsigned int *out)
+get_WDL_from_cache (tbkey_t key, unsigned side, index_t idx, unsigned int *out)
 {
 	index_t 	offset;
 	index_t		remainder;
@@ -7602,7 +7610,7 @@ get_WDL_from_cache (int key, int side, index_t idx, unsigned int *out)
 static unsigned int
 wdl_extract (unit_t *uarr, unsigned int x)
 {
-	int width = 2;
+	unsigned int width = 2;
 	unsigned int nu = x/WDL_entries_per_unit;
 	unsigned int y  = x - (nu * WDL_entries_per_unit);
 	return (uarr[nu] >> (y*width)) & WDL_entry_mask;
@@ -7650,7 +7658,7 @@ wdl_movetotop (wdl_block_t *t)
 /****************************************************************************************************/
 
 static bool_t
-wdl_preload_cache (int key, int side, index_t idx)
+wdl_preload_cache (tbkey_t key, unsigned side, index_t idx)
 /* output to the least used block of the cache */
 {
 	dtm_block_t		*dtm_block;
@@ -7689,8 +7697,8 @@ wdl_preload_cache (int key, int side, index_t idx)
 	} else {
 		/* make it unusable */
 		to_modify->key    = -1;
-		to_modify->side   = -1;
-		to_modify->offset = -1;
+		to_modify->side   = gtbNOSIDE;
+		to_modify->offset = gtbNOINDEX;
 	}
 
 	FOLLOW_LU("wdl preload_cache?", ok)
@@ -7742,11 +7750,11 @@ dtm2WDL(dtm_t dtm)
 #ifdef WDL_PROBE
 
 static unsigned int	inv_wdl(unsigned w);
-static bool_t	egtb_get_wdl (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard_flag, unsigned int *wdl);
+static bool_t	egtb_get_wdl (tbkey_t k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard_flag, unsigned int *wdl);
 
 static bool_t
 tb_probe_wdl
-			(unsigned int stm, 
+			(unsigned stm, 
 			 const SQUARE *inp_wSQ, 
 			 const SQUARE *inp_bSQ,
 			 const SQ_CONTENT *inp_wPC, 
@@ -7754,7 +7762,7 @@ tb_probe_wdl
 			 bool_t probingtype,
 			 /*@out@*/ unsigned *res)
 {
-	long int id = -1;
+	tbkey_t id = -1;
 	unsigned int wdl = iUNKNOWN;
 
 	SQUARE 		storage_ws [MAX_LISTSIZE], storage_bs [MAX_LISTSIZE];
@@ -7876,7 +7884,7 @@ inv_wdl(unsigned w)
 }
 
 static bool_t
-egtb_get_wdl (int k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard_flag, unsigned int *wdl)
+egtb_get_wdl (tbkey_t k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_t probe_hard_flag, unsigned int *wdl)
 {
 	bool_t idxavail;
 	index_t idx;
