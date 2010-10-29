@@ -5426,7 +5426,7 @@ static bool_t
 kppk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = 64*64, BLOCK_B = 64}; 	
-	int pp_slice;	
+	SQUARE pp_slice;
 	SQUARE anchor, loosen;
 	
 	SQUARE wk     = pw[0];
@@ -5819,7 +5819,7 @@ static bool_t
 kppka_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = 64*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 
-	int pp_slice;	
+	SQUARE pp_slice;
 	SQUARE anchor, loosen;
 	
 	SQUARE wk     = pw[0];
@@ -5977,7 +5977,7 @@ static bool_t
 kappk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = 64*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 
-	int pp_slice;	
+	SQUARE pp_slice;
 	SQUARE anchor, loosen;
 	
 	SQUARE wk     = pw[0];
@@ -6094,7 +6094,7 @@ static bool_t
 kapkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = 64*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 	
-	int pp_slice;
+	SQUARE pp_slice;
 	SQUARE anchor, loosen;
 	
 	SQUARE wk     = pw[0];
@@ -6656,16 +6656,16 @@ static bool_t 	test_kppkp (void);
 static bool_t 	kppkp_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, index_t *out);
 static void		kppkp_indextopc (index_t i, SQUARE *pw, SQUARE *pb);
 
-static int map24_b (sq_t s);
-static sq_t unmap24_b (int i);
+static sq_t map24_b   (sq_t s);
+static sq_t unmap24_b (unsigned int i);
 
 static index_t
 init_pp48_idx (void)
 /* modifies pp48_idx[][], pp48_sq_x[], pp48_sq_y[] */
 {
 	enum  {MAX_I = 48, MAX_J = 48};
-	int i, j;
-	int idx = 0;
+	SQUARE i, j;
+	index_t idx = 0;
 	SQUARE a, b;
 
 	/* default is noindex */
@@ -6779,7 +6779,7 @@ kppkp_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 
 	enum  {BLOCK_A = MAX_PP48_INDEX*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 
 	index_t a, b, c, d, r;
-	int m, n;
+	SQUARE m, n;
 	
 	r = i;
 	a  = r / BLOCK_A;
@@ -6816,7 +6816,7 @@ static bool_t
 kppkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = MAX_PP48_INDEX*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 
-	int pp48_slice;	
+	SQUARE pp48_slice;	
 	
 	SQUARE wk     = pw[0];
 	SQUARE pawn_a = pw[1];
@@ -6855,7 +6855,7 @@ kppkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 	return TRUE;
 }
 
-static int
+static sq_t
 map24_b (sq_t s)
 {
 	s -= 8;
@@ -6863,7 +6863,7 @@ map24_b (sq_t s)
 }
 
 static sq_t
-unmap24_b (int i)
+unmap24_b (unsigned int i)
 {
 	return (i&(4+8+16)) + i + 8;
 }
@@ -6896,8 +6896,8 @@ init_ppp48_idx (void)
 /* modifies ppp48_idx[][], ppp48_sq_x[], ppp48_sq_y[], ppp48_sq_z[] */
 {
 	enum  {MAX_I = 48, MAX_J = 48, MAX_K = 48};
-	int i, j, k;
-	int idx = 0;
+	SQUARE i, j, k;
+	index_t idx = 0;
 	SQUARE a, b, c;
 	int x, y, z;
 
@@ -7028,7 +7028,7 @@ kpppk_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 
 	enum  {BLOCK_A = 64*64, BLOCK_B = 64}; 
 	index_t a, b, c, r;
-	int m, n, o;
+	SQUARE m, n, o;
 	
 	r  = i;
 	a  = r / BLOCK_A;
@@ -7065,7 +7065,7 @@ static bool_t
 kpppk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = 64*64, BLOCK_B = 64}; 
-	int ppp48_slice;	
+	SQUARE ppp48_slice;	
 	
 	SQUARE wk     = pw[0];
 	SQUARE pawn_a = pw[1];
@@ -7120,7 +7120,7 @@ static bool_t
 kpkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = 64*64, BLOCK_B = 64}; 	
-	int pp_slice;	
+	SQUARE pp_slice;	
 	SQUARE anchor, loosen;
 	
 	SQUARE wk     = pw[0];
@@ -7128,7 +7128,7 @@ kpkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 	SQUARE pawn_a = pw[1];
 	SQUARE pawn_b = pb[1];
 
-	int m, n;
+	SQUARE m, n;
 
 	#ifdef DEBUG
 	if (!(A2 <= pawn_a && pawn_a < A8)) {
@@ -7186,7 +7186,7 @@ kpkp_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	enum  {BLOCK_A = 64*64, BLOCK_B = 64}; 
 	enum  {block_m = 48};
 	index_t a, b, c, r;
-	int m, n;
+	index_t m, n;
 	SQUARE sq_m, sq_n;
 	
 	r = i;
