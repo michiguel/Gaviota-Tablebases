@@ -262,12 +262,12 @@ int ZEXPORT deflateInit2_(z_streamp strm, int level, int method, int windowBits,
 
     s->wrap = wrap;
     s->gzhead = Z_NULL;
-    s->w_bits = windowBits;
-    s->w_size = 1 << s->w_bits;
+    s->w_bits = (z_uInt) windowBits; /*MAB casts */
+    s->w_size = (z_uInt) (1 << s->w_bits); /*MAB casts */
     s->w_mask = s->w_size - 1;
 
-    s->hash_bits = memLevel + 7;
-    s->hash_size = 1 << s->hash_bits;
+    s->hash_bits = (z_uInt) (memLevel + 7); /*MAB casts */
+    s->hash_size = (z_uInt) (1 << s->hash_bits); /*MAB casts */
     s->hash_mask = s->hash_size - 1;
     s->hash_shift =  ((s->hash_bits+MIN_MATCH-1)/MIN_MATCH);
 
@@ -275,7 +275,7 @@ int ZEXPORT deflateInit2_(z_streamp strm, int level, int method, int windowBits,
     s->prev   = (Posf *)  ZALLOC(strm, s->w_size, sizeof(Pos));
     s->head   = (Posf *)  ZALLOC(strm, s->hash_size, sizeof(Pos));
 
-    s->lit_bufsize = 1 << (memLevel + 6); /* 16K elements by default */
+    s->lit_bufsize = (z_uInt)(1 << (memLevel + 6)); /* 16K elements by default */ /*MAB casts */
 
     overlay = (ushf *) ZALLOC(strm, s->lit_bufsize, sizeof(ush)+2);
     s->pending_buf = (uchf *) overlay;
@@ -432,10 +432,10 @@ int ZEXPORT deflateTune(z_streamp strm, int good_length, int max_lazy, int nice_
 
     if (strm == Z_NULL || strm->state == Z_NULL) return Z_STREAM_ERROR;
     s = strm->state;
-    s->good_match = good_length;
-    s->max_lazy_match = max_lazy;
+    s->good_match = (z_uInt) good_length; /*MAB casts */
+    s->max_lazy_match = (z_uInt) max_lazy; /*MAB casts */
     s->nice_match = nice_length;
-    s->max_chain_length = max_chain;
+    s->max_chain_length = (z_uInt) max_chain; /*MAB casts */
     return Z_OK;
 }
 
@@ -988,7 +988,7 @@ local uInt longest_match(deflate_state *s, IPos cur_match)
     register Bytef *scan = s->window + s->strstart; /* current string */
     register Bytef *match;                       /* matched string */
     register int len;                           /* length of current match */
-    int best_len = s->prev_length;              /* best match length so far */
+    int best_len = (int)s->prev_length;         /* best match length so far */ /*MAB casts */
     int nice_match = s->nice_match;             /* stop if match long enough */
     IPos limit = s->strstart > (IPos)MAX_DIST(s) ?
         s->strstart - (IPos)MAX_DIST(s) : NIL;
@@ -1023,7 +1023,7 @@ local uInt longest_match(deflate_state *s, IPos cur_match)
     /* Do not look for matches beyond the end of the input. This is necessary
      * to make deflate deterministic.
      */
-    if ((uInt)nice_match > s->lookahead) nice_match = s->lookahead;
+    if ((uInt)nice_match > s->lookahead) nice_match = (int )s->lookahead; /*MAB casts */
 
     Assert((ulg)s->strstart <= s->window_size-MIN_LOOKAHEAD, "need lookahead");
 
@@ -1334,7 +1334,7 @@ local void fill_window(deflate_state *s)
          */
         Assert(more >= 2, "more < 2");
 
-        n = read_buf(s->strm, s->window + s->strstart + s->lookahead, more);
+        n = (unsigned)read_buf(s->strm, s->window + s->strstart + s->lookahead, more); /*MAB casts */
         s->lookahead += n;
 
         /* Initialize the hash value now that we have some input: */
@@ -1362,7 +1362,7 @@ local void fill_window(deflate_state *s)
                    (charf *)Z_NULL), \
                 (ulg)((long)s->strstart - s->block_start), \
                 (eof)); \
-   s->block_start = s->strstart; \
+   s->block_start = (long)s->strstart; /*MAB casts*/\
    flush_pending(s->strm); \
    Tracev((stderr,"[FLUSH]")); \
 }
@@ -1413,7 +1413,7 @@ local block_state deflate_stored(deflate_state *s, int flush)
         s->lookahead = 0;
 
         /* Emit a stored block if pending_buf will be full: */
-        max_start = s->block_start + max_block_size;
+        max_start = (ulg)((ulg)s->block_start + (ulg)max_block_size); /*MAB casts */
         if (s->strstart == 0 || (ulg)s->strstart >= max_start) {
             /* strstart == 0 is possible when wraparound on 16-bit machine */
             s->lookahead = (uInt)(s->strstart - max_start);
