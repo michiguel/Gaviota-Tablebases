@@ -65,7 +65,7 @@ SizeT x86_Convert(Byte *data, SizeT size, UInt32 ip, UInt32 *state, int encoding
         b = (Byte)(dest >> (24 - index));
         if (!Test86MSByte(b))
           break;
-        src = dest ^ ((1 << (32 - index)) - 1);
+        src = dest ^ (((UInt32)1 << (32 - index)) - (UInt32)1);
       }
       p[4] = (Byte)(~(((dest >> 24) & 1) - 1));
       p[3] = (Byte)(dest >> 16);
