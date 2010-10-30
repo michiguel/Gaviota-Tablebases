@@ -129,7 +129,7 @@ uLong ZEXPORT adler32_combine(uLong adler1, uLong adler2, long int len2)
     unsigned rem;
 
     /* the derivation of this formula is left as an exercise for the reader */
-    rem = (unsigned)(len2 % BASE);
+    rem = (unsigned)((long unsigned)len2 % BASE); /*MAB long unsigned casts */
     sum1 = adler1 & 0xffff;
     sum2 = rem * sum1;
     MOD(sum2);
