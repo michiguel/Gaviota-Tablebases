@@ -2272,20 +2272,24 @@ fread_entry_packed (FILE *finp, unsigned side, dtm_t *px)
 	return ok;
 }
 
+
 mySHARED bool_t
 fpark_entry_packed  (FILE *finp, unsigned side, index_t max, index_t idx)
 {
 	bool_t ok;
-	size_t sz = sizeof(unsigned char);	
 	index_t i;
+	long int fseek_i;
+	size_t sz = sizeof(unsigned char);	
+
 	assert (side == WH || side == BL);
 	assert (finp != NULL);
 	assert (idx >= 0);
 	i = (side * max + idx) * (index_t)(sz);
-	ok = (0 == fseek (finp, i, SEEK_SET));
+	fseek_i = (long int) i;
+	assert (fseek_i >= 0);
+	ok = (0 == fseek (finp, fseek_i, SEEK_SET));
 	return ok;
 }
-
 
 /*----------------------------------------------------*\ 
 |
@@ -2786,7 +2790,7 @@ static index_t 	egtb_block_getsize 			(tbkey_t key, index_t idx);
 static index_t 	egtb_block_getsize_zipped 	(tbkey_t key, index_t block );
 static  bool_t 	egtb_block_park  			(tbkey_t key, index_t block);
 static  bool_t 	egtb_block_read 			(tbkey_t key, index_t len, unsigned char *buffer); 
-static  bool_t 	egtb_block_decode 			(tbkey_t key, int z, unsigned char *bz, int n, unsigned char *bp);
+static  bool_t 	egtb_block_decode 			(tbkey_t key, size_t z, unsigned char *bz, size_t n, unsigned char *bp);
 static  bool_t 	egtb_block_unpack 			(unsigned side, index_t n, const unsigned char *bp, dtm_t *out);
 static  bool_t 	egtb_file_beready 			(tbkey_t key);
 static  bool_t 	egtb_loadindexes 			(tbkey_t key);
@@ -3044,6 +3048,7 @@ static bool_t
 egtb_block_park  (tbkey_t key, index_t block)
 {
 	index_t i;
+	long fseek_i;
 	assert (egkey[key].fd != NULL);
 
 	if (Uncompressed) {
@@ -3055,7 +3060,9 @@ egtb_block_park  (tbkey_t key, index_t block)
 		i += Zipinfo[key].extraoffset;
 	}
 
-	return 0 == fseek (egkey[key].fd, i, SEEK_SET);
+	fseek_i = (long) i;
+	assert (fseek_i >= 0);
+	return 0 == fseek (egkey[key].fd, fseek_i, SEEK_SET);
 }
 
 
@@ -3069,7 +3076,7 @@ egtb_block_read (tbkey_t key, index_t len, unsigned char *buffer)
 tbkey_t TB_PROBE_indexing_dummy;
 
 static bool_t
-egtb_block_decode (tbkey_t key, int z, unsigned char *bz, int n, unsigned char *bp)
+egtb_block_decode (tbkey_t key, size_t z, unsigned char *bz, size_t n, unsigned char *bp)
 /* bz:buffer zipped to bp:buffer packed */
 {
 	TB_PROBE_indexing_dummy = key; /* to silence compiler */	
@@ -3114,7 +3121,7 @@ preload_cache (tbkey_t key, unsigned side, index_t idx)
 	if (Uncompressed) {
 
 		index_t block = egtb_block_getnumber (key, side, idx);
-		int n         = egtb_block_getsize   (key, idx);
+		index_t n     = egtb_block_getsize   (key, idx);
 
 		ok =	   egtb_file_beready (key)
 				&& egtb_block_park   (key, block)
@@ -3130,8 +3137,7 @@ preload_cache (tbkey_t key, unsigned side, index_t idx)
 	} else {
 
 
-        index_t block=0;
-        int n=0, z=0;
+        index_t block=0, n=0, z=0;
 		
 		ok =	   egtb_file_beready (key);
 
@@ -3475,7 +3481,7 @@ static index_t
 init_kkidx (void)
 /* modifies kkidx[][], wksq[], bksq[] */
 {
-	int idx;
+	unsigned int idx;
 	SQUARE x, y, i, j;
 	
 	/* default is noindex */
@@ -3517,7 +3523,7 @@ static index_t
 init_aaidx (void)
 /* modifies aabase[], aaidx[][] */
 {
-	int idx;
+	unsigned int idx;
 	SQUARE x, y;
 	
 	/* default is noindex */
@@ -3560,8 +3566,8 @@ static index_t
 init_ppidx (void)
 /* modifies ppidx[][], pp_hi24[], pp_lo48[] */
 {
-	int i, j;
-	int idx = 0;
+	unsigned int i, j;
+	unsigned int idx = 0;
 	SQUARE a, b;
 
 	/* default is noindex */
@@ -3616,7 +3622,7 @@ init_ppidx (void)
 static void
 init_flipt (void)
 {
-	int i, j;
+	unsigned int i, j;
 	for (i = 0; i < 64; i++) {
 		for (j = 0; j < 64; j++) {
 			flipt [i] [j] = flip_type (i, j);
@@ -3719,14 +3725,14 @@ pp_putanchorfirst (SQUARE a, SQUARE b, /*@out@*/ SQUARE *out_anchor, /*@out@*/ S
 		x = a;
 		col = x & 07;
 		inv = col ^ 07;
-		x = (1<<col) | (1<<inv);
+		x = (1u<<col) | (1u<<inv);
 		x &= (x-1);	
 		hi_a = x;
 		
 		x = b;
 		col = x & 07;
 		inv = col ^ 07;
-		x = (1<<col) | (1<<inv);
+		x = (1u<<col) | (1u<<inv);
 		x &= (x-1);	
 		hi_b = x;			
 				
@@ -4685,7 +4691,7 @@ init_aaa (void)
 	index_t accum;
 	index_t a;
 	
-	int idx;
+	index_t idx;
 	SQUARE x, y, z;
 
 	/* getting aaa_base */	
@@ -5390,7 +5396,7 @@ kppk_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	enum  {B11100  = 7u << 2};
 	enum  {BLOCK_A = 64*64, BLOCK_B = 64}; 
 	index_t a, b, c, r;
-	int m, n;
+	unsigned int m, n;
 	
 	r = i;
 	a  = r / BLOCK_A;
@@ -5441,7 +5447,7 @@ kppk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 	SQUARE pawn_a = pw[1];
 	SQUARE pawn_b = pw[2];
 	SQUARE bk     = pb[0];
-	int i, j;
+	sq_t i, j;
 
 	#ifdef DEBUG
 	if (!(A2 <= pawn_a && pawn_a < A8)) {
@@ -5791,7 +5797,7 @@ kppka_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 
 	enum  {BLOCK_A = 64*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 
 	index_t a, b, c, d, r;
-	int m, n;
+	unsigned int m, n;
 	
 	r = i;
 	a  = r / BLOCK_A;
@@ -5949,7 +5955,7 @@ kappk_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 
 	enum  {BLOCK_A = 64*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 
 	index_t a, b, c, d, r;
-	int m, n;
+	unsigned int m, n;
 	
 	r = i;
 	a  = r / BLOCK_A;
@@ -6110,8 +6116,7 @@ kapkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 	SQUARE pawn_a = pw[2];
 	SQUARE bk     = pb[0];
 	SQUARE pawn_b = pb[1];
-
-	int m, n;
+	unsigned int m, n;
 
 	assert (A2 <= pawn_a && pawn_a < A8);
 	assert (A2 <= pawn_b && pawn_b < A8);
@@ -6155,7 +6160,7 @@ kapkp_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	enum  {BLOCK_A = 64*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 
 	enum  {block_m = 48};
 	index_t a, b, c, d, r;
-	int m, n;
+	unsigned int m, n;
 	SQUARE sq_m, sq_n;
 	
 	r = i;
