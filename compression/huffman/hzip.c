@@ -44,6 +44,7 @@ Copyright (c) 2010 Miguel A. Ballicora
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #define MAXDIVERSITY (256)
 #define MAXHEAP (MAXDIVERSITY+1)
@@ -105,7 +106,7 @@ static unsigned code_table[MAXDIVERSITY];
 static unsigned size_table[MAXDIVERSITY];
 static stream_t Stream = {0, NULL};
 static ro_stream_t RO_Stream = {0, NULL};
-static unsigned int VALUEBITS = 8;
+static const unsigned int VALUEBITS = 8u;
 
 /*==== PROTOTYPES======================================*/
 
@@ -144,7 +145,7 @@ static size_t stream_len (stream_t *s);
 
 static void stream_rewind (stream_t *s);
 static unsigned int stream_nextbit (ro_stream_t *s);
-static unsigned int stream_nextbit_n (ro_stream_t *s, int width);
+static unsigned int stream_nextbit_n (ro_stream_t *s, unsigned int width);
 static void stream_writebit (stream_t *s, unsigned z);
 static void stream_write_n (unsigned code, unsigned width, stream_t *s);		 
 
@@ -203,10 +204,10 @@ extern int
 huff_decode
 (const unsigned char *in_start, size_t in_len, unsigned char *out_start, size_t *pout_len, size_t out_max)
 {
-	size_t n =     in_start[0] 
-				| (in_start[1] <<  8) 
-				| (in_start[2] << 16)
-				| (in_start[3] << 24);	
+	size_t n =     (size_t)in_start[0] 
+				| ((size_t)in_start[1] <<  8) 
+				| ((size_t)in_start[2] << 16)
+				| ((size_t)in_start[3] << 24);	
 	TB_hzip_unused = out_max;
 	*pout_len = n;
 	return huffman_decode (in_len-4, in_start+4, n, out_start);
@@ -362,17 +363,17 @@ stream_len (stream_t *s)
 static unsigned int
 stream_nextbit (ro_stream_t *s)
 {
-	unsigned y,byte,bit;	
+	unsigned y, byte, bit;	
 	y = s->pbit++;
 	byte = y / 8;
 	bit = y & 7;
-	return 1u & (s->x[byte] >> bit);
+	return 1u & (((unsigned)s->x[byte]) >> bit);
 }
 
 static unsigned int
-stream_nextbit_n (ro_stream_t *s, int width)
+stream_nextbit_n (ro_stream_t *s, unsigned int width)
 {
-	int i;
+	unsigned i;
 	unsigned x;
 	unsigned r = 0;
 	for (i = 0; i < width; i++) {
@@ -524,7 +525,7 @@ stream_dump (stream_t *s, int ori, int n)
 /*=== HUFFTREE=================================================*/
 
 #define LEFTCODE 0
-#define RIGHTCODE 1
+#define RIGHTCODE 1u
 #define BITLEAF 1
 #define BITNODE 0
 
@@ -620,13 +621,14 @@ hufftree_to_codes (int start, int n, unsigned code)
 {
 	int x, m;
 	unsigned c;
-	unsigned value;	
+	int value;	
 	
 	#ifdef TRACK	
 	if (n == 0)
 		printf ("\nHufftree to codes\n"); 
 	#endif
-	
+
+	assert (n >= 0);	
 	
 	x = hufftree[start].pleft;
 	c = code | (LEFTCODE << n);
@@ -636,7 +638,7 @@ hufftree_to_codes (int start, int n, unsigned code)
 	if (hufftree[x].isleaf) {
 		value = hufftree[x].value;	
 		code_table[value] = c;
-		size_table[value] = m;
+		size_table[value] = (unsigned)m; 
 
 		#ifdef TRACK	
 		printf ("value=%c:%d, code=%d \"%s\", size=%d\n", value,value, c, binstream(c,m), m); 
@@ -655,7 +657,7 @@ hufftree_to_codes (int start, int n, unsigned code)
 	if (hufftree[x].isleaf) {
 		value = hufftree[x].value;			
 		code_table[value] = c;
-		size_table[value] = m;
+		size_table[value] = (unsigned)m;
 
 		#ifdef TRACK	
 		printf ("value=%c:%d, code=%d \"%s\", size=%d\n", value,value, c, binstream(c,m), m);
@@ -672,7 +674,8 @@ hufftree_to_codes (int start, int n, unsigned code)
 static int
 hufftree_frombits (ro_stream_t *stream, bool_t *pok)
 {
-	unsigned bit, value;
+	unsigned bit;
+	unsigned value;
 	int thisnode;
 	struct huff h;
 	
@@ -685,7 +688,7 @@ hufftree_frombits (ro_stream_t *stream, bool_t *pok)
 		value = stream_nextbit_n (stream, VALUEBITS);
 		thisnode = huff_end++;
 		h.isleaf = TRUE;
-		h.value = value;
+		h.value = (int)value;
 		h.freq =  0;
 		h.pleft = 0;
 		h.pright = 0;
@@ -733,8 +736,10 @@ hufftree_tobits (int thisnode, stream_t *stream)
 		{int c = hufftree[thisnode].value; printf ("[leaf=1][%c:%d=%s]", c, c, binstream(c,8));} 
 		#endif
 		
+		assert (0 <= hufftree[thisnode].value);
+
 		stream_writebit (stream, BITLEAF);
-		stream_write_n (hufftree[thisnode].value, VALUEBITS, stream);
+		stream_write_n ((unsigned)hufftree[thisnode].value, VALUEBITS, stream);
 		
 	} else {
 		stream_writebit (stream, BITNODE);		
@@ -768,7 +773,8 @@ hufftree_readstream (int root, ro_stream_t *s)
 	}
 
 	if (hufftree[next].isleaf) {
-		return hufftree[next].value;
+		assert (0 <= hufftree[next].value);
+		return (unsigned)hufftree[next].value;
 	} else {
 		return hufftree_readstream (next, s);
 	}
