@@ -121,7 +121,7 @@ lzma_encode
 (const unsigned char *in_start, size_t in_len, unsigned char *out_start, size_t *pout_len, size_t out_max)
 {
 	int level  =    5; 			/* 5 => default compression level */
-	int memory = 4096; 			/* dictionary size */
+	unsigned int memory = 4096;	/* dictionary size */
 	int filter = SZ_FILTER_NO; 	/* => 0, use LZMA, do not try to optimize with x86 filter */
 	size_t zz  = out_max; 		/* maximum memory allowed, receives back the actual size */
 	int x      = Lzma86_Encode(out_start, &zz, in_start, in_len, level, memory, filter);
@@ -230,7 +230,7 @@ rle_encode
 	unsigned char       *out     = out_start;
 	int ok = TRUE;
 	int ch;
-	size_t out_len;
+	ptrdiff_t out_len;
 
 	while (in < in_end)
 	{
@@ -267,8 +267,8 @@ rle_encode
 	if (ok) {
 		/*	*out++ = RLE_ESC; *out++ = RLE_TER; */
 		out_len = out - out_start;
-		*pout_len = out_len;	
-		ok = out_len <= out_max;
+		*pout_len = (size_t)out_len;	
+		ok = (size_t)out_len <= out_max;
 	}
 
 	return ok;
@@ -285,7 +285,7 @@ rle_decode
 	int ok = TRUE;
 	int ch;
 	int n;
-	size_t out_len;
+	ptrdiff_t out_len;
 
 	while (in < in_end)
 	{
@@ -314,9 +314,9 @@ rle_decode
 	out_len = out - out_start;
 
 	if (ok)
-		*pout_len = out_len;
+		*pout_len = (size_t)out_len;
 
-	ok = ok && (out_max >= out_len);
+	ok = ok && (out_max >= (size_t)out_len);
 
 	return ok;
 }
