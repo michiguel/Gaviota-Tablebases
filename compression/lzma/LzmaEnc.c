@@ -491,7 +491,7 @@ static void RangeEnc_Construct(CRangeEnc *p)
   p->bufBase = 0;
 }
 
-#define RangeEnc_GetProcessed(p) ((p)->processed + ((p)->buf - (p)->bufBase) + (p)->cacheSize)
+#define RangeEnc_GetProcessed(p) ((p)->processed + (UInt64) ((p)->buf - (p)->bufBase) + (p)->cacheSize) /*MAB casts */
 
 #define RC_BUF_SIZE (1 << 16)
 static int RangeEnc_Alloc(CRangeEnc *p, ISzAlloc *alloc)
@@ -531,7 +531,7 @@ static void RangeEnc_FlushStream(CRangeEnc *p)
   size_t num;
   if (p->res != SZ_OK)
     return;
-  num = p->buf - p->bufBase;
+  num = (size_t)(p->buf - p->bufBase); /*MAB casts */
   if (num != p->outStream->Write(p->outStream, p->bufBase, num))
     p->res = SZ_ERROR_WRITE;
   p->processed += num;
@@ -726,7 +726,7 @@ static void RcTree_ReverseEncode(CRangeEnc *rc, CLzmaProb *probs, int numBitLeve
 static UInt32 RcTree_GetPrice(const CLzmaProb *probs, int numBitLevels, UInt32 symbol, UInt32 *ProbPrices)
 {
   UInt32 price = 0;
-  symbol |= (1 << numBitLevels);
+  symbol |= (1u << numBitLevels); /*MAB 1u */
   while (symbol != 1)
   {
     price += GET_PRICEa(probs[symbol >> 1], symbol & 1);
@@ -1693,7 +1693,7 @@ static void FillDistancesPrices(CLzmaEnc *p)
     UInt32 posSlot = GetPosSlot1(j);
     UInt32 footerBits = ((posSlot >> 1) - 1);
     UInt32 base = ((2 | (posSlot & 1)) << footerBits);
-    tempPrices[j] = RcTree_ReverseGetPrice(p->posEncoders + base - posSlot - 1, footerBits, j - base, p->ProbPrices);
+    tempPrices[j] = RcTree_ReverseGetPrice(p->posEncoders + base - posSlot - 1, (int)footerBits, j - base, p->ProbPrices); /*MAB casts */
   }
 
   for (lenToPosState = 0; lenToPosState < kNumLenToPosStates; lenToPosState++)
@@ -1805,7 +1805,7 @@ static SRes LzmaEnc_CodeOneBlock(CLzmaEnc *p, Bool useLimits, UInt32 maxPackSize
     ReadMatchDistances(p, &numPairs);
     RangeEnc_EncodeBit(&p->rc, &p->isMatch[p->state][0], 0);
     p->state = (UInt32) kLiteralNextStates[p->state]; /*MAB casts */
-    curByte = p->matchFinder.GetIndexByte(p->matchFinderObj, 0 - p->additionalOffset);
+    curByte = p->matchFinder.GetIndexByte(p->matchFinderObj, (Int32)(0 - p->additionalOffset)); /*MAB casts */
     LitEnc_Encode(&p->rc, p->litProbs, curByte);
     p->additionalOffset--;
     nowPos32++;
@@ -1965,8 +1965,8 @@ static SRes LzmaEnc_Alloc(CLzmaEnc *p, UInt32 keepWindowSize, ISzAlloc *alloc, I
     if (p->litProbs == 0 || p->saveState.litProbs == 0 || p->lclp != lclp)
     {
       LzmaEnc_FreeLits(p, alloc);
-      p->litProbs = (CLzmaProb *)alloc->Alloc(alloc, (0x300 << lclp) * sizeof(CLzmaProb));
-      p->saveState.litProbs = (CLzmaProb *)alloc->Alloc(alloc, (0x300 << lclp) * sizeof(CLzmaProb));
+      p->litProbs           = (CLzmaProb *)alloc->Alloc(alloc, (0x300u << lclp) * sizeof(CLzmaProb)); /*MAB 0x300 vs 0x300u*/
+      p->saveState.litProbs = (CLzmaProb *)alloc->Alloc(alloc, (0x300u << lclp) * sizeof(CLzmaProb)); /*MAB 0x300 vs 0x300u*/
       if (p->litProbs == 0 || p->saveState.litProbs == 0)
       {
         LzmaEnc_FreeLits(p, alloc);
@@ -2240,7 +2240,7 @@ SRes LzmaEnc_Encode(CLzmaEncHandle pp, ISeqOutStream *outStream, ISeqInStream *i
       break;
     if (progress != 0)
     {
-      res = progress->Progress(progress, p->nowPos64, RangeEnc_GetProcessed(&p->rc));
+      res = progress->Progress(progress, p->nowPos64, (UInt64) RangeEnc_GetProcessed(&p->rc)); /*MAB casts */
       if (res != SZ_OK)
       {
         res = SZ_ERROR_PROGRESS;
