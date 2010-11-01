@@ -106,8 +106,8 @@
 
 #define LZMA_BASE_SIZE 1846
 #define LZMA_LIT_SIZE 768
-
-#define LzmaProps_GetNumProbs(p) ((UInt32)LZMA_BASE_SIZE + (LZMA_LIT_SIZE << ((p)->lc + (p)->lp)))
+/*MAB casts next... */
+#define LzmaProps_GetNumProbs(p) ((UInt32)LZMA_BASE_SIZE + ((unsigned)LZMA_LIT_SIZE << ((p)->lc + (p)->lp)))
 
 #if Literal != LZMA_BASE_SIZE
 StopCompilingDueBUG
@@ -170,9 +170,9 @@ static int MY_FAST_CALL LzmaDec_DecodeReal(CLzmaDec *p, SizeT limit, const Byte 
       UPDATE_0(prob);
       prob = probs + Literal;
       if (checkDicSize != 0 || processedPos != 0)
-        prob += (LZMA_LIT_SIZE * (((processedPos & lpMask) << lc) +
-        (dic[(dicPos == 0 ? dicBufSize : dicPos) - 1] >> (8 - lc))));
-
+        prob += (LZMA_LIT_SIZE * (((processedPos & lpMask) << lc) +		(UInt32)	( /*MAB casts */
+        (dic[(dicPos == 0 ? dicBufSize : dicPos) - 1] >> (8 - lc))))				)
+		;
       if (state < kNumLitStates)
       {
         symbol = 1;
@@ -506,7 +506,7 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
     CLzmaProb *prob;
     UInt32 bound;
     unsigned ttt;
-    unsigned posState = (p->processedPos) & ((1 << p->prop.pb) - 1);
+    unsigned posState = (p->processedPos) & ((1u << p->prop.pb) - 1u); /*MAB 1u */
 
     prob = probs + IsMatch + (state << kNumPosBitsMax) + posState;
     IF_BIT_0_CHECK(prob)
@@ -518,8 +518,10 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
       prob = probs + Literal;
       if (p->checkDicSize != 0 || p->processedPos != 0)
         prob += (LZMA_LIT_SIZE *
-          ((((p->processedPos) & ((1 << (p->prop.lp)) - 1)) << p->prop.lc) +
-          (p->dic[(p->dicPos == 0 ? p->dicBufSize : p->dicPos) - 1] >> (8 - p->prop.lc))));
+          ( (unsigned) /*MAB casts */
+			(((p->processedPos) & ((1u << (p->prop.lp)) - 1u)) << p->prop.lc) +
+			(unsigned) /*MAB casts */
+	      (p->dic[(p->dicPos == 0 ? p->dicBufSize : p->dicPos) - 1] >> (8 - p->prop.lc))));
 
       if (state < kNumLitStates)
       {
@@ -645,7 +647,7 @@ static ELzmaDummy LzmaDec_TryDummy(const CLzmaDec *p, const Byte *buf, SizeT inS
         TREE_DECODE_CHECK(prob, 1 << kNumPosSlotBits, posSlot);
         if (posSlot >= kStartPosModelIndex)
         {
-          int numDirectBits = ((posSlot >> 1) - 1);
+          int numDirectBits = (int)((posSlot >> 1) - 1); /*MAB casts */
 
           /* if (bufLimit - buf >= 8) return DUMMY_MATCH; */
 
@@ -934,7 +936,7 @@ SRes LzmaProps_Decode(CLzmaProps *p, const Byte *data, unsigned size)
 
 static SRes LzmaDec_AllocateProbs2(CLzmaDec *p, const CLzmaProps *propNew, ISzAlloc *alloc)
 {
-  UInt32 numProbs = LzmaProps_GetNumProbs(propNew);
+  UInt32 numProbs = (UInt32) (LzmaProps_GetNumProbs(propNew)); /*MAB casts */
   if (p->probs == 0 || numProbs != p->numProbs)
   {
     LzmaDec_FreeProbs(p, alloc);
