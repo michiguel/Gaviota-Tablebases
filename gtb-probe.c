@@ -5332,7 +5332,7 @@ test_kppk (void)
 			pp_putanchorfirst (b, c, &anchor1, &loosen1);
 			pp_putanchorfirst (c, b, &anchor2, &loosen2);
 			if (!(anchor1 == anchor2 && loosen1 == loosen2)) {
-				printf ("Output depends on input in pp_outanchorfirst()\n input:%d, %d\n",b,c);
+				printf ("Output depends on input in pp_outanchorfirst()\n input:%u, %u\n",(unsigned)b,(unsigned)c);
 				fatal_error();
 			} 
 		}
