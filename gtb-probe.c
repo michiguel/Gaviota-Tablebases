@@ -2956,7 +2956,7 @@ egtb_loadindexes (tbkey_t key)
 
 	p = NULL;
 
-	ok = ok && NULL != (p = (index_t *)malloc (n_idx * 4));
+	ok = ok && NULL != (p = (index_t *)malloc (n_idx * sizeof(index_t)));
 
 	/* Input of Indexes */
 	for (i = 0; ok && i < n_idx; i++) {

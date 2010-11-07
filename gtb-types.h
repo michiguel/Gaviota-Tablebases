@@ -6,11 +6,11 @@ extern "C" {
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 #include "sysport.h"
 
-typedef unsigned 			sq_t;
-typedef unsigned char 		pc_t;
+typedef uint32_t 			sq_t;
+typedef int8_t 				pc_t;
 typedef uint32_t			mv_t;
-typedef long int			tbkey_t;
-typedef unsigned short  	dtm_t;
+typedef int32_t				tbkey_t;
+typedef int16_t			  	dtm_t;
 typedef int32_t				index_t;
 
 /*<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
