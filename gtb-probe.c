@@ -1902,10 +1902,17 @@ fd_openit (tbkey_t key)
 
 	start = egkey[key].pathn;
 	end   = Gtbpath_end_index;
+
+/*@@
+printf ("start: %d\n",start);
+printf ("===================Gtbpath[0]=%s\n",Gtbpath[0]);
+*/
 	for (pth = start; NULL == finp && pth < end && Gtbpath[pth] != NULL; pth++) {
 		const char *path = Gtbpath[pth];
 		size_t pl = strlen(path);
-
+/*@@
+printf ("path: %s\n",path);
+*/
 		if (pl == 0) {
 				sprintf (buf, "%s%s%s", path, egkey[key].str, extension);
 		} else {
@@ -1915,8 +1922,10 @@ fd_openit (tbkey_t key)
 				sprintf (buf, "%s%s%s%s", path, FOLDERSEP, egkey[key].str, extension);
 			}
 		}
+/*printf ("try to open %s   --> ",filename);*/
 		/* Finally found the file? */
 		finp = fopen (filename, "rb");
+/*printf ("%d\n",finp != NULL);*/
 	}
 
 	/* File was found and opened */
@@ -1943,8 +1952,10 @@ fd_openit (tbkey_t key)
 				sprintf (buf, "%s%s%s%s", path, FOLDERSEP, egkey[key].str, extension);
 			}
 		}
+/*printf ("try to open %s   --> ",filename);*/
 		/* Finally found the file? */
 		finp = fopen (filename, "rb");
+/*printf ("%d\n",finp != NULL);*/
 	}
 
 
