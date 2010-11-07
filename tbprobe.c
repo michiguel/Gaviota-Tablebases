@@ -104,13 +104,13 @@ int main (int argc, char *argv[])
 
 	/* the number of paths that can be added is only limited by memory */
 	paths = tbpaths_init();
-if (!paths) printf ("Error here... %d\n",__LINE__);
+if (NULL == paths) printf ("Error here... %d\n",__LINE__);
 	paths = tbpaths_add (paths, path1);
-if (!paths) printf ("Error here... %d\n",__LINE__);
+if (NULL == paths) printf ("Error here... %d\n",__LINE__);
 	paths = tbpaths_add (paths, path2);
-if (!paths) printf ("Error here... %d\n",__LINE__);
+if (NULL == paths) printf ("Error here... %d\n",__LINE__);
 	paths = tbpaths_add (paths, path3);
-if (!paths) printf ("Error here... %d\n",__LINE__);
+if (NULL == paths) printf ("Error here... %d\n",__LINE__);
 
 	/* init probing code, indexes, paths, etc. */
 	initinfo = tb_init (verbosity, scheme, paths);

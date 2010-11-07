@@ -426,6 +426,9 @@ static void 	fatal_error(void) {
 |
 *---------------------------------*/
 
+#define IDX_set_empty(x) {x=0;x--;}
+#define IDX_is_empty(x) (0==(1+(x)))
+
 #define NO_KKINDEX NOINDEX
 #define MAX_KKINDEX 462
 #define MAX_PPINDEX 576
@@ -439,7 +442,7 @@ static void 	fatal_error(void) {
 
 /* VARIABLES */
 
-static unsigned int		kkidx [64] [64];
+static index_t			kkidx [64] [64];
 static sq_t				wksq [MAX_KKINDEX];
 static sq_t				bksq [MAX_KKINDEX];
 static unsigned int		ppidx [24] [48];
@@ -3487,7 +3490,7 @@ init_kkidx (void)
 	/* default is noindex */
 	for (x = 0; x < 64; x++) {
 		for (y = 0; y < 64; y++) {
-			kkidx [x][y] = NO_KKINDEX;
+			IDX_set_empty(kkidx [x][y]);
 		}
 	}
 
@@ -3503,7 +3506,7 @@ init_kkidx (void)
 			/*i <-- x; j <-- y */
 			norm_kkindex (x, y, &i, &j);
 		
-			if (NO_KKINDEX == kkidx [i][j]) { /* still empty */
+			if (IDX_is_empty(kkidx [i][j])) { /* still empty */
 				kkidx [i][j] = idx;
 				kkidx [x][y] = idx;
 				bksq [idx] = i;
@@ -3529,7 +3532,7 @@ init_aaidx (void)
 	/* default is noindex */
 	for (x = 0; x < 64; x++) {
 		for (y = 0; y < 64; y++) {
-			aaidx [x][y] = NOINDEX;
+			IDX_set_empty(aaidx [x][y]);
 		}
 	}
 
@@ -3542,7 +3545,7 @@ init_aaidx (void)
 
 			assert (idx == (int)((y - x) + x * (127-x)/2 - 1) );
 
-			if (NOINDEX == aaidx [x][y]) { /* still empty */
+			if (IDX_is_empty(aaidx [x][y])) { /* still empty */
 				aaidx [x] [y] = idx; 
 				aaidx [y] [x] = idx;
 				aabase [idx] = (unsigned char) x;
@@ -3573,13 +3576,13 @@ init_ppidx (void)
 	/* default is noindex */
 	for (i = 0; i < 24; i++) {
 		for (j = 0; j < 48; j++) {
-			ppidx [i][j] = NOINDEX;
+			IDX_set_empty(ppidx [i][j]);
 		}
 	}
 		
 	for (idx = 0; idx < MAX_PPINDEX; idx++) {
-		pp_hi24 [idx] = (unsigned int) NOINDEX;	
-		pp_lo48 [idx] =	(unsigned int) NOINDEX;			
+		IDX_set_empty(pp_hi24 [idx]);
+		IDX_set_empty(pp_lo48 [idx]);		
 	}		
 		
 	idx = 0;
@@ -3602,7 +3605,7 @@ init_ppidx (void)
 			i = wsq_to_pidx24 (anchor);
 			j = wsq_to_pidx48 (loosen);
 			
-			if (NOINDEX == ppidx [i] [j]) {
+			if (IDX_is_empty(ppidx [i] [j])) {
 
                 ppidx [i] [j] = idx;
                 assert (idx < MAX_PPINDEX);
@@ -3890,7 +3893,7 @@ kxk_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, index_t *out)
 
 	ki = kkidx [bs[0]] [ws[0]]; /* kkidx [black king] [white king] */
 
-	if (ki == NOINDEX) {
+	if (IDX_is_empty(ki)) {
 		*out = NOINDEX;
 		return FALSE;
 	}	
@@ -3975,7 +3978,7 @@ kabk_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, index_t *out)
 
 	ki = kkidx [bs[0]] [ws[0]]; /* kkidx [black king] [white king] */
 
-	if (ki == NOINDEX) {
+	if (IDX_is_empty(ki)) {
 		*out = NOINDEX;
 		return FALSE;
 	}	
@@ -4056,7 +4059,7 @@ kabkc_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, index_t *out)
 
 	ki = kkidx [bs[0]] [ws[0]]; /* kkidx [black king] [white king] */
 
-	if (ki == NOINDEX) {
+	if (IDX_is_empty(ki)) {
 		*out = NOINDEX;
 		return FALSE;
 	}	
@@ -4134,7 +4137,7 @@ kabck_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, index_t *out)
 
 	ki = kkidx [bs[0]] [ws[0]]; /* kkidx [black king] [white king] */
 
-	if (ki == NOINDEX) {
+	if (IDX_is_empty(ki)) {
 		*out = NOINDEX;
 		return FALSE;
 	}	
@@ -4219,7 +4222,7 @@ kakb_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, index_t *out)
 
 	ki = kkidx [bs[0]] [ws[0]]; /* kkidx [black king] [white king] */
 
-	if (ki == NOINDEX) {
+	if (IDX_is_empty(ki)) {
 		*out = NOINDEX;
 		return FALSE;
 	}	
@@ -4367,7 +4370,7 @@ kaakb_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, /*@out@*/ index_t *
 	ki = kkidx [bs[0]] [ws[0]]; /* kkidx [black king] [white king] */
 	ai = aaidx [ws[1]] [ws[2]];
 
-	if (ki == NOINDEX || ai == NOINDEX) {
+	if (IDX_is_empty(ki) || IDX_is_empty(ai)) {
 		*out = NOINDEX;
 		return FALSE;
 	}	
@@ -4516,7 +4519,7 @@ kaabk_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, /*@out@*/ index_t *
 	ki = kkidx [bs[0]] [ws[0]]; /* kkidx [black king] [white king] */
 	ai = aaidx [ws[1]] [ws[2]];
 
-	if (ki == NOINDEX || ai == NOINDEX) {
+	if (IDX_is_empty(ki) || IDX_is_empty(ai)) {
 		*out = NOINDEX;
 		return FALSE;
 	}	
@@ -4665,7 +4668,7 @@ kabbk_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, /*@out@*/ index_t *
 	ki = kkidx [bs[0]] [ws[0]]; /* kkidx [black king] [white king] */
 	ai = aaidx [ws[2]] [ws[3]];
 
-	if (ki == NOINDEX || ai == NOINDEX) {
+	if (IDX_is_empty(ki) || IDX_is_empty(ai)) {
 		*out = NOINDEX;
 		return FALSE;
 	}	
@@ -4713,10 +4716,9 @@ init_aaa (void)
 
 	/* initialize aaa_xyz [][] */
 	for (idx = 0; idx < MAX_AAAINDEX; idx++) {
-		aaa_xyz[idx][0] = (sq_t) NOINDEX;
-		aaa_xyz[idx][1] = (sq_t) NOINDEX;				
-		aaa_xyz[idx][2] = (sq_t) NOINDEX;
-
+		IDX_set_empty (aaa_xyz[idx][0]);
+		IDX_set_empty (aaa_xyz[idx][1]);				
+		IDX_set_empty (aaa_xyz[idx][2]);
 	}
 
 	idx = 0;
@@ -4916,7 +4918,7 @@ kaaak_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, index_t *out)
 	
 	ai = aaa_getsubi ( ws[1], ws[2], ws[3] );	
 	
-	if (ki == NOINDEX || ai == NOINDEX) {
+	if (IDX_is_empty(ki) || IDX_is_empty(ai)) {
 		*out = NOINDEX;
 		return FALSE;
 	}	
@@ -5478,7 +5480,7 @@ kppk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	pp_slice = ppidx [i] [j];
 
-	if (pp_slice == NOINDEX) {
+	if (IDX_is_empty(pp_slice)) {
 		*out = NOINDEX;
 		return FALSE;
 	}
@@ -5709,7 +5711,7 @@ kaak_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, index_t *out)
 	ki = kkidx [bs[0]] [ws[0]]; /* kkidx [black king] [white king] */
 	ai = aaidx [ws[1]] [ws[2]];
 
-	if (ki == NOINDEX || ai == NOINDEX) {
+	if (IDX_is_empty(ki) || IDX_is_empty(ai)) {
 		*out = NOINDEX;
 		return FALSE;
 	}	
@@ -5861,7 +5863,7 @@ kppka_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	pp_slice = ppidx [i] [j];
 
-	if (pp_slice == NOINDEX) {
+	if (IDX_is_empty(pp_slice)) {
 		*out = NOINDEX;
 		return FALSE;
 	}
@@ -6020,7 +6022,7 @@ kappk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	pp_slice = ppidx [i] [j];
 
-	if (pp_slice == NOINDEX) {
+	if (IDX_is_empty(pp_slice)) {
 		*out = NOINDEX;
 		return FALSE;
 	}
@@ -6138,7 +6140,7 @@ kapkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	pp_slice = m * 48 + n; 
 
-	if (pp_slice == NOINDEX) {
+	if (IDX_is_empty(pp_slice)) {
 		*out = NOINDEX;
 		return FALSE;
 	}
@@ -6482,7 +6484,7 @@ kaapk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	aa_combo = aaidx [wa] [wa2];
 
-	if (aa_combo == NOINDEX) {
+	if (IDX_is_empty(aa_combo)) {
 		*out = NOINDEX;
 		return FALSE;
 	}	
@@ -6645,7 +6647,7 @@ kaakp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	aa_combo = aaidx [wa] [wa2];
 
-	if (aa_combo == NOINDEX) {
+	if (IDX_is_empty(aa_combo)) {
 		*out = NOINDEX;
 		return FALSE;
 	}	
@@ -6684,7 +6686,7 @@ init_pp48_idx (void)
 	/* default is noindex */
 	for (i = 0; i < MAX_I; i++) {
 		for (j = 0; j < MAX_J; j++) {
-			pp48_idx [i][j] = NOINDEX;
+			IDX_set_empty (pp48_idx [i][j]);
 		}
 	}
 		
@@ -6701,7 +6703,7 @@ init_pp48_idx (void)
 			i = flipWE( flipNS (a) ) - 8;
 			j = flipWE( flipNS (b) ) - 8;
 			
-			if (pp48_idx [i] [j] == NOINDEX) {
+			if (IDX_is_empty(pp48_idx [i] [j])) {
 
 				pp48_idx  [i][j]= idx; 	assert (idx < MAX_PP48_INDEX);
 				pp48_idx  [j][i]= idx;
@@ -6856,7 +6858,7 @@ kppkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	pp48_slice = pp48_idx [i] [j];
 
-	if (pp48_slice == NOINDEX) {
+	if (IDX_is_empty(pp48_slice)) {
 		*out = NOINDEX;
 		return FALSE;
 	}
@@ -6918,7 +6920,7 @@ init_ppp48_idx (void)
 	for (i = 0; i < MAX_I; i++) {
 		for (j = 0; j < MAX_J; j++) {
 			for (k = 0; k < MAX_K; k++) {
-				ppp48_idx [i][j][k] = (uint16_t)NOINDEX;
+				IDX_set_empty(ppp48_idx [i][j][k]);
 			}
 		}
 	}
@@ -6945,7 +6947,7 @@ init_ppp48_idx (void)
 				j = b - 8;
 				k = c - 8;
 				
-				if (ppp48_idx [i] [j] [k] == (uint16_t)NOINDEX) {
+				if (IDX_is_empty(ppp48_idx [i] [j] [k])) {
 
 					ppp48_idx  [i][j][k] = idx; 	
 					ppp48_idx  [i][k][j] = idx;
@@ -7099,7 +7101,7 @@ kpppk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	ppp48_slice = ppp48_idx [i] [j] [k];
 
-	if (ppp48_slice == (uint16_t)NOINDEX) { 
+	if (IDX_is_empty(ppp48_slice)) { 
 		wk     = flipWE (wk);		
 		pawn_a = flipWE (pawn_a);
 		pawn_b = flipWE (pawn_b);
@@ -7113,7 +7115,7 @@ kpppk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	ppp48_slice = ppp48_idx [i] [j] [k];
  
-	if (ppp48_slice == (uint16_t)NOINDEX) {
+	if (IDX_is_empty(ppp48_slice)) {
 		*out = NOINDEX;
 		return FALSE;
 	}
@@ -7175,7 +7177,7 @@ kpkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	pp_slice = m * 48 + n; 
 
-	if (pp_slice == NOINDEX) {
+	if (IDX_is_empty(pp_slice)) {
 		*out = NOINDEX;
 		return FALSE;
 	}
