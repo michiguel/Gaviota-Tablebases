@@ -283,8 +283,8 @@ unsigned long ZEXPORT crc32(long unsigned int crc, const unsigned char *buf, uns
 
 /* ========================================================================= */
 #define DOLIT4 c ^= *buf4++; \
-        c = crc_table[3][c & 0xff] ^ crc_table[2][(c >> 8) & 0xff] ^ \
-            crc_table[1][(c >> 16) & 0xff] ^ crc_table[0][c >> 24]
+        c = (u4)(crc_table[3][c & 0xff] ^ crc_table[2][(c >> 8) & 0xff] ^ crc_table[1][(c >> 16) & 0xff] ^ crc_table[0][c >> 24]) /*MAB casts */
+
 #define DOLIT32 DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4; DOLIT4
 
 /* ========================================================================= */
@@ -296,7 +296,7 @@ local unsigned long crc32_little(long unsigned int crc, const unsigned char *buf
     c = (u4)crc;
     c = ~c;
     while (len && ((ptrdiff_t)buf & 3)) {
-        c = crc_table[0][(c ^ *buf++) & 0xff] ^ (c >> 8);
+        c = (u4) (crc_table[0][(c ^ *buf++) & 0xff] ^ (c >> 8)); /*MAB casts */
         len--;
     }
 
@@ -312,7 +312,7 @@ local unsigned long crc32_little(long unsigned int crc, const unsigned char *buf
     buf = (const unsigned char FAR *)buf4;
 
     if (len) do {
-        c = crc_table[0][(c ^ *buf++) & 0xff] ^ (c >> 8);
+        c = (u4)(crc_table[0][(c ^ *buf++) & 0xff] ^ (c >> 8)); /*MAB casts */
     } while (--len);
     c = ~c;
     return (unsigned long)c;
@@ -320,8 +320,8 @@ local unsigned long crc32_little(long unsigned int crc, const unsigned char *buf
 
 /* ========================================================================= */
 #define DOBIG4 c ^= *++buf4; \
-        c = crc_table[4][c & 0xff] ^ crc_table[5][(c >> 8) & 0xff] ^ \
-            crc_table[6][(c >> 16) & 0xff] ^ crc_table[7][c >> 24]
+        c = (u4) (crc_table[4][c & 0xff] ^ crc_table[5][(c >> 8) & 0xff] ^ crc_table[6][(c >> 16) & 0xff] ^ crc_table[7][c >> 24]) /*MAB casts */
+
 #define DOBIG32 DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4; DOBIG4
 
 /* ========================================================================= */
@@ -333,7 +333,7 @@ local unsigned long crc32_big(long unsigned int crc, const unsigned char *buf, u
     c = REV((u4)crc);
     c = ~c;
     while (len && ((ptrdiff_t)buf & 3)) {
-        c = crc_table[4][(c >> 24) ^ *buf++] ^ (c << 8);
+        c = (u4) (crc_table[4][(c >> 24) ^ *buf++] ^ (c << 8)); /*MAB casts */
         len--;
     }
 
@@ -351,7 +351,7 @@ local unsigned long crc32_big(long unsigned int crc, const unsigned char *buf, u
     buf = (const unsigned char FAR *)buf4;
 
     if (len) do {
-        c = crc_table[4][(c >> 24) ^ *buf++] ^ (c << 8);
+        c = (u4) (crc_table[4][(c >> 24) ^ *buf++] ^ (c << 8));
     } while (--len);
     c = ~c;
     return (unsigned long)(REV(c));
