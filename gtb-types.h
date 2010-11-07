@@ -11,7 +11,7 @@ typedef unsigned char 		pc_t;
 typedef uint32_t			mv_t;
 typedef long int			tbkey_t;
 typedef unsigned short  	dtm_t;
-typedef int 				index_t;
+typedef int32_t				index_t;
 
 /*<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
 #ifdef __cplusplus
