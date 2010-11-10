@@ -465,29 +465,17 @@ static void 	init_indexing (int verbosity);
 static void 	norm_kkindex (SQUARE x, SQUARE y, /*@out@*/ SQUARE *pi, /*@out@*/ SQUARE *pj);
 static void 	pp_putanchorfirst (SQUARE a, SQUARE b, /*@out@*/ SQUARE *out_anchor, /*@out@*/ SQUARE *out_loosen);
 
-static SQUARE 	wsq_to_pidx24 (SQUARE pawn);
-static SQUARE 	wsq_to_pidx48 (SQUARE pawn);
-static SQUARE 	pidx24_to_wsq (unsigned int a);
-static SQUARE 	pidx48_to_wsq (unsigned int a);
+static index_t	wsq_to_pidx24 (SQUARE pawn);
+static index_t 	wsq_to_pidx48 (SQUARE pawn);
+static SQUARE 	pidx24_to_wsq (index_t a);
+static SQUARE 	pidx48_to_wsq (index_t a);
 
-static SQUARE 	flipWE    (SQUARE x) {
-    return x ^  07;
-}
-static SQUARE 	flipNS    (SQUARE x) {
-    return x ^ 070;
-}
-static SQUARE 	flipNW_SE (SQUARE x) {
-    return ((x&7)<<3) | (x>>3);
-}
-static SQUARE 	getcol    (SQUARE x) {
-    return x &  7;
-}
-static SQUARE 	getrow    (SQUARE x) {
-    return x >> 3;
-}
-static bool_t 	in_queenside (sq_t x) {
-    return 0 == (x & (1<<2));
-}
+static SQUARE 	flipWE    		(SQUARE x) { return x ^  07;}
+static SQUARE 	flipNS    		(SQUARE x) { return x ^ 070;}
+static SQUARE 	flipNW_SE 		(SQUARE x) { return ((x&7)<<3) | (x>>3);}
+static SQUARE 	getcol    		(SQUARE x) { return x &  7;}
+static SQUARE 	getrow    		(SQUARE x) { return x >> 3;}
+static bool_t 	in_queenside	(sq_t x)   { return 0 == (x & (1<<2));}
 
 /* 1:0 */
 static void 	kxk_indextopc   (index_t i, SQUARE *pw, SQUARE *pb);
@@ -2423,7 +2411,7 @@ static void			movetotop (dtm_block_t *t);
 
 /*- WDL --------------------------------------------------------------------*/
 #ifdef WDL_PROBE
-static unsigned int		wdl_extract (unit_t *uarr, unsigned int x);
+static unsigned int		wdl_extract (unit_t *uarr, index_t x);
 static wdl_block_t *	wdl_point_block_to_replace (void);
 static void				wdl_movetotop (wdl_block_t *t);
 
@@ -2439,7 +2427,6 @@ static void				wdl_cache_done (void);
 
 static wdl_block_t *	wdl_point_block_to_replace (void);
 static bool_t			get_WDL_from_cache (tbkey_t key, unsigned side, index_t idx, unsigned int *out);
-static unsigned int		wdl_extract (unit_t *uarr, unsigned int x);
 static void				wdl_movetotop (wdl_block_t *t);
 static bool_t			wdl_preload_cache (tbkey_t key, unsigned side, index_t idx);
 #endif
@@ -3777,7 +3764,7 @@ pp_putanchorfirst (SQUARE a, SQUARE b, /*@out@*/ SQUARE *out_anchor, /*@out@*/ S
 }
 
 
-static SQUARE
+static index_t
 wsq_to_pidx24 (SQUARE pawn)
 {
 	unsigned int idx24;
@@ -3791,10 +3778,10 @@ wsq_to_pidx24 (SQUARE pawn)
 	sq -= 8;   /* down one row*/
 	idx24 = (sq+(sq&3)) >> 1; 
 	assert (idx24 < 24);
-	return idx24;
+	return (index_t) idx24;
 }
 
-static SQUARE
+static index_t
 wsq_to_pidx48 (SQUARE pawn)
 {
 	unsigned int idx48;
@@ -3807,30 +3794,29 @@ wsq_to_pidx48 (SQUARE pawn)
 	sq -= 8;   /* down one row*/
 	idx48 = sq;
 	assert (idx48 < 48);
-	return idx48;
+	return (index_t)idx48;
 }
 
 static SQUARE
-pidx24_to_wsq (unsigned int a)
+pidx24_to_wsq (index_t a)
 {
 	enum  {B11100  = 7u << 2};
-	unsigned int x;
+	unsigned int x = (unsigned int) a; 	/* x is pslice */
 	assert (a < 24);
-	/* x is pslice */
-	x = a;
+
 	x += x & B11100; /* get upper part and double it */
 	x += 8;          /* add extra row  */
 	x ^= 070;        /* flip NS */
-	return x;
+	return (SQUARE) x;
 }
 
 static SQUARE
-pidx48_to_wsq (unsigned int a)
+pidx48_to_wsq (index_t a)
 {
 	unsigned int x;
 	assert (a < 48);
 	/* x is pslice */
-	x = a;
+	x = (unsigned int)a;
 	x += 8;          /* add extra row  */
 	x ^= 070;        /* flip NS */
 	return x;
@@ -6004,7 +5990,7 @@ static bool_t
 kappk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = 64*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 
-	SQUARE pp_slice;
+	index_t pp_slice;
 	SQUARE anchor, loosen;
 	
 	SQUARE wk     = pw[0];
@@ -6013,7 +5999,7 @@ kappk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 	SQUARE pawn_b = pw[3];
 	SQUARE bk     = pb[0];
 
-	SQUARE i, j;
+	index_t i, j;
 
 	assert (A2 <= pawn_a && pawn_a < A8);
 	assert (A2 <= pawn_b && pawn_b < A8);
@@ -6031,7 +6017,7 @@ kappk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 	i = wsq_to_pidx24 (anchor);
 	j = wsq_to_pidx48 (loosen);
 
-	pp_slice = ppidx [i] [j];
+	pp_slice = (index_t)ppidx [i] [j];
 
 	if (IDX_is_empty(pp_slice)) {
 		*out = NOINDEX;
@@ -6040,7 +6026,7 @@ kappk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	assert (pp_slice < MAX_PPINDEX );
 	
-	*out = pp_slice * BLOCK_A + wk * BLOCK_B  + bk * BLOCK_C + wa;
+	*out = pp_slice * (index_t)BLOCK_A + (index_t)wk * (index_t)BLOCK_B  + (index_t)bk * (index_t)BLOCK_C + (index_t)wa;
 
 	return TRUE;
 }
@@ -6121,7 +6107,7 @@ static bool_t
 kapkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = 64*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 	
-	SQUARE pp_slice;
+	index_t pp_slice;
 	SQUARE anchor, loosen;
 	
 	SQUARE wk     = pw[0];
@@ -6129,7 +6115,7 @@ kapkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 	SQUARE pawn_a = pw[2];
 	SQUARE bk     = pb[0];
 	SQUARE pawn_b = pb[1];
-	unsigned int m, n;
+	index_t m, n;
 
 	assert (A2 <= pawn_a && pawn_a < A8);
 	assert (A2 <= pawn_b && pawn_b < A8);
@@ -6147,7 +6133,7 @@ kapkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 	}
  
 	m = wsq_to_pidx24 (anchor);
-	n = loosen - 8;
+	n = (index_t)loosen - 8;
 
 	pp_slice = m * 48 + n; 
 
@@ -6158,7 +6144,7 @@ kapkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	assert (pp_slice < (64*MAX_PpINDEX) );
 	
-	*out = pp_slice * BLOCK_A + wk * BLOCK_B  + bk * BLOCK_C + wa;
+	*out = pp_slice * (index_t)BLOCK_A + (index_t)wk * (index_t)BLOCK_B  + (index_t)bk * (index_t)BLOCK_C + (index_t)wa;
 
 	return TRUE;
 }
@@ -6173,7 +6159,7 @@ kapkp_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	enum  {BLOCK_A = 64*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 
 	enum  {block_m = 48};
 	index_t a, b, c, d, r;
-	unsigned int m, n;
+	index_t m, n;
 	SQUARE sq_m, sq_n;
 	
 	r = i;
@@ -6192,11 +6178,11 @@ kapkp_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	n  = r ;
 
 	sq_m = pidx24_to_wsq (m);
-	sq_n = n + 8;
+	sq_n = (SQUARE) n + 8;
 	
-	pw[0] = b;
-	pb[0] = c;	
-	pw[1] = d;
+	pw[0] = (SQUARE) b;
+	pb[0] = (SQUARE) c;	
+	pw[1] = (SQUARE) d;
 	pw[2] = sq_m;
 	pb[1] = sq_n;
 	pw[3] = NOSQUARE;
@@ -6288,7 +6274,7 @@ kabpk_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	*----------------------------------------------------------*/
 	enum  {BLOCK_A = 64*64*64*64, BLOCK_B = 64*64*64, BLOCK_C = 64*64, BLOCK_D = 64}; 
 	index_t a, b, c, d, e, r;
-	index_t x;
+	SQUARE x;
 	
 	r = i;
 	a  = r / BLOCK_A;
@@ -6303,13 +6289,13 @@ kabpk_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	
 	x = pidx24_to_wsq(a);
 
-	pw[0] = b;
-	pw[1] = d;
-	pw[2] = e;
+	pw[0] = (SQUARE) b;
+	pw[1] = (SQUARE) d;
+	pw[2] = (SQUARE) e;
 	pw[3] = x;
 	pw[4] = NOSQUARE;
 
-	pb[0] = c;	
+	pb[0] = (SQUARE) c;	
 	pb[1] = NOSQUARE;
 	
 	assert (kabpk_pctoindex (pw, pb, &a) && a == i);
@@ -6322,7 +6308,7 @@ static bool_t
 kabpk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = 64*64*64*64, BLOCK_B = 64*64*64, BLOCK_C = 64*64, BLOCK_D = 64}; 	
-	SQUARE pslice;
+	index_t pslice;
 
 	SQUARE wk   = pw[0];
 	SQUARE wa   = pw[1];
@@ -6342,7 +6328,7 @@ kabpk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	pslice = wsq_to_pidx24 (pawn);
 
-	*out = pslice * BLOCK_A + wk * BLOCK_B  + bk * BLOCK_C + wa * BLOCK_D + wb;
+	*out = pslice * (index_t)BLOCK_A + (index_t)wk * (index_t)BLOCK_B  + (index_t)bk * (index_t)BLOCK_C + (index_t)wa * (index_t)BLOCK_D + (index_t)wb;
 
 	return TRUE;
 }
@@ -6441,7 +6427,7 @@ kaapk_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	r -= c * BLOCK_C;	
 	d  = r;
 
-	z = pidx24_to_wsq(a);
+	z = (index_t) pidx24_to_wsq(a);
 	
 	/* split d into x, y*/
 	x = aabase [d];
@@ -6451,13 +6437,13 @@ kaapk_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	assert (aaidx[x][y] == d);
 
 
-	pw[0] = b;
-	pw[1] = x;
-	pw[2] = y;
-	pw[3] = z;
+	pw[0] = (SQUARE) b;
+	pw[1] = (SQUARE) x;
+	pw[2] = (SQUARE) y;
+	pw[3] = (SQUARE) z;
 	pw[4] = NOSQUARE;
 	
-	pb[0] = c;	
+	pb[0] = (SQUARE) c;	
 	pb[1] = NOSQUARE;
 	
 	assert (kaapk_pctoindex (pw, pb, &a) && a == i);
@@ -6493,14 +6479,14 @@ kaapk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	pslice = wsq_to_pidx24 (pawn);
 
-	aa_combo = aaidx [wa] [wa2];
+	aa_combo = (index_t) aaidx [wa] [wa2];
 
 	if (IDX_is_empty(aa_combo)) {
 		*out = NOINDEX;
 		return FALSE;
 	}	
 
-	*out = pslice * BLOCK_A + wk * BLOCK_B  + bk * BLOCK_C + aa_combo;
+	*out = pslice * (index_t)BLOCK_A + (index_t)wk * (index_t)BLOCK_B  + (index_t)bk * (index_t)BLOCK_C + aa_combo;
 
 	assert (*out >= 0);
 
@@ -6589,7 +6575,8 @@ kaakp_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	}; 	
 	index_t a, b, c, d, r;
 	index_t x, y, z;
-	
+	SQUARE zq;	
+
 	assert (i >= 0);
 
 	r = i;
@@ -6601,8 +6588,8 @@ kaakp_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	r -= c * BLOCK_C;	
 	d  = r;
 
-	z = pidx24_to_wsq(a); 
-	z = flipNS(z);
+	zq = pidx24_to_wsq(a); 
+	z  = (index_t)flipNS(zq);
 
 	
 	/* split d into x, y*/
@@ -6613,13 +6600,13 @@ kaakp_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	assert (aaidx[x][y] == d);
 
 
-	pw[0] = b;
-	pw[1] = x;
-	pw[2] = y;
+	pw[0] = (SQUARE)b;
+	pw[1] = (SQUARE)x;
+	pw[2] = (SQUARE)y;
 	pw[3] = NOSQUARE;
 	
-	pb[0] = c;	
-	pb[1] = z;
+	pb[0] = (SQUARE)c;	
+	pb[1] = (SQUARE)z;
 	pb[2] = NOSQUARE;
 	
 	assert (kaakp_pctoindex (pw, pb, &a) && a == i);
@@ -6656,14 +6643,14 @@ kaakp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 	pawn = flipNS(pawn);
 	pslice = wsq_to_pidx24 (pawn);
 
-	aa_combo = aaidx [wa] [wa2];
+	aa_combo = (index_t)aaidx [wa] [wa2];
 
 	if (IDX_is_empty(aa_combo)) {
 		*out = NOINDEX;
 		return FALSE;
 	}	
 
-	*out = pslice * BLOCK_A + wk * BLOCK_B  + bk * BLOCK_C + aa_combo;
+	*out = pslice * (index_t)BLOCK_A + (index_t)wk * (index_t)BLOCK_B  + (index_t)bk * (index_t)BLOCK_C + aa_combo;
 
 	assert (*out >= 0);
 
@@ -6683,7 +6670,7 @@ static bool_t 	kppkp_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, inde
 static void		kppkp_indextopc (index_t i, SQUARE *pw, SQUARE *pb);
 
 static sq_t map24_b   (sq_t s);
-static sq_t unmap24_b (unsigned int i);
+static sq_t unmap24_b (index_t i);
 
 static index_t
 init_pp48_idx (void)
@@ -6819,13 +6806,13 @@ kppkp_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	m = pp48_sq_x [b];
 	n = pp48_sq_y [b];
 	
-	pw[0] = c;
+	pw[0] = (SQUARE)c;
 	pw[1] = flipWE(flipNS(m+8));
 	pw[2] = flipWE(flipNS(n+8));
 	pw[3] = NOSQUARE;
 
-	pb[0] = d;	
-	pb[1] = unmap24_b (a);
+	pb[0] = (SQUARE)d;	
+	pb[1] = (SQUARE)unmap24_b (a);
 	pb[2] = NOSQUARE;	
 
 
@@ -6842,7 +6829,7 @@ static bool_t
 kppkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = MAX_PP48_INDEX*64*64, BLOCK_B = 64*64, BLOCK_C = 64}; 
-	SQUARE pp48_slice;	
+	index_t pp48_slice;	
 	
 	SQUARE wk     = pw[0];
 	SQUARE pawn_a = pw[1];
@@ -6876,7 +6863,7 @@ kppkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	assert (pp48_slice < MAX_PP48_INDEX );
 	
-	*out = k * BLOCK_A + pp48_slice * BLOCK_B + wk * BLOCK_C  + bk;
+	*out = (index_t)k * (index_t)BLOCK_A + pp48_slice * (index_t)BLOCK_B + (index_t)wk * (index_t)BLOCK_C  + (index_t)bk;
 
 	return TRUE;
 }
@@ -6889,9 +6876,9 @@ map24_b (sq_t s)
 }
 
 static sq_t
-unmap24_b (unsigned int i)
+unmap24_b (index_t i)
 {
-	return (i&(4+8+16)) + i + 8;
+	return (sq_t) ((i&(4+8+16)) + i + 8);
 }
 
 /********************** end KPP/KP ************************************/
@@ -7068,13 +7055,13 @@ kpppk_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	o = ppp48_sq_z [a];
 
 	
-	pw[0] = b;
+	pw[0] = (SQUARE)b;
 	pw[1] = m + 8;
 	pw[2] = n + 8;
 	pw[3] = o + 8;
 	pw[4] = NOSQUARE;
 
-	pb[0] = c;	
+	pb[0] = (SQUARE)c;	
 	pb[1] = NOSQUARE;	
 
 
@@ -7091,7 +7078,7 @@ static bool_t
 kpppk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 {
 	enum  {BLOCK_A = 64*64, BLOCK_B = 64}; 
-	SQUARE ppp48_slice;	
+	index_t ppp48_slice;	
 	
 	SQUARE wk     = pw[0];
 	SQUARE pawn_a = pw[1];
@@ -7133,7 +7120,7 @@ kpppk_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	assert (ppp48_slice < MAX_PPP48_INDEX );
 	
-	*out = ppp48_slice * BLOCK_A + wk * BLOCK_B  + bk;
+	*out = (index_t)ppp48_slice * BLOCK_A + (index_t)wk * BLOCK_B  + (index_t)bk;
 
 	return TRUE;
 }
@@ -7183,7 +7170,7 @@ kpkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 		bk     = flipWE (bk);		
 	}
  
-	m = wsq_to_pidx24 (anchor);
+	m = (SQUARE)wsq_to_pidx24 (anchor);
 	n = loosen - 8;
 
 	pp_slice = m * 48 + n; 
@@ -7195,7 +7182,7 @@ kpkp_pctoindex (const SQUARE *pw, const SQUARE *pb, index_t *out)
 
 	assert (pp_slice < MAX_PpINDEX );
 	
-	*out = pp_slice * BLOCK_A + wk * BLOCK_B  + bk;
+	*out = (index_t) (pp_slice * BLOCK_A + wk * BLOCK_B  + bk);
 
 	return TRUE;
 }
@@ -7228,11 +7215,11 @@ kpkp_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	r -= m * block_m;
 	n  = r ;
 
-	sq_m = pidx24_to_wsq (m);
-	sq_n = n + 8;
+	sq_m  = pidx24_to_wsq (m);
+	sq_n  = (SQUARE)n + 8;
 	
-	pw[0] = b;
-	pb[0] = c;	
+	pw[0] = (SQUARE)b;
+	pb[0] = (SQUARE)c;	
 	pw[1] = sq_m;
 	pb[1] = sq_n;
 	pw[2] = NOSQUARE;
@@ -7240,7 +7227,6 @@ kpkp_indextopc (index_t i, SQUARE *pw, SQUARE *pb)
 	
 	assert (A2 <= pw[1] && pw[1] < A8);
 	assert (A2 <= pb[1] && pb[1] < A8);
-/*	assert (kPpk_pctoindex (pw, pb, &a) && a == i);*/
 
 	return;
 }
@@ -7298,13 +7284,14 @@ list_index (void)
 {
 	enum  {START_GTB = 0, END_GTB = (MAX_EGKEYS)};
 	int i; 
-	unsigned long accum = 0;
+	index_t accum = 0;
 	printf ("\nIndex for each GTB\n");
 		printf ("%3s: %7s  %7s   %7s   %7s\n" , "i", "TB", "RAM-slice", "RAM-max", "HD-cumulative");	
 	for (i = START_GTB; i < END_GTB; i++) { 
-		unsigned long indiv_k  = egkey[i].maxindex * sizeof(dtm_t) * 2/1024;
+		index_t indiv_k  = egkey[i].maxindex * (index_t)sizeof(dtm_t) * 2/1024;
 		accum += indiv_k;
-		printf ("%3d: %7s %8luk %8luk %8luM\n", i, egkey[i].str, indiv_k/egkey[i].slice_n, indiv_k, accum/1024/2);	
+		printf ("%3d: %7s %8luk %8luk %8luM\n", i, egkey[i].str, (long unsigned)(indiv_k/egkey[i].slice_n), 
+													(long unsigned)indiv_k, (long unsigned)accum/1024/2);	
 	}
 	printf ("\n");	
 	return;
@@ -7325,7 +7312,7 @@ list_index (void)
 \*---------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------------*/
-static unsigned int		wdl_extract (unit_t *uarr, unsigned int x);
+static unsigned int		wdl_extract (unit_t *uarr, index_t x);
 static wdl_block_t *	wdl_point_block_to_replace (void);
 static void				wdl_movetotop (wdl_block_t *t);
 
@@ -7341,7 +7328,6 @@ static void				wdl_cache_done (void);
 
 static wdl_block_t *	wdl_point_block_to_replace (void);
 static bool_t			get_WDL_from_cache (tbkey_t key, unsigned side, index_t idx, unsigned int *out);
-static unsigned int		wdl_extract (unit_t *uarr, unsigned int x);
 static void				wdl_movetotop (wdl_block_t *t);
 static bool_t			wdl_preload_cache (tbkey_t key, unsigned side, index_t idx);
 
@@ -7556,7 +7542,7 @@ wdl_point_block_to_replace (void)
 |
 \****************************************************************************/
 
-static unsigned int	wdl_extract (unit_t *uarr, unsigned int x);
+static unsigned int	wdl_extract (unit_t *uarr, index_t x);
 static bool_t		get_WDL_from_cache (tbkey_t key, unsigned side, index_t idx, unsigned int *info_out);
 static unsigned 	dtm2WDL(dtm_t dtm);	
 static void			wdl_movetotop (wdl_block_t *t);
@@ -7634,11 +7620,11 @@ get_WDL_from_cache (tbkey_t key, unsigned side, index_t idx, unsigned int *out)
 }
 
 static unsigned int
-wdl_extract (unit_t *uarr, unsigned int x)
+wdl_extract (unit_t *uarr, index_t x)
 {
-	unsigned int width = 2;
-	unsigned int nu = x/WDL_entries_per_unit;
-	unsigned int y  = x - (nu * WDL_entries_per_unit);
+	index_t width = 2;
+	index_t nu = x/WDL_entries_per_unit;
+	index_t y  = x - (nu * WDL_entries_per_unit);
 	return (uarr[nu] >> (y*width)) & WDL_entry_mask;
 }
 
