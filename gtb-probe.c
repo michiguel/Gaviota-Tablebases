@@ -3078,7 +3078,7 @@ static bool_t
 egtb_block_read (tbkey_t key, index_t len, unsigned char *buffer) 
 {
 	assert (egkey[key].fd != NULL);
-	assert (((size_t)-1) >= len);
+	assert (sizeof(size_t) >= sizeof(len));
 	return ((size_t)len == fread (buffer, sizeof (unsigned char), (size_t)len, egkey[key].fd));	
 }
 
@@ -3091,8 +3091,8 @@ egtb_block_decode (tbkey_t key, index_t z, unsigned char *bz, index_t n, unsigne
 	TB_PROBE_indexing_dummy = key; /* to silence compiler */
 	size_t zz = (size_t) z;
 	size_t nn = (size_t) n;
-	assert (((size_t)-1) >= n);	
-	assert (((size_t)-1) >= z);	
+	assert (sizeof(size_t) >= sizeof(n));
+	assert (sizeof(size_t) >= sizeof(z));
 	return decode (zz-1, bz+1, nn, bp);
 }
 
