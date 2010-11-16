@@ -1770,10 +1770,13 @@ egtb_get_dtm (tbkey_t k, unsigned stm, const SQUARE *wS, const SQUARE *bS, bool_
 
 					#if defined(DEBUG)
 					if (Uncompressed) {
+						dtm_t 	dtm_temp;
+						bool_t 	ok;
+						bool_t 	success2;
+
 						assert (decoding_scheme() == 0 && GTB_scheme == 0);
-						dtm_t dtm_temp;
-						bool_t ok;
-						bool_t success2 = egtb_filepeek (k, stm, idx, &dtm_temp);
+
+						success2 = egtb_filepeek (k, stm, idx, &dtm_temp);
 						ok =  (success == success2) && (!success || *dtm == dtm_temp);
 						if (!ok) {
 							printf ("\nERROR\nsuccess1=%d sucess2=%d\n"
@@ -3088,9 +3091,9 @@ static bool_t
 egtb_block_decode (tbkey_t key, index_t z, unsigned char *bz, index_t n, unsigned char *bp)
 /* bz:buffer zipped to bp:buffer packed */
 {
-	TB_PROBE_indexing_dummy = key; /* to silence compiler */
 	size_t zz = (size_t) z;
 	size_t nn = (size_t) n;
+	TB_PROBE_indexing_dummy = key; /* to silence compiler */
 	assert (sizeof(size_t) >= sizeof(n));
 	assert (sizeof(size_t) >= sizeof(z));
 	return decode (zz-1, bz+1, nn, bp);
