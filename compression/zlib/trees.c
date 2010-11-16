@@ -203,12 +203,12 @@ local void send_bits(s, value, length)
      * unused bits in value.
      */
     if (s->bi_valid > (int)Buf_size - length) {
-        s->bi_buf |= (value << s->bi_valid);
+        s->bi_buf |= (ush)(value << s->bi_valid); /*MAB cast to ush */
         put_short(s, s->bi_buf);
-        s->bi_buf = (ush)value >> (Buf_size - s->bi_valid);
-        s->bi_valid += length - Buf_size;
+        s->bi_buf = (ush)((ush)value >> ((int)Buf_size - s->bi_valid)); /*MAB cast to int */
+        s->bi_valid += length - (int)Buf_size; /*MAB cast to int */
     } else {
-        s->bi_buf |= value << s->bi_valid;
+        s->bi_buf |= (ush)(value << s->bi_valid); /*MAB cast to ush */
         s->bi_valid += length;
     }
 }
@@ -1062,8 +1062,8 @@ void _tr_flush_block(deflate_state *s, charf *buf, ulg stored_len, int eof)
         s->compressed_len += 7;  /* align on byte boundary */
 #endif
     }
-    Tracev((stderr,"\ncomprlen %lu(%lu) ", s->compressed_len>>3,
-           s->compressed_len-7*eof));
+    Tracev((stderr,"\ncomprlen %lu(%lu) ", (unsigned long) (s->compressed_len>>3), /*MAB casts to ul */
+           (unsigned long) (s->compressed_len-7ul*(unsigned long)eof))); /*MAB casts to ul */
 }
 
 /* ===========================================================================
@@ -1154,7 +1154,7 @@ local void compress_block(deflate_state *s, ct_data *ltree, ct_data *dtree)
             extra = extra_dbits[code];
             if (extra != 0) {
                 dist -= (unsigned)(base_dist[code]); /*MAB casts */
-                send_bits(s, dist, extra);   /* send the extra distance bits */
+                send_bits(s, (int)dist, extra);   /* send the extra distance bits */ /*MAB cast with int for debug */
             }
         } /* literal or match pair ? */
 
@@ -1234,7 +1234,7 @@ local void bi_windup(deflate_state *s)
     s->bi_buf = 0;
     s->bi_valid = 0;
 #ifdef DEBUG
-    s->bits_sent = (s->bits_sent+7) & ~7;
+    s->bits_sent = (s->bits_sent+7ul) & ~7ul; /*MAB add ul */
 #endif
 }
 

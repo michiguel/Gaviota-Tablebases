@@ -1225,7 +1225,7 @@ local void check_match(s, start, match, length)
 {
     /* check that the match is indeed a match */
     if (zmemcmp(s->window + match,
-                s->window + start, length) != EQUAL) {
+                s->window + start, (size_t)length) != EQUAL) { /*MAB add size_t cast */
         fprintf(stderr, " start %u, match %u, length %d\n",
                 start, match, length);
         do {
@@ -1487,7 +1487,7 @@ local block_state deflate_fast(deflate_state *s, int flush)
             /* longest_match() or longest_match_fast() sets match_start */
         }
         if (s->match_length >= MIN_MATCH) {
-            check_match(s, s->strstart, s->match_start, s->match_length);
+            check_match(s, s->strstart, s->match_start, (int)s->match_length); /*MAB cast with int */
 
             _tr_tally_dist(s, s->strstart - s->match_start,
                            s->match_length - MIN_MATCH, bflush);
@@ -1607,7 +1607,7 @@ local block_state deflate_slow(deflate_state *s, int flush)
             uInt max_insert = s->strstart + s->lookahead - MIN_MATCH;
             /* Do not insert strings in hash table beyond this. */
 
-            check_match(s, s->strstart-1, s->prev_match, s->prev_length);
+            check_match(s, s->strstart-1, s->prev_match, (int)s->prev_length); /*MAB cast with int */
 
             _tr_tally_dist(s, s->strstart -1 - s->prev_match,
                            s->prev_length - MIN_MATCH, bflush);
