@@ -130,10 +130,10 @@ int ZEXPORT inflatePrime(z_streamp strm, int bits, int value)
 
     if (strm == Z_NULL || strm->state == Z_NULL) return Z_STREAM_ERROR;
     state = (struct inflate_state FAR *)strm->state;
-    if (bits > 16 || state->bits + bits > 32) return Z_STREAM_ERROR;
-    value &= (1L << bits) - 1;
-    state->hold += value << state->bits;
-    state->bits += bits;
+    if (bits > 16 || state->bits + (unsigned)bits > 32) return Z_STREAM_ERROR; /*MAB casts */
+    value &= (int) ((1L << bits) - 1); /*MAB casts */
+    state->hold += ((long unsigned)value << state->bits); /*MAB casts */
+    state->bits += (unsigned) bits; /*MAB casts */
     return Z_OK;
 }
 
@@ -1134,8 +1134,8 @@ int ZEXPORT inflate(z_streamp strm, int flush)
     if (state->wrap && out)
         strm->adler = state->check =
             UPDATE(state->check, strm->next_out - out, out);
-    strm->data_type = state->bits + (state->last ? 64 : 0) +
-                      (state->mode == TYPE ? 128 : 0);
+    strm->data_type = (int)(state->bits + (state->last ? 64 : 0) + (state->mode == TYPE ? 128 : 0)); /*MAB casts */
+
     if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK)
         ret = Z_BUF_ERROR;
     return ret;

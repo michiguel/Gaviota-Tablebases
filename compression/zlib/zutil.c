@@ -162,7 +162,7 @@ uLong ZEXPORT zlibCompileFlags(void)
 int z_verbose = verbose;
 
 void z_error (m)
-    char *m;
+    const char *m; /*MAB add const */
 {
     fprintf(stderr, "%s\n", m);
     exit(1);

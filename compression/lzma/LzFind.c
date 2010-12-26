@@ -8,7 +8,7 @@
 
 #define kEmptyHashValue 0
 #define kMaxValForNormalize ((UInt32)0xFFFFFFFF)
-#define kNormalizeStepMin (1 << 10) /* it must be power of 2 */
+#define kNormalizeStepMin (1u << 10) /* it must be power of 2 */ /*MAB 1u */
 #define kNormalizeMask (~(kNormalizeStepMin - 1))
 #define kMaxHistorySize ((UInt32)3 << 30)
 
@@ -66,7 +66,7 @@ static void MatchFinder_ReadBlock(CMatchFinder *p)
   for (;;)
   {
     Byte *dest = p->buffer + (p->streamPos - p->pos);
-    size_t size = (p->bufferBase + p->blockSize - dest);
+    size_t size = (size_t)(p->bufferBase + p->blockSize - dest);
     if (size == 0)
       return;
     p->result = p->stream->Read(p->stream, dest, &size);
@@ -307,6 +307,7 @@ static void MatchFinder_CheckLimits(CMatchFinder *p)
 {
   if (p->pos == kMaxValForNormalize)
     MatchFinder_Normalize(p);
+
   if (!p->streamEndWasReached && p->keepSizeAfter == p->streamPos - p->pos)
     MatchFinder_CheckAndMoveAndRead(p);
   if (p->cyclicBufferPos == p->cyclicBufferSize)
@@ -517,7 +518,7 @@ static UInt32 Bt3_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
   if (delta2 < p->cyclicBufferSize && *(cur - delta2) == *cur)
   {
     for (; maxLen != lenLimit; maxLen++)
-      if (cur[(ptrdiff_t)maxLen - delta2] != cur[maxLen])
+      if (cur[(ptrdiff_t)maxLen - (ptrdiff_t)delta2] != cur[maxLen]) /*MAB second casts (ptrdiff_t)*/
         break;
     distances[0] = maxLen;
     distances[1] = delta2 - 1;
@@ -564,7 +565,7 @@ static UInt32 Bt4_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
   if (offset != 0)
   {
     for (; maxLen != lenLimit; maxLen++)
-      if (cur[(ptrdiff_t)maxLen - delta2] != cur[maxLen])
+      if (cur[(ptrdiff_t)maxLen - (ptrdiff_t)delta2] != cur[maxLen]) /*MAB casts second (ptrdiff_t)*/
         break;
     distances[offset - 2] = maxLen;
     if (maxLen == lenLimit)
@@ -610,9 +611,10 @@ static UInt32 Hc4_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
   }
   if (offset != 0)
   {
-    for (; maxLen != lenLimit; maxLen++)
-      if (cur[(ptrdiff_t)maxLen - delta2] != cur[maxLen])
+    for (; maxLen != lenLimit; maxLen++) 
+      if (cur[(ptrdiff_t)maxLen - (ptrdiff_t)delta2] != cur[maxLen]) /*MAB casts second (ptrdiff_t) */
         break;
+
     distances[offset - 2] = maxLen;
     if (maxLen == lenLimit)
     {

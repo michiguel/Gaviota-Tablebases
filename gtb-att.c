@@ -146,8 +146,9 @@ attack_maps_init(void)
 {
 	int i;
 	unsigned int m, from, to;
-	unsigned int to88, fr88;	
-	int diff;
+	unsigned int to88, fr88;
+	int diff;	
+
 	uint64_t rook, bishop, queen, knight, king;
 
 	if (!reach_was_initialized()) {
@@ -208,7 +209,7 @@ attack_maps_init(void)
 			
 			to88 = mapx88(to);
 			fr88 = mapx88(from);
-			diff = to88 - fr88;
+			diff = (int)to88 - (int)fr88;
 
 			if (diff ==  17 || diff ==  15) {
 				m |= attmsk[wP];
@@ -258,8 +259,12 @@ reach_init (void)
 	SQ_CONTENT pc;
 	int stp_a [] = {15, -15 };
 	int stp_b [] = {17, -17 };
-	int side, index, STEP_A, STEP_B;
-	SQUARE sq, s, us;
+	int STEP_A, STEP_B;
+	unsigned int side;
+	unsigned int index;
+	SQUARE sq, us;
+
+	int s;
 
 	for (pc = KNIGHT; pc < (KING+1); pc++) {
 		for (sq = 0; sq < 64; sq++) {
@@ -278,7 +283,7 @@ reach_init (void)
 		STEP_B = stp_b[side];
 		for (sq = 0; sq < 64; sq++) {
 
-			int sq88 = map88(sq);
+			int sq88 = (int)map88(sq);
 			uint64_t bb = U64(0x0);
 
 			list = buflist;
@@ -286,12 +291,12 @@ reach_init (void)
 
 			s = sq88 + STEP_A;
 			if (0 == (s & 0x88)) {
-				us = unmap88(s);
+				us = (SQUARE)unmap88(s);
 				*list++ = us;
 			}
 			s = sq88 + STEP_B;
 			if (0 == (s & 0x88)) {
-				us = unmap88(s);
+				us = (SQUARE)unmap88(s);
 				*list++ = us;
 			}
 			*list = NOSQUARE;
@@ -327,8 +332,8 @@ tolist_rev (uint64_t occ, SQ_CONTENT input_piece, SQUARE sq, SQUARE *list)
 {
    	int direction;
    	unsigned int pc;
-    unsigned int s;
-   	unsigned int from;
+    int s;
+   	int from;
 	int step;
 	const int *steparr;
 	bool_t slider;
@@ -341,7 +346,7 @@ tolist_rev (uint64_t occ, SQ_CONTENT input_piece, SQUARE sq, SQUARE *list)
 			input_piece == ROOK   || input_piece == QUEEN  || 
 			input_piece == KING);
 
-   	from = map88(sq);
+   	from = (int)map88(sq);
    	
 	pc = input_piece & (PAWN|KNIGHT|BISHOP|ROOK|QUEEN|KING);
 
@@ -354,7 +359,7 @@ tolist_rev (uint64_t occ, SQ_CONTENT input_piece, SQUARE sq, SQUARE *list)
 			step = steparr[direction];
 			s = from + step;
 			while (0 == (s & 0x88)) {
-				us = unmap88(s);
+				us = (SQUARE)unmap88(s);
 				if (0 != (0x1u & (unsigned int)(occ >> us)))
 					break;
 				*list++ = us;
@@ -368,7 +373,7 @@ tolist_rev (uint64_t occ, SQ_CONTENT input_piece, SQUARE sq, SQUARE *list)
 			step = steparr[direction];
 			s = from + step;
 			if (0 == (s & 0x88)) {
-				us = unmap88(s);
+				us = (SQUARE)unmap88(s);
 				if (0 == (0x1u & (unsigned int)(occ >> us))) {
 					*list++ = us;
 				}

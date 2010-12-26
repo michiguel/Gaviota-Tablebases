@@ -203,12 +203,12 @@ local void send_bits(s, value, length)
      * unused bits in value.
      */
     if (s->bi_valid > (int)Buf_size - length) {
-        s->bi_buf |= (value << s->bi_valid);
+        s->bi_buf |= (ush)(value << s->bi_valid); /*MAB cast to ush */
         put_short(s, s->bi_buf);
-        s->bi_buf = (ush)value >> (Buf_size - s->bi_valid);
-        s->bi_valid += length - Buf_size;
+        s->bi_buf = (ush)((ush)value >> ((int)Buf_size - s->bi_valid)); /*MAB cast to int */
+        s->bi_valid += length - (int)Buf_size; /*MAB cast to int */
     } else {
-        s->bi_buf |= value << s->bi_valid;
+        s->bi_buf |= (ush)(value << s->bi_valid); /*MAB cast to ush */
         s->bi_valid += length;
     }
 }
@@ -234,13 +234,13 @@ local void send_bits(s, value, length)
 
 /*MAB: modified */
 #define send_bits(s, value, length) \
-{ int len = length;\
+{ int len = (int)length;/*MAB casts*/\
   if (s->bi_valid > (int)Buf_size - len) {\
-    int val = value;\
+    int val = (int)value;/*MAB casts*/\
     s->bi_buf = (ush)(s->bi_buf | (val << s->bi_valid));/*MAB: Cast to silence compiler, see [1] above */\
     put_short(s, s->bi_buf);\
-    s->bi_buf =  (ush) ((ush)val >> (Buf_size - s->bi_valid));/*MAB: Cast to silence compiler */\
-    s->bi_valid += len - Buf_size;\
+    s->bi_buf =  (ush) ((ush)val >> ((int)Buf_size - s->bi_valid));/*MAB: Cast to silence compiler */\
+    s->bi_valid += (int)(len - (int)Buf_size);/*MAB casts*/\
   } else {\
     s->bi_buf = (ush) (s->bi_buf | ((value) << s->bi_valid));/*MAB: Cast to silence compiler, see [2] above */\
     s->bi_valid += len;\
@@ -569,8 +569,8 @@ local void gen_bitlen(deflate_state *s, tree_desc *desc)
         xbits = 0;
         if (n >= base) xbits = extra[n-base];
         f = tree[n].Freq;
-        s->opt_len += (ulg)f * (bits + xbits);
-        if (stree) s->static_len += (ulg)f * (stree[n].Len + xbits);
+        s->opt_len += (ulg)f * (ulg)(bits + xbits); /*MAB cast, (ulg)(bits + xbits) */
+        if (stree) s->static_len += (ulg)f * (ulg)(stree[n].Len + xbits); /*MAB cast */
     }
     if (overflow == 0) return;
 
@@ -582,7 +582,7 @@ local void gen_bitlen(deflate_state *s, tree_desc *desc)
         bits = max_length-1;
         while (s->bl_count[bits] == 0) bits--;
         s->bl_count[bits]--;      /* move one leaf down the tree */
-        s->bl_count[bits+1] += 2; /* move one overflow item as its brother */
+        s->bl_count[bits+1] = (ush)(s->bl_count[bits+1] + 2); /* move one overflow item as its brother */ /*MAB cast and expand += */
         s->bl_count[max_length]--;
         /* The brother of the overflow item also moves one step up,
          * but this does not affect bl_count[max_length]
@@ -602,8 +602,10 @@ local void gen_bitlen(deflate_state *s, tree_desc *desc)
             if (m > max_code) continue;
             if ((unsigned) tree[m].Len != (unsigned) bits) {
                 Trace((stderr,"code %d bits %d->%d\n", m, tree[m].Len, bits));
-                s->opt_len += ((long)bits - (long)tree[m].Len)
-                              *(long)tree[m].Freq;
+	            s->opt_len +=  (long unsigned)( /*MAB cast */
+								((long)bits - (long)tree[m].Len)
+                              	*(long)tree[m].Freq
+							);
                 tree[m].Len = (ush)bits;
             }
             n--;
@@ -873,7 +875,7 @@ local int build_bl_tree(deflate_state *s)
         if (s->bl_tree[bl_order[max_blindex]].Len != 0) break;
     }
     /* Update opt_len to include the bit length tree and counts */
-    s->opt_len += 3*(max_blindex+1) + 5+5+4;
+    s->opt_len += (long unsigned)(3*(max_blindex+1) + 5 + 5 + 4); /*MAB casts */
     Tracev((stderr, "\ndyn trees: dyn %ld, stat %ld",
             s->opt_len, s->static_len));
 
@@ -1060,8 +1062,8 @@ void _tr_flush_block(deflate_state *s, charf *buf, ulg stored_len, int eof)
         s->compressed_len += 7;  /* align on byte boundary */
 #endif
     }
-    Tracev((stderr,"\ncomprlen %lu(%lu) ", s->compressed_len>>3,
-           s->compressed_len-7*eof));
+    Tracev((stderr,"\ncomprlen %lu(%lu) ", (unsigned long) (s->compressed_len>>3), /*MAB casts to ul */
+           (unsigned long) (s->compressed_len-7ul*(unsigned long)eof))); /*MAB casts to ul */
 }
 
 /* ===========================================================================
@@ -1145,14 +1147,14 @@ local void compress_block(deflate_state *s, ct_data *ltree, ct_data *dtree)
                 send_bits(s, lc, extra);       /* send the extra length bits */
             }
             dist--; /* dist is now the match distance - 1 */
-            code = d_code(dist);
+            code = (unsigned)(d_code(dist)); /*MAB casts */
             Assert (code < D_CODES, "bad d_code");
 
             send_code(s, code, dtree);       /* send the distance code */
             extra = extra_dbits[code];
             if (extra != 0) {
-                dist -= base_dist[code];
-                send_bits(s, dist, extra);   /* send the extra distance bits */
+                dist -= (unsigned)(base_dist[code]); /*MAB casts */
+                send_bits(s, (int)dist, extra);   /* send the extra distance bits */ /*MAB cast with int for debug */
             }
         } /* literal or match pair ? */
 
@@ -1232,7 +1234,7 @@ local void bi_windup(deflate_state *s)
     s->bi_buf = 0;
     s->bi_valid = 0;
 #ifdef DEBUG
-    s->bits_sent = (s->bits_sent+7) & ~7;
+    s->bits_sent = (s->bits_sent+7ul) & ~7ul; /*MAB add ul */
 #endif
 }
 

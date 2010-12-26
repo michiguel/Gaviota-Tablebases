@@ -85,6 +85,7 @@ The following files will be "included"
 gtb-probe.h  
 gtb-dec.h  
 gtb-att.h
+gtb-types.h
 
 plus all the *.h files in the folders, so set the proper -I flags:
 sysport/
@@ -140,5 +141,6 @@ UCI graphical user interface.
 
 Good luck with the tablebases!
 
-Miguel
+Miguel
+
 *****************************************************************************
