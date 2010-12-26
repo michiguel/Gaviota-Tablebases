@@ -152,6 +152,12 @@ extern int /*bool*/	tb_is_initialized (void);
 
 extern unsigned int	tb_availability(void);
 
+/* 	tb_indexmemory ()returns 
+	how much memory has been allocated for indexes 
+*/
+
+extern size_t		tb_indexmemory (void);
+
 /*----------------------------------*\
 |         	cache
 \*----------------------------------*/
