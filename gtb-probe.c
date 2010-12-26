@@ -2887,13 +2887,13 @@ static size_t
 zipinfo_memory_allocated (void)
 {
 	int i;
-	size_t accum_blocks = 0;
+	index_t accum_blocks = 0;
 	for (i = 0; i < MAX_EGKEYS; i++) {
 		if (Zipinfo[i].blockindex != NULL) {
 		 	accum_blocks += Zipinfo[i].totalblocks;
 		}
 	}
-	return accum_blocks * sizeof(index_t);
+	return (size_t)accum_blocks * sizeof(index_t);
 }
 
 extern size_t
