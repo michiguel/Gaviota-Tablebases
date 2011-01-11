@@ -427,7 +427,7 @@ SRes LzmaEnc_SetProps(CLzmaEncHandle pp, const CLzmaEncProps *props2)
   LzmaEncProps_Normalize(&props);
 
   if (props.lc > LZMA_LC_MAX || props.lp > LZMA_LP_MAX || props.pb > LZMA_PB_MAX ||
-      props.dictSize > (1u << kDicLogSizeMaxCompress) || props.dictSize > (1u << 30)) /*MAB, change 1 to 1u to silence warning */
+      props.dictSize > (1 << kDicLogSizeMaxCompress) || props.dictSize > (1 << 30))
     return SZ_ERROR_PARAM;
   p->dictSize = props.dictSize;
   p->matchFinderCycles = props.mc;
@@ -649,7 +649,7 @@ static void LzmaEnc_InitPriceTables(UInt32 *ProbPrices)
         bitCount++;
       }
     }
-    ProbPrices[i >> kNumMoveReducingBits] = ((kNumBitModelTotalBits << kCyclesBits) - 15 - bitCount);
+    ProbPrices[i >> kNumMoveReducingBits] = (/*MAB: cast to silence*/(UInt32)(kNumBitModelTotalBits << kCyclesBits) - /*MAB: cast to silence*/(UInt32)15 - bitCount);
   }
 }
 

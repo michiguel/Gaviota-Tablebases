@@ -524,7 +524,7 @@ stream_dump (stream_t *s, int ori, int n)
 
 /*=== HUFFTREE=================================================*/
 
-#define LEFTCODE 0
+#define LEFTCODE 0u
 #define RIGHTCODE 1u
 #define BITLEAF 1
 #define BITNODE 0
