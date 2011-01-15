@@ -137,23 +137,30 @@ extern int /*bool*/	tb_probe_WDL_soft
 
 extern int /*bool*/	tb_is_initialized (void);
 
-/* 	tb_availability() returns
-	0: no TBs available 
-	and the following bits turned one if
-	0: at least one 3-pc TB is present
-	1: 3-pc TBs are complete
-	2: at least one 4-pc TB is present
-	3: 4-pc TBs are complete
-	4: at least one 5-pc TB is present
-	5: 5-pc TBs are complete
-	etc.
-	so, if 63 is returned, it means all 3-4-5-pc TBs are present
+/* 	
+|	tb_availability() returns 0 if no TBs available 
+|	Otherwise, the following bits are turned 'on' if...
+|	----------------------------------
+|	bit: meaning
+|	----------------------------------
+|	0: at least one 3-pc TB is present
+|	1: 3-pc TBs are complete
+|	2: at least one 4-pc TB is present
+|	3: 4-pc TBs are complete
+|	4: at least one 5-pc TB is present
+|	5: 5-pc TBs are complete
+|	6: at least one 6-pc TB is present
+|	7: 6-pc TBs are complete
+|	Example: if 63 is returned, it means all 3-4-5-pc TBs are present
+|	Bits 6 and 7 will be always off, of course, until 6-piece TBs
+|	are supported.
 */
 
 extern unsigned int	tb_availability(void);
 
-/* 	tb_indexmemory ()returns 
-	how much memory has been allocated for indexes 
+/* 	
+|	tb_indexmemory ()returns 
+|	how much memory has been allocated for indexes 
 */
 
 extern size_t		tb_indexmemory (void);
@@ -173,15 +180,15 @@ extern void			tbcache_flush (void);
 \*----------------------------------*/
 
 /*
-For maximum portability, some stats are provided
-in two 32 bits integers rather than a single 64 bit
-number. For intance, prob_hard_hits[0] contains only the
-less significant 32 bits (bit 0 to 31), and prob_hard_hits[1] the
-most significant ones (32 to 63). The number can be recreated
-like this
-uint64_t x = (uint64_t)probe_hard_hits[0] | ((uint64_t)probe_hard_hits[1] << 32);
-The user has the responsibility to combine the numbers and use the 
-proper 64 bit integers.
+|	For maximum portability, some stats are provided
+|	in two 32 bits integers rather than a single 64 bit number. 
+|	For intance, prob_hard_hits[0] contains the less significant 32 bits 
+|	(0 to 31), and prob_hard_hits[1] the most significant ones (32 to 63). 
+|	The 64-bit number can be recreated like this:
+|	uint64_t x;
+|	x = (uint64_t)probe_hard_hits[0]|((uint64_t)probe_hard_hits[1]<<32);
+|	The user has the responsibility to combine the numbers and use the 
+|	proper 64 bit integers.
 */
 
 struct TB_STATS {
