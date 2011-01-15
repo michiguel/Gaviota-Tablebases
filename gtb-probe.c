@@ -2858,8 +2858,10 @@ zipinfo_init (void)
 
 
 	for (j = 0, z = 0, x = 3; x < 8; x++) {
-		if (partial[x]) z |= 1u << j++;
-		if (complet[x]) z |= 1u << j++;
+		if (partial[x]) z |= 1u << j; 
+		j++;
+		if (complet[x]) z |= 1u << j;
+		j++;
 	}
 
 	ret = z;
