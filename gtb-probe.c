@@ -1556,6 +1556,8 @@ tb_probe_	(unsigned stm,
         ws = bs;
         bs = temps;
 		stm = Opp(stm);
+		if (epsq != NOSQUARE) epsq ^= 070; 				/* added */
+		{SQ_CONTENT *tempp = wp; wp = bp; bp = tempp;} 	/* added */
 	} else {
 		#if defined(DEBUG)
 		printf("did not get id...\n");
@@ -7873,6 +7875,8 @@ tb_probe_wdl
         ws = bs;
         bs = temps;
 		stm = Opp(stm);
+		/* no enpassant in this fuction, so no adjustment */
+		{SQ_CONTENT *tempp = wp; wp = bp; bp = tempp;} 	/* added */
 	} else {
 		#if defined(DEBUG)
 		printf("did not get id...\n");
