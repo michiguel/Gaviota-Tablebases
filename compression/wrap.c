@@ -99,7 +99,7 @@ extern int
 lzf_encode
 (const unsigned char *in_start, size_t in_len, unsigned char *out_start, size_t *pout_len, size_t out_max)
 {
-	size_t x = lzf_compress (in_start, in_len, out_start, in_len-1 /* ensures best compression */);
+	size_t x = lzf_compress (in_start, (unsigned)in_len, out_start, (unsigned)(in_len-1) /* ensures best compression */);
 	TB_DUMMY_unused = out_max;
 	if (x != 0)
 		*pout_len = (size_t) x;
@@ -110,7 +110,7 @@ extern int
 lzf_decode
 (const unsigned char *in_start, size_t in_len, unsigned char *out_start, size_t *pout_len, size_t out_max)
 {
-	*pout_len = (size_t)lzf_decompress (in_start, (unsigned int)in_len, out_start, out_max);
+	*pout_len = (size_t)lzf_decompress (in_start, (unsigned)in_len, out_start, (unsigned)out_max);
 	return *pout_len != 0;
 }
 

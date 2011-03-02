@@ -2032,8 +2032,8 @@ egtb_get_id (SQ_CONTENT *w, SQ_CONTENT *b, tbkey_t *id)
 	SQ_CONTENT *s; 
 	char *t;
 	bool_t found;
-	long int i;
-	static long int cache_i = 0;
+	tbkey_t i;
+	static tbkey_t cache_i = 0;
 	
 	assert (PAWN == 1 && KNIGHT == 2 && BISHOP == 3 && ROOK == 4 && QUEEN == 5 && KING == 6);
 

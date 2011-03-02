@@ -363,7 +363,7 @@ stream_len (stream_t *s)
 static unsigned int
 stream_nextbit (ro_stream_t *s)
 {
-	unsigned y, byte, bit;	
+	unsigned long y, byte, bit;	
 	y = s->pbit++;
 	byte = y / 8;
 	bit = y & 7;
@@ -402,7 +402,7 @@ stream_next8 (stream_t *s)
 static void
 stream_writebit (stream_t *s, unsigned z)
 {
-	unsigned y,byte,bit;	
+	unsigned long y,byte,bit;	
 	y = s->pbit++;
 	
 	byte = y / 8;
@@ -423,7 +423,7 @@ stream_writebit (stream_t *s, unsigned z)
 	|	It is only useful when this function is use for sequential writing on a 
 	|	empty buffer.
 	*/
-	unsigned y, byte, bit;	
+	unsigned long y, byte, bit;	
 	unsigned char *p;
 	y = s->pbit++;
 
