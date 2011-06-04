@@ -279,7 +279,7 @@ int ZEXPORT deflateInit2_(z_streamp strm, int level, int method, int windowBits,
 
     overlay = (ushf *) ZALLOC(strm, s->lit_bufsize, sizeof(ush)+2);
     s->pending_buf = (uchf *) overlay;
-    s->pending_buf_size = (ulg)s->lit_bufsize * (sizeof(ush)+2L);
+    s->pending_buf_size = (ulg)s->lit_bufsize * (ulg)(sizeof(ush)+2L); /*MAB casts (ulg)(sizeof... */
 
     if (s->window == Z_NULL || s->prev == Z_NULL || s->head == Z_NULL ||
         s->pending_buf == Z_NULL) {

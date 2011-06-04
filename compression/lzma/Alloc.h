@@ -13,7 +13,7 @@ void MyFree(void *address);
 
 #ifdef _WIN32
 
-void SetLargePageSize();
+void SetLargePageSize(void);
 
 void *MidAlloc(size_t size);
 void MidFree(void *address);

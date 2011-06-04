@@ -9,17 +9,22 @@
 |
 */
 
-#ifdef _MSC_VER
+#if defined(MINGW)
 	#include <windows.h>
-#else
-	#include <unistd.h>
-#endif
-
-#ifdef _MSC_VER 
 	#if !defined(MVSC)
 		#define MVSC
 	#endif
 #endif
+
+#ifdef _MSC_VER
+	#include <windows.h>
+	#if !defined(MVSC)
+		#define MVSC
+	#endif
+#else
+	#include <unistd.h>
+#endif
+
 
 #if defined(__linux__) || defined(__GNUC__)
 	#if !defined(GCCLINUX)
@@ -27,6 +32,9 @@
 	#endif
 #endif
 
+#if defined(MINGW)
+	#undef GCCLINUX
+#endif
 
 /*
 |
@@ -36,65 +44,48 @@
 
 
 #if defined(CYGWIN)
-
 	#define USECLOCK
 	#define MULTI_THREADED_INTERFACE
 	#undef  NT_THREADS
 	#define POSIX_THREADS
 	#define GCCLINUX_INTEGERS
-
 #elif defined(MINGW)
-
 	#define USEWINCLOCK
 	#define MULTI_THREADED_INTERFACE
 	#define NT_THREADS
 	#undef  POSIX_THREADS
-	#define GCCLINUX_INTEGERS
-	
+	#define MSWINDOWS_INTEGERS
 #elif defined(GCCLINUX)
-
 	#define USELINCLOCK
 	#define MULTI_THREADED_INTERFACE
 	#undef  NT_THREADS
 	#define POSIX_THREADS
 	#define GCCLINUX_INTEGERS
-
 #elif defined(MVSC)
-
 	#define USEWINCLOCK 
 	#define MULTI_THREADED_INTERFACE
 	#define NT_THREADS
 	#undef  POSIX_THREADS
 	#define MSWINDOWS_INTEGERS
-
 #else
-	
 	#error COMPILER NOT DEFINED
-
 #endif
-
-
 
 #if defined(MONOTHREAD)
 	#undef MULTI_THREADED_INTERFACE
 #endif
 
 
-
-#if defined(GCCLINUX)
-
+#if defined(GCCLINUX) || defined(MINGW)
 	#define U64(x) (x##ull)
-
 #elif defined(MVSC)
-
 	#define U64(x) (x##ui64)
-
 #else
 	#error OS not defined properly
 #endif
 
 
-#if defined(GCCLINUX)
+#if defined(GCCLINUX) || defined(MINGW)
 /*
 	typedef unsigned long long int	uint64_t;
 	typedef long long int			int64_t;
@@ -237,10 +228,7 @@ extern int /*boolean*/	mysem_destroy	(mysem_t *sem);
 #endif
 
 
-#if defined(MINGW)
-#undef GCCLINUX
-#define MSVC
-#endif
+
 
 
 /* end MULTI_THREADED_INTERFACE*/

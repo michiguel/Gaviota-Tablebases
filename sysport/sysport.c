@@ -228,10 +228,10 @@ mysem_init	(mysem_t *sem, unsigned int value)
 {
 	mysem_t h =
 	CreateSemaphore(
-  		NULL, 	/* cannot be inherited */
-		value, 	/* Initial Count */
-  		256,	/* Maximum Count */
-  		NULL	/* Name --> NULL, not shared among threads */
+  		NULL, 		/* cannot be inherited */
+		(LONG)value,/* Initial Count */
+  		256,		/* Maximum Count */
+  		NULL		/* Name --> NULL, not shared among threads */
 	);
 
 	if (h != NULL)	*sem = h;

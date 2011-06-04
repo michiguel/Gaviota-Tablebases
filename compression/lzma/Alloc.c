@@ -76,7 +76,7 @@ SIZE_T g_LargePageSize = 0;
 typedef SIZE_T (WINAPI *GetLargePageMinimumP)();
 #endif
 
-void SetLargePageSize()
+void SetLargePageSize(void)
 {
   #ifdef _7ZIP_LARGE_PAGES
   SIZE_T size = 0;

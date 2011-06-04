@@ -124,7 +124,8 @@ lzf_compress (const void *const in_data, unsigned int in_len,
    * special workaround for it.
    */
 #if defined (WIN32) && defined (_M_X64)
-  unsigned _int64 off; /* workaround for missing POSIX compliance */
+	/*MAB fix bug, it is __int64 rather than _int64 */
+  unsigned __int64 off; /* workaround for missing POSIX compliance */
 #else
   unsigned long off;
 #endif

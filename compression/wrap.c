@@ -77,7 +77,7 @@ zlib_encode
 	enum COMPRESSION_LEVELS {ZLIB_MAXIMUM_COMPRESSION = 9};
 	int outcome;
 	unsigned long zz = (unsigned long)out_max;
-	outcome = compress2 (out_start, &zz, in_start, in_len, ZLIB_MAXIMUM_COMPRESSION);
+	outcome = compress2 (out_start, &zz, in_start, (z_uLong)in_len, ZLIB_MAXIMUM_COMPRESSION);
 	*pout_len = (size_t) zz;
 	return outcome == Z_OK;
 }
