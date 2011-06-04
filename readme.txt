@@ -107,8 +107,8 @@ These switches should be set in the compiler
 -D Z_PREFIX
 
 The first one removes the assert code, and the second
-one makes sure that there is no collisoin between some names in the 
-zlib library with names in other compression libraries.
+one makes sure that there is no collision between some names in the 
+zlib library and names in other compression libraries.
 
 -------------------------- COMPILATION EXAMPLE ------------------------------
 
