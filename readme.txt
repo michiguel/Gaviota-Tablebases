@@ -1,5 +1,5 @@
                  Gaviota Tablebases Probing Code API
-                Copyright (c) 2010 Miguel A. Ballicora
+                Copyright (c) 2010-2011 Miguel A. Ballicora
 -----------------------------------------------------------------------------
 
 This software provides C code to probe the Gaviota Endgame Tablebases.
@@ -31,8 +31,9 @@ http://www.olympuschess.com/egtb/gaviota/ (Many thanks to Josh Shriver)
 
 "tbprobe" is distributed here as a tablebase probing example. The current API
 is relatively "low level" to optimize performance. We hope the small program 
-tbprobe is self explanatory. A more complete and detailed documentation may be 
-released later.
+tbprobe is self explanatory. A thorough and detailed documentation may be 
+released later. However, it seems that everybody who attempted to implement
+this probing code was successful relatively easy.
 
 We plan to support an interface with a FEN notation; thus, it is expected 
 that some other functions maybe added to this API.
@@ -106,8 +107,8 @@ These switches should be set in the compiler
 -D Z_PREFIX
 
 The first one removes the assert code, and the second
-one makes sure that some names in the zlib library will not
-collision with names in other compression libraries.
+one makes sure that there is no collisoin between some names in the 
+zlib library with names in other compression libraries.
 
 -------------------------- COMPILATION EXAMPLE ------------------------------
 
