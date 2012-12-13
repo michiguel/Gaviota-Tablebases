@@ -2804,7 +2804,7 @@ static  bool_t 	egtb_block_unpack 			(unsigned side, index_t n, const unsigned c
 static  bool_t 	egtb_file_beready 			(tbkey_t key);
 static  bool_t 	egtb_loadindexes 			(tbkey_t key);
 static index_t 	egtb_block_uncompressed_to_index (tbkey_t key, index_t b);
-static  bool_t 	fread32 					(FILE *f, unsigned long int *y);
+static  bool_t 	fread32 					(FILE *f, /*@out@*/ unsigned long int *y);
 
 
 static unsigned int
@@ -2907,7 +2907,7 @@ tb_indexmemory (void)
 }
 
 static bool_t
-fread32 (FILE *f, unsigned long int *y)
+fread32 (FILE *f, /*@out@*/ unsigned long int *y)
 {
 	enum SIZE {SZ = 4};
 	int i;
@@ -2933,7 +2933,7 @@ egtb_loadindexes (tbkey_t key)
 	unsigned long int blocksize = 1;
 	unsigned long int tailblocksize1 = 0;
 	unsigned long int tailblocksize2 = 0;
-    unsigned long int offset=0;
+    unsigned long int offset = 0;
 	unsigned long int dummy;
 	unsigned long int i;
 	unsigned long int blocks;
@@ -2977,7 +2977,7 @@ egtb_loadindexes (tbkey_t key)
 
 	/* Input of Indexes */
 	for (i = 0; ok && i < n_idx; i++) {
-		ok = fread32 (f, &idx);
+		ok = fread32 (f, &idx); /* idx will be used if ok is true, otherwise, it is discarded */
 		p[i] = (index_t)idx; /* reads a 32 bit int, and converts it to index_t */ assert (sizeof(index_t) >= 4);
 	}
 
