@@ -2938,7 +2938,7 @@ egtb_loadindexes (tbkey_t key)
 	unsigned long int i;
 	unsigned long int blocks;
 	unsigned long int n_idx;
-	unsigned long int idx;
+	unsigned long int idx = 0; /* to silence warning "may be used uninitialized..." */
 	index_t	*p;
 
 	bool_t ok;
