@@ -4073,8 +4073,10 @@ kabkc_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, index_t *out)
 
 	assert (ft < 8);
 
-	for (i = 0; i < N_WHITE; i++) ws[i] = inp_pw[i]; ws[N_WHITE] = NOSQUARE;
-	for (i = 0; i < N_BLACK; i++) bs[i] = inp_pb[i]; bs[N_BLACK] = NOSQUARE;	
+	for (i = 0; i < N_WHITE; i++) ws[i] = inp_pw[i];
+	ws[N_WHITE] = NOSQUARE;
+	for (i = 0; i < N_BLACK; i++) bs[i] = inp_pb[i];
+	bs[N_BLACK] = NOSQUARE;
 
 	if ((ft & WE_FLAG) != 0) {
 		for (i = 0; i < N_WHITE; i++) ws[i] = flipWE (ws[i]);
@@ -4151,8 +4153,10 @@ kabck_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, index_t *out)
 
 	assert (ft < 8);
 
-	for (i = 0; i < N_WHITE; i++) ws[i] = inp_pw[i]; ws[N_WHITE] = NOSQUARE;
-	for (i = 0; i < N_BLACK; i++) bs[i] = inp_pb[i]; bs[N_BLACK] = NOSQUARE;	
+	for (i = 0; i < N_WHITE; i++) ws[i] = inp_pw[i];
+	ws[N_WHITE] = NOSQUARE;
+	for (i = 0; i < N_BLACK; i++) bs[i] = inp_pb[i];
+	bs[N_BLACK] = NOSQUARE;
 
 	if ((ft & WE_FLAG) != 0) {
 		for (i = 0; i < N_WHITE; i++) ws[i] = flipWE (ws[i]);
@@ -4384,8 +4388,10 @@ kaakb_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, /*@out@*/ index_t *
 
 	assert (ft < 8);
 
-	for (i = 0; i < N_WHITE; i++) ws[i] = inp_pw[i]; ws[N_WHITE] = NOSQUARE;
-	for (i = 0; i < N_BLACK; i++) bs[i] = inp_pb[i]; bs[N_BLACK] = NOSQUARE;	
+	for (i = 0; i < N_WHITE; i++) ws[i] = inp_pw[i];
+	ws[N_WHITE] = NOSQUARE;
+	for (i = 0; i < N_BLACK; i++) bs[i] = inp_pb[i];
+	bs[N_BLACK] = NOSQUARE;
 
 	if ((ft & WE_FLAG) != 0) {
 		for (i = 0; i < N_WHITE; i++) ws[i] = flipWE (ws[i]);
@@ -4533,8 +4539,10 @@ kaabk_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, /*@out@*/ index_t *
 
 	assert (ft < 8);
 
-	for (i = 0; i < N_WHITE; i++) ws[i] = inp_pw[i]; ws[N_WHITE] = NOSQUARE;
-	for (i = 0; i < N_BLACK; i++) bs[i] = inp_pb[i]; bs[N_BLACK] = NOSQUARE;	
+	for (i = 0; i < N_WHITE; i++) ws[i] = inp_pw[i];
+	ws[N_WHITE] = NOSQUARE;
+	for (i = 0; i < N_BLACK; i++) bs[i] = inp_pb[i];
+	bs[N_BLACK] = NOSQUARE;
 
 	if ((ft & WE_FLAG) != 0) {
 		for (i = 0; i < N_WHITE; i++) ws[i] = flipWE (ws[i]);
@@ -4682,8 +4690,10 @@ kabbk_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, /*@out@*/ index_t *
 
 	assert (ft < 8);
 
-	for (i = 0; i < N_WHITE; i++) ws[i] = inp_pw[i]; ws[N_WHITE] = NOSQUARE;
-	for (i = 0; i < N_BLACK; i++) bs[i] = inp_pb[i]; bs[N_BLACK] = NOSQUARE;	
+	for (i = 0; i < N_WHITE; i++) ws[i] = inp_pw[i];
+	ws[N_WHITE] = NOSQUARE;
+	for (i = 0; i < N_BLACK; i++) bs[i] = inp_pb[i];
+	bs[N_BLACK] = NOSQUARE;
 
 	if ((ft & WE_FLAG) != 0) {
 		for (i = 0; i < N_WHITE; i++) ws[i] = flipWE (ws[i]);
@@ -4904,8 +4914,10 @@ kaaak_pctoindex (const SQUARE *inp_pw, const SQUARE *inp_pb, index_t *out)
 
 	assert (ft < 8);
 
-	for (i = 0; i < N_WHITE; i++) ws[i] = inp_pw[i]; ws[N_WHITE] = NOSQUARE;
-	for (i = 0; i < N_BLACK; i++) bs[i] = inp_pb[i]; bs[N_BLACK] = NOSQUARE;	
+	for (i = 0; i < N_WHITE; i++) ws[i] = inp_pw[i];
+	ws[N_WHITE] = NOSQUARE;
+	for (i = 0; i < N_BLACK; i++) bs[i] = inp_pb[i];
+	bs[N_BLACK] = NOSQUARE;
 
 	if ((ft & WE_FLAG) != 0) {
 		for (i = 0; i < N_WHITE; i++) ws[i] = flipWE (ws[i]);
